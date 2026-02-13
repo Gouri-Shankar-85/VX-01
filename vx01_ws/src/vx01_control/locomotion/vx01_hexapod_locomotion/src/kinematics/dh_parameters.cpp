@@ -5,8 +5,7 @@ namespace vx01_hexapod_locomotion {
     namespace kinematics {
 
         DHParameters::DHParameters(double a, double alpha, double d, double theta)
-            : a_(a), alpha_(alpha), d_(d), theta_(theta) {
-        }
+            : a_(a), alpha_(alpha), d_(d), theta_(theta) {}
 
         double DHParameters::getA() const {
             return a_;
