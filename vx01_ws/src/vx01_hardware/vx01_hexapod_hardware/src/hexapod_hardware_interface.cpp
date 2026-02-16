@@ -3,11 +3,6 @@
 
 namespace vx01_hexapod_hardware {
 
-
-    struct HWData {
-        std::vector<double> positions_;
-    };
-
     HexapodHardwareInterface::HexapodHardwareInterface()
         : logger_(rclcpp::get_logger("HexapodHardwareINterface")) {}
 
@@ -186,7 +181,7 @@ namespace vx01_hexapod_hardware {
     }
 
     bool HexapodHardwareInterface::loadServoConfigurations() {
-        
+
         RCLCPP_INFO(logger_, "Loading servo configurations...");
         
         for (size_t i = 0; i < joint_names_.size(); i++) {
