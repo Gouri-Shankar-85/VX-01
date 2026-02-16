@@ -59,10 +59,10 @@ install(
 )
 
 # Install config files
-install(
-  DIRECTORY config
-  DESTINATION share/${PROJECT_NAME}
-)
+# install(
+#   DIRECTORY config
+#   DESTINATION share/${PROJECT_NAME}
+# )
 
 # Export targets
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)

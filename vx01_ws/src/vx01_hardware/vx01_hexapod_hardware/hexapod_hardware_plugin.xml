@@ -1,0 +1,12 @@
+<library path="vx01_hexapod_hardware">
+  
+  <class name="vx01_hexapod_hardware/HexapodHardwareInterface"
+         type="vx01_hexapod_hardware::HexapodHardwareInterface"
+         base_class_type="hardware_interface::SystemInterface">
+
+    <description>
+      Hardware interface for VX-01 hexapod robot using Pololu Maestro Mini 18-channel servo controller
+    </description>
+    
+  </class>
+</library>
