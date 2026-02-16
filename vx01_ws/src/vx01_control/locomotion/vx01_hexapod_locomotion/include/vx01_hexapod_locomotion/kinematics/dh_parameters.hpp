@@ -10,8 +10,8 @@ namespace vx01_hexapod_locomotion {
         class DHParameters {
             private:
                 double a_;      // Link length
-                double d_;      // Link offset
                 double alpha_;  // Link twist
+                double d_;      // Link offset
                 double theta_;  // Joint angle
 
             public:
