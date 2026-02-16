@@ -114,6 +114,9 @@ namespace vx01_hexapod_hardware {
             if (!is_open_ || bytes.empty()) {
                 return false;
             }
+
+            ssize_t result = write(serial_fd_, bytes.data(), bytes.size());
+            return (result == static_cast<ssize_t>(bytes.size()));
         }
 
         bool SerialInterface::readByte(uint8_t& byte, int timeout_ms) {
