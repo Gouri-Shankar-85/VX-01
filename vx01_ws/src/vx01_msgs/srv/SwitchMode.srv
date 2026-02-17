@@ -1,0 +1,17 @@
+# Request
+uint8 target_mode
+uint8 MODE_GROUND=0
+uint8 MODE_AIR=1
+uint8 MODE_WATER=2
+
+# Optional transition params
+float64 transition_speed  # How fast to transition
+bool force_switch         # Override safety checks
+
+---
+
+# Response
+bool success
+string message
+uint8 current_mode
+float64 estimated_transition_time  # seconds

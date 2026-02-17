@@ -1,0 +1,18 @@
+# Request
+uint8 calibration_type
+uint8 CALIBRATE_SERVOS=0
+uint8 CALIBRATE_IMU=1
+uint8 CALIBRATE_MOTORS=2
+uint8 CALIBRATE_ALL=3
+
+# Optional
+bool save_to_file  # Save calibration results
+
+---
+
+# Response
+bool success
+string message
+float64[18] servo_offsets  # Hexapod servo offsets
+float64[3] imu_offsets     # IMU calibration offsets
+float64[4] motor_offsets   # Motor calibration values

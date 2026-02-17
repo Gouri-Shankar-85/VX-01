@@ -1,0 +1,21 @@
+# Goal
+float64 target_depth       # meters below surface
+float64 dive_speed         # m/s
+float64 hold_time          # seconds to hold at depth
+
+---
+
+# Result
+bool success
+string message
+float64 actual_depth       # meters reached
+float64 total_time         # seconds taken
+
+---
+
+# Feedback
+float64 current_depth
+float64 depth_remaining
+float64 pressure           # hPa
+float64 water_temperature
+string dive_status         # DIVING, HOLDING, SURFACING
