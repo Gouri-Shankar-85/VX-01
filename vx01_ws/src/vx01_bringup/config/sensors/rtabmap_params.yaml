@@ -1,0 +1,63 @@
+# RTAB-Map 3D Mapping Parameters
+# Using YDLIDAR HP60C RGBD Camera
+
+rtabmap:
+  ros__parameters:
+
+    # ========================
+    # INPUT TOPICS
+    # ========================
+    rgb_topic: "/vx01/camera/color/image_raw"
+    depth_topic: "/vx01/camera/depth/image_raw"
+    camera_info_topic: "/vx01/camera/color/camera_info"
+    odom_topic: "/vx01/odometry"
+
+    # ========================
+    # FRAME IDs
+    # ========================
+    frame_id: "base_link"
+    map_frame_id: "map"
+    odom_frame_id: "odom"
+
+    # ========================
+    # MAPPING MODES
+    # Ground mode: full 3D map
+    # Underwater: dense point cloud
+    # ========================
+    mapping_mode: true         # true=mapping, false=localization
+
+    # ========================
+    # MAP PARAMETERS
+    # ========================
+    # Grid map
+    grid_size: 0.05            # 5cm resolution
+    grid_ray_tracing: true
+
+    # Point cloud
+    cloud_output_voxel_size: 0.05
+    cloud_max_depth: 4.0       # meters
+
+    # ========================
+    # LOOP CLOSURE
+    # ========================
+    loop_closure_enabled: true
+    loop_thr: 0.11             # Loop closure threshold
+
+    # ========================
+    # VISUAL ODOMETRY
+    # ========================
+    visual_odometry: true
+    vo_type: 0                 # 0=F2M (Frame-to-Map)
+
+    # ========================
+    # MEMORY MANAGEMENT
+    # ========================
+    mem_stm_size: 10           # Short term memory size
+    mem_image_keep_compressed: true
+
+    # ========================
+    # OUTPUT TOPICS
+    # ========================
+    map_topic: "/vx01/map"
+    cloud_map_topic: "/vx01/cloud_map"
+    octomap_topic: "/vx01/octomap"

@@ -1,0 +1,65 @@
+mavros:
+  ros__parameters:
+
+    # ========================
+    # CONNECTION
+    # RDK X5 → Pix6 via USB
+    # ========================
+    fcu_url: "serial:///dev/ttyACM1:57600"
+    gcs_url: ""
+
+    # MAVLink system IDs
+    target_system_id: 1
+    target_component_id: 1
+    system_id: 255
+    component_id: 240
+
+    # Protocol
+    fcu_protocol: "v2.0"
+
+    # ========================
+    # FRAME
+    # ========================
+    frame_id: "map"
+    local_position_frame_id: "base_link"
+    
+    # ========================
+    # HEARTBEAT
+    # ========================
+    heartbeat_rate: 1.0       # Hz
+    heartbeat_mav_type: 2     # MAV_TYPE_QUADROTOR
+
+    # ========================
+    # TIMEOUTS
+    # ========================
+    conn_timeout: 30.0
+    
+    # ========================
+    # MOTOR MAPPING
+    # ArduPilot X-Frame:
+    # Motor 1: Front-Right (CW)
+    # Motor 2: Back-Left   (CW)
+    # Motor 3: Front-Left  (CCW)
+    # Motor 4: Back-Right  (CCW)
+    # ========================
+
+    # ========================
+    # FLIGHT MODES
+    # All modes enabled
+    # ========================
+    # STABILIZE : Manual stabilized flight
+    # GUIDED    : Full ROS2 autonomous control
+    # LOITER    : GPS hold position
+    # ALT_HOLD  : Altitude hold
+    # LAND      : Auto landing
+    # RTL       : Return to launch
+
+    # ========================
+    # ARDUPILOT PARAMETERS
+    # Set these in Mission Planner:
+    # FRAME_CLASS  = 1  (Quadcopter)
+    # FRAME_TYPE   = 1  (X frame)
+    # SYSID_MYGCS  = 255
+    # SERIAL0_BAUD = 57  (57600)
+    # SERIAL0_PROTOCOL = 2 (MAVLink2)
+    # ========================

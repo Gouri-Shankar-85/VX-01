@@ -1,0 +1,14 @@
+<library path="vx01_drone_hardware">
+
+    <class
+        name="vx01_drone_hardware/DroneHardwareInterface"
+        type="vx01_drone_hardware::DroneHardwareInterface"
+        base_class_type="hardware_interface::SystemInterface">
+
+        <description>
+            Hardware interface for VX-01 drone arm servos using GPIO PWM on RDK X5 board
+        </description>
+        
+    </class>
+
+</library>

@@ -1,0 +1,62 @@
+# Hiwonder IM10A IMU Parameters
+# USB connection to RDK X5
+# 10-axis AHRS (Gyro + Accel + Mag + Baro)
+
+imu:
+  ros__parameters:
+
+    # ========================
+    # CONNECTION
+    # ========================
+    port: "/dev/ttyUSB0"       # USB port (check with ls /dev/ttyUSB*)
+    baud_rate: 9600            # Default 9600, adjustable to 921600
+    update_rate: 200.0         # Hz (max 200Hz)
+
+    # ========================
+    # FRAME
+    # ========================
+    frame_id: "imu_link"
+
+    # ========================
+    # OUTPUT TOPICS
+    # ========================
+    imu_topic: "/vx01/imu/data"
+    mag_topic: "/vx01/imu/mag"
+    baro_topic: "/vx01/imu/baro"
+    temp_topic: "/vx01/imu/temperature"
+
+    # ========================
+    # CALIBRATION
+    # IM10A specs:
+    # Accel range: ±16g
+    # Gyro range: ±2000°/s
+    # Mag range: ±2Gauss
+    # ========================
+    accel_range: 16.0          # ±16g
+    gyro_range: 2000.0         # ±2000°/s
+    mag_range: 2.0             # ±2Gauss
+
+    # ========================
+    # NOISE (from datasheet)
+    # ========================
+    accel_noise: 0.00075       # g/√Hz (0.75mg-rms at 100Hz)
+    gyro_noise: 0.028          # °/s/√Hz
+    mag_noise: 0.0000667       # Gauss/LSB
+
+    # ========================
+    # ORIENTATION
+    # Static tilt accuracy: 0.1°
+    # Dynamic tilt accuracy: 0.5°
+    # Yaw accuracy: 0.1° (9-axis)
+    # ========================
+    use_magnetometer: true     # Use 9-axis for yaw
+    publish_tf: true
+
+    # ========================
+    # MODES
+    # ========================
+    # Used by ALL robot modes:
+    # Ground: body orientation
+    # Air: flight attitude
+    # Water: underwater orientation
+    underwater_mode: false     # Compensate for water interference

@@ -1,0 +1,25 @@
+# Add TFMini-S as observation source
+obstacle_layer:
+  enabled: true
+  observation_sources: depth_camera range_sensor   # ← ADD range_sensor
+
+  depth_camera:
+    topic: /vx01/camera/depth/points
+    data_type: PointCloud2
+    max_obstacle_height: 2.0
+    min_obstacle_height: 0.0
+    obstacle_max_range: 5.0
+    obstacle_min_range: 0.1
+    raytrace_max_range: 6.0
+    raytrace_min_range: 0.0
+
+  range_sensor:                                    # ← ADD THIS BLOCK
+    topic: /vx01/lidar/range
+    data_type: Range
+    max_obstacle_height: 2.0
+    min_obstacle_height: 0.0
+    obstacle_max_range: 12.0
+    obstacle_min_range: 0.1
+    raytrace_max_range: 12.0
+    clearing: true
+    marking: true

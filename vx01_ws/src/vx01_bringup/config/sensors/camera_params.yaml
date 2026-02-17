@@ -1,0 +1,68 @@
+# YDLIDAR HP60C RGBD Camera Parameters
+# USB connection to RDK X5
+
+camera:
+  ros__parameters:
+
+    # ========================
+    # CONNECTION
+    # ========================
+    device: "/dev/video0"      # USB camera device
+    serial_number: ""          # Leave empty for auto-detect
+
+    # ========================
+    # RESOLUTION & FPS
+    # ========================
+    color_width: 1280
+    color_height: 720
+    color_fps: 30
+
+    depth_width: 640
+    depth_height: 480
+    depth_fps: 30
+
+    # ========================
+    # DEPTH RANGE
+    # ========================
+    depth_min: 0.1             # meters
+    depth_max: 10.0            # meters
+
+    # ========================
+    # TOPIC NAMES
+    # ========================
+    color_topic: "/vx01/camera/color/image_raw"
+    depth_topic: "/vx01/camera/depth/image_raw"
+    pointcloud_topic: "/vx01/camera/depth/points"
+    camera_info_topic: "/vx01/camera/color/camera_info"
+
+    # ========================
+    # FRAME IDs
+    # ========================
+    color_frame_id: "camera_color_optical_frame"
+    depth_frame_id: "camera_depth_optical_frame"
+
+    # ========================
+    # FILTERS
+    # ========================
+    # Depth post-processing
+    enable_decimation_filter: true
+    decimation_magnitude: 2
+
+    enable_spatial_filter: true
+    spatial_magnitude: 2
+    spatial_smooth_alpha: 0.5
+    spatial_smooth_delta: 20
+
+    enable_temporal_filter: true
+    temporal_smooth_alpha: 0.4
+    temporal_smooth_delta: 20
+
+    enable_hole_filling_filter: true
+    hole_filling_mode: 1       # 1=farthest, 2=nearest
+
+    # ========================
+    # UNDERWATER MODE
+    # ========================
+    underwater_mode: false     # Enable underwater color correction
+    underwater_alpha: 1.2      # Red channel boost
+    underwater_beta: 0.8       # Blue channel reduction

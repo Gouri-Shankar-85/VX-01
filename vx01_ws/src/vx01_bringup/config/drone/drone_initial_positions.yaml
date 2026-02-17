@@ -1,0 +1,10 @@
+# Initial positions for drone arm servos
+# All arms start horizontal (0 degrees)
+# Air mode   : arms at 0.0  (horizontal - standard quadcopter)
+# Water mode : arms tilt    (varies based on thrust vectoring)
+
+initial_positions:
+  drone_arm0_joint: 0.0
+  drone_arm1_joint: 0.0
+  drone_arm2_joint: 0.0
+  drone_arm3_joint: 0.0

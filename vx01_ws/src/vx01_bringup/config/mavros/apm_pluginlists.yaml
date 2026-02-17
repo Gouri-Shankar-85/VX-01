@@ -1,0 +1,34 @@
+plugin_allowlist:
+  - sys_status
+  - sys_time
+  - command
+  - setpoint_raw
+  - setpoint_velocity
+  - setpoint_position
+  # REMOVE imu from allowlist ← CHANGE
+  # Reason: We use IM10A directly on RDK X5
+  # Pix6 IMU data not needed in ROS2
+  - local_position
+  - global_position
+  - altitude
+  - battery
+  - rc_io
+  - param
+  - waypoint
+
+plugin_blocklist:
+  - image_pub
+  - vibration
+  - wheel_odometry
+  - distance_sensor
+  - rangefinder
+  - optical_flow
+  - hil
+  - fake_gps
+  - cam_imu_sync
+  - log_transfer
+  - imu                # ← ADD TO BLOCKLIST
+  # Reason: Using dedicated IM10A IMU on RDK X5
+  # IM10A is higher quality than Pix6 internal IMU
+  # for ROS2 navigation purposes
+  # Pix6 still uses its own IMU internally for flight

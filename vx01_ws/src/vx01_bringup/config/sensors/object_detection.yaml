@@ -1,0 +1,48 @@
+# Object Detection Parameters
+# Using YDLIDAR HP60C RGB + Depth
+
+object_detection:
+  ros__parameters:
+
+    # ========================
+    # INPUT
+    # ========================
+    rgb_topic: "/vx01/camera/color/image_raw"
+    depth_topic: "/vx01/camera/depth/image_raw"
+    pointcloud_topic: "/vx01/camera/depth/points"
+
+    # ========================
+    # DETECTION MODEL
+    # ========================
+    model_type: "yolov8"
+    model_path: "models/yolov8n.onnx"
+    confidence_threshold: 0.5
+    nms_threshold: 0.4
+
+    # ========================
+    # CLASSES
+    # ========================
+    class_names:
+      - person
+      - obstacle
+      - water_hazard
+      - terrain
+
+    # ========================
+    # UNDERWATER DETECTION
+    # ========================
+    underwater_mode: false
+    underwater_model_path: "models/underwater_yolov8.onnx"
+    underwater_classes:
+      - fish
+      - coral
+      - rock
+      - debris
+      - diver
+
+    # ========================
+    # OUTPUT TOPICS
+    # ========================
+    detection_topic: "/vx01/detections"
+    detection_image_topic: "/vx01/detection_image"
+    detection_3d_topic: "/vx01/detections_3d"

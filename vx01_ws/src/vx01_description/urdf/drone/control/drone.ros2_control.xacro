@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:macro name="drone_ros2_control" params="
+        name
+        prefix
+        use_sim:=false
+        pwm_frequency:=50">
+
+        <ros2_control name="${name}" type="system">
+
+            <!-- HARDWARE PLUGIN          -->
+            <!-- Only GPIO arm servos     -->
+            <!-- BLDC handled by MAVROS   -->
+
+            <hardware>
+
+                <xacro:if value="${use_sim}">
+                    <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+                </xacro:if>
+
+                <xacro:unless value="${use_sim}">
+                    <plugin>vx01_drone_hardware/DroneHardwareInterface</plugin>
+                    <param name="pwm_frequency">${pwm_frequency}</param>
+                    
+                    <!-- GPIO pins for arm servos on RDK X5 -->
+                    <param name="arm_servo_0_pin">20</param>
+                    <param name="arm_servo_1_pin">21</param>
+                    <param name="arm_servo_2_pin">22</param>
+                    <param name="arm_servo_3_pin">23</param>
+                </xacro:unless>
+
+            </hardware>
+
+            <!-- ARM 0 - Roll axis servo -->
+            <joint name="${prefix}drone_arm0_joint">
+
+                <command_interface name="position">
+                    <param name="min">-1.5707963</param>
+                    <param name="max">1.5707963</param>
+                </command_interface>
+
+                <state_interface name="position">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="velocity"/>
+
+                <param name="gpio_pin">20</param>
+                <param name="min_pulse_us">500.0</param>
+                <param name="max_pulse_us">2500.0</param>
+                <param name="min_angle">-1.5707963</param>
+                <param name="max_angle">1.5707963</param>
+                <param name="offset">0.0</param>
+                <param name="reversed">false</param>
+            </joint>
+
+            <!-- ARM 1 -->
+            <joint name="${prefix}drone_arm1_joint">
+
+                <command_interface name="position">
+                    <param name="min">-1.5707963</param>
+                    <param name="max">1.5707963</param>
+                </command_interface>
+                    <state_interface name="position">
+                        <param name="initial_value">0.0</param>
+                    </state_interface>
+                    <state_interface name="velocity"/>
+                <param name="gpio_pin">21</param>
+                <param name="min_pulse_us">500.0</param>
+                <param name="max_pulse_us">2500.0</param>
+                <param name="min_angle">-1.5707963</param>
+                <param name="max_angle">1.5707963</param>
+                <param name="offset">0.0</param>
+                <param name="reversed">false</param>
+
+            </joint>
+
+            <!-- ARM 2 -->
+            <joint name="${prefix}drone_arm2_joint">
+
+                <command_interface name="position">
+                    <param name="min">-1.5707963</param>
+                    <param name="max">1.5707963</param>
+                </command_interface>
+
+                <state_interface name="position">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="velocity"/>
+
+                <param name="gpio_pin">22</param>
+                <param name="min_pulse_us">500.0</param>
+                <param name="max_pulse_us">2500.0</param>
+                <param name="min_angle">-1.5707963</param>
+                <param name="max_angle">1.5707963</param>
+                <param name="offset">0.0</param>
+                <param name="reversed">false</param>
+
+            </joint>
+
+            <!-- ARM 3 -->
+            <joint name="${prefix}drone_arm3_joint">
+
+                <command_interface name="position">
+                    <param name="min">-1.5707963</param>
+                    <param name="max">1.5707963</param>
+                </command_interface>
+
+                <state_interface name="position">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="velocity"/>
+
+                <param name="gpio_pin">23</param>
+                <param name="min_pulse_us">500.0</param>
+                <param name="max_pulse_us">2500.0</param>
+                <param name="min_angle">-1.5707963</param>
+                <param name="max_angle">1.5707963</param>
+                <param name="offset">0.0</param>
+                <param name="reversed">false</param>
+
+            </joint>
+
+        </ros2_control>
+
+    </xacro:macro>
+
+</robot>

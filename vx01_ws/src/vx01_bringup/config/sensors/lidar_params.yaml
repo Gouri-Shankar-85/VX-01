@@ -1,0 +1,55 @@
+# Benewake TFMini-S LiDAR Parameters
+# UART connection to RDK X5
+# Single point, downward facing
+
+lidar:
+  ros__parameters:
+
+    # ========================
+    # CONNECTION
+    # UART on RDK X5
+    # ========================
+    port: "/dev/ttyS1"         # UART port on RDK X5
+    baud_rate: 115200          # TFMini-S default
+    update_rate: 100.0         # Hz
+
+    # ========================
+    # FRAME
+    # ========================
+    frame_id: "lidar_link"
+
+    # ========================
+    # OUTPUT TOPICS
+    # ========================
+    range_topic: "/vx01/lidar/range"
+    pointcloud_topic: "/vx01/lidar/points"
+
+    # ========================
+    # SENSOR SPECS
+    # ========================
+    min_range: 0.1             # meters
+    max_range: 12.0            # meters
+    field_of_view: 0.0523      # 3 degrees in radians
+
+    # ========================
+    # USAGE PER MODE
+    # ========================
+
+    # Ground mode (Hexapod)
+    ground_mode:
+      enabled: true
+      use_for: "terrain_following"
+      target_height: 0.1      # meters above ground
+
+    # Air mode (Drone)
+    air_mode:
+      enabled: true
+      use_for: "altitude_hold"
+      landing_threshold: 0.5  # meters (start landing procedure)
+      min_altitude: 0.3       # meters (minimum safe altitude)
+
+    # Water mode (Underwater)
+    water_mode:
+      enabled: true
+      use_for: "seabed_distance"
+      surface_threshold: 0.5  # meters (detect water surface)

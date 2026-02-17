@@ -1,0 +1,78 @@
+# Sensor Fusion Configuration
+# Combines IMU + Camera + LiDAR for state estimation
+# Using robot_localization package (EKF)
+
+ekf_filter_node:
+  ros__parameters:
+
+    # ========================
+    # FILTER SETTINGS
+    # ========================
+    frequency: 100.0           # Hz
+    sensor_timeout: 0.1        # seconds
+    two_d_mode: false          # Full 3D fusion
+    publish_tf: true
+    publish_acceleration: true
+
+    # ========================
+    # FRAMES
+    # ========================
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: base_link
+    world_frame: odom
+
+    # ========================
+    # IMU (IM10A)
+    # Topic: /vx01/imu/data
+    # ========================
+    imu0: /vx01/imu/data
+    imu0_config:
+    #      x      y      z
+    #   roll  pitch    yaw
+    #     vx     vy     vz
+    #  vroll vpitch   vyaw
+    #     ax     ay     az
+      [false, false, false,
+       true,  true,  true,
+       false, false, false,
+       true,  true,  true,
+       true,  true,  true]
+    imu0_differential: false
+    imu0_relative: false
+    imu0_queue_size: 10
+    imu0_remove_gravitational_acceleration: true
+
+    # ========================
+    # VISUAL ODOMETRY (RTAB-Map)
+    # Topic: /vx01/vo/odom
+    # ========================
+    odom0: /vx01/vo/odom
+    odom0_config:
+      [true,  true,  true,
+       false, false, false,
+       true,  true,  true,
+       false, false, false,
+       false, false, false]
+    odom0_differential: false
+    odom0_queue_size: 10
+
+    # ========================
+    # PROCESS NOISE COVARIANCE
+    # ========================
+    process_noise_covariance:
+      [0.05, 0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+       0,    0.05, 0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0.06, 0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0.03, 0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0.03, 0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0.06, 0,     0,     0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0.025, 0,     0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,     0.025, 0,    0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,     0,     0.04, 0,    0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,     0,     0,    0.01, 0,    0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0.01, 0,    0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0.02, 0,    0,    0,
+       0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0.01, 0,    0,
+       0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0.01, 0,
+       0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0.015]

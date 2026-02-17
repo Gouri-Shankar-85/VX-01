@@ -1,0 +1,29 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    # Controllers to load
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    drone_arm_controller:
+      type: forward_command_controller/ForwardCommandController
+
+# Joint State Broadcaster
+joint_state_broadcaster:
+  ros__parameters:
+    joints:
+      - drone_arm0_joint
+      - drone_arm1_joint
+      - drone_arm2_joint
+      - drone_arm3_joint
+
+# Arm servo position controller
+drone_arm_controller:
+  ros__parameters:
+    joints:
+      - drone_arm0_joint
+      - drone_arm1_joint
+      - drone_arm2_joint
+      - drone_arm3_joint
+    interface_name: position
