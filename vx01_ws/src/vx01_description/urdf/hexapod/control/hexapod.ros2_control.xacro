@@ -11,11 +11,6 @@
         <ros2_control name="${name}" type="system">
 
             <!-- Hardware Plugin -->
-
-            <buildtool_depend>rosidl_default_generators</buildtool_depend>
-            <depend>action_msgs</depend>
-            <member_of_group>rosidl_interface_packages</member_of_group>
-
             <hardware>
                 <xacro:if value="${use_sim}">
                     <plugin>gazebo_ros2_control/GazeboSystem</plugin>
@@ -28,20 +23,17 @@
                 </xacro:unless>
             </hardware>
 
-            <!-- LEG 0 JOINTS  -->
+            <!-- LEG 0 JOINTS (Right Front) -->
             <joint name="${prefix}coxa_leg0_joint">
                 <command_interface name="position">
                     <param name="min">-1.5707963</param>
                     <param name="max">1.5707963</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
-                <!-- Servo hardware params -->
                 <param name="servo_id">0</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -58,13 +50,11 @@
                     <param name="min">-1.5707963</param>
                     <param name="max">1.5707963</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">0.6911503</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">1</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -81,13 +71,11 @@
                     <param name="min">-2.3561944</param>
                     <param name="max">0.0</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">-2.0647985</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">2</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -99,19 +87,17 @@
                 <param name="max_acceleration">20.0</param>
             </joint>
 
-            <!-- LEG 1 JOINTS -->
+            <!-- LEG 1 JOINTS (Right Middle) -->
             <joint name="${prefix}coxa_leg1_joint">
                 <command_interface name="position">
                     <param name="min">-1.5707963</param>
                     <param name="max">1.5707963</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">3</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -128,13 +114,11 @@
                     <param name="min">-1.5707963</param>
                     <param name="max">1.5707963</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">0.6911503</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">4</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -151,13 +135,11 @@
                     <param name="min">-2.3561944</param>
                     <param name="max">0.0</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">-2.0647985</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">5</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -169,19 +151,17 @@
                 <param name="max_acceleration">20.0</param>
             </joint>
 
-            <!-- LEG 2 JOINTS -->
+            <!-- LEG 2 JOINTS (Right Rear) -->
             <joint name="${prefix}coxa_leg2_joint">
                 <command_interface name="position">
                     <param name="min">-1.5707963</param>
                     <param name="max">1.5707963</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">6</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -198,13 +178,11 @@
                     <param name="min">-1.5707963</param>
                     <param name="max">1.5707963</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">0.6911503</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">7</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -221,13 +199,11 @@
                     <param name="min">-2.3561944</param>
                     <param name="max">0.0</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">-2.0647985</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">8</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -239,19 +215,17 @@
                 <param name="max_acceleration">20.0</param>
             </joint>
 
-            <!-- LEG 3 JOINTS (Left side) -->
+            <!-- LEG 3 JOINTS (Left Rear - reversed) -->
             <joint name="${prefix}coxa_leg3_joint">
                 <command_interface name="position">
                     <param name="min">-1.5707963</param>
                     <param name="max">1.5707963</param>
                 </command_interface>
-                
                 <state_interface name="position">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">9</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -268,13 +242,11 @@
                     <param name="min">-1.5707963</param>
                     <param name="max">1.5707963</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">0.6911503</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">10</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -291,13 +263,11 @@
                     <param name="min">-2.3561944</param>
                     <param name="max">0.0</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">-2.0647985</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">11</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -309,19 +279,17 @@
                 <param name="max_acceleration">20.0</param>
             </joint>
 
-            <!-- LEG 4 JOINTS  -->
+            <!-- LEG 4 JOINTS (Left Middle - reversed) -->
             <joint name="${prefix}coxa_leg4_joint">
                 <command_interface name="position">
                     <param name="min">-1.5707963</param>
                     <param name="max">1.5707963</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">12</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -338,13 +306,11 @@
                     <param name="min">-1.5707963</param>
                     <param name="max">1.5707963</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">0.6911503</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">13</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -361,14 +327,11 @@
                     <param name="min">-2.3561944</param>
                     <param name="max">0.0</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">-2.0647985</param>
                 </state_interface>
-
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">14</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -380,19 +343,17 @@
                 <param name="max_acceleration">20.0</param>
             </joint>
 
-            <!-- LEG 5 JOINTS -->
+            <!-- LEG 5 JOINTS (Left Front - reversed) -->
             <joint name="${prefix}coxa_leg5_joint">
                 <command_interface name="position">
                     <param name="min">-1.5707963</param>
                     <param name="max">1.5707963</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">0.0</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">15</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -409,13 +370,11 @@
                     <param name="min">-1.5707963</param>
                     <param name="max">1.5707963</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">0.6911503</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">16</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
@@ -432,13 +391,11 @@
                     <param name="min">-2.3561944</param>
                     <param name="max">0.0</param>
                 </command_interface>
-
                 <state_interface name="position">
                     <param name="initial_value">-2.0647985</param>
                 </state_interface>
                 <state_interface name="velocity"/>
                 <state_interface name="effort"/>
-
                 <param name="servo_id">17</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>

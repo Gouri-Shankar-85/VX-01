@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<robot name="vx01" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- PROPERTIES -->
+    <xacro:property name="use_sim" value="false"/>
+    <xacro:property name="prefix" value=""/>
+
+    <!-- Base body -->
+    <xacro:include filename="$(find vx01_description)/urdf/base/base.xacro"/>
+
+    <!-- Hexapod legs (6 legs) -->
+    <xacro:include filename="$(find vx01_description)/urdf/hexapod/leg_0.xacro"/>
+    <xacro:include filename="$(find vx01_description)/urdf/hexapod/leg_1.xacro"/>
+    <xacro:include filename="$(find vx01_description)/urdf/hexapod/leg_2.xacro"/>
+    <xacro:include filename="$(find vx01_description)/urdf/hexapod/leg_3.xacro"/>
+    <xacro:include filename="$(find vx01_description)/urdf/hexapod/leg_4.xacro"/>
+    <xacro:include filename="$(find vx01_description)/urdf/hexapod/leg_5.xacro"/>
+
+    <!-- Drone arms (4 arms with props) -->
+    <xacro:include filename="$(find vx01_description)/urdf/drone/arm_0.xacro"/>
+    <xacro:include filename="$(find vx01_description)/urdf/drone/arm_1.xacro"/>
+    <xacro:include filename="$(find vx01_description)/urdf/drone/arm_2.xacro"/>
+    <xacro:include filename="$(find vx01_description)/urdf/drone/arm_3.xacro"/>
+
+    <!-- Sensors -->
+    <xacro:include filename="$(find vx01_description)/urdf/sensors/depth_camera.xacro"/>
+    <xacro:include filename="$(find vx01_description)/urdf/sensors/imu.xacro"/>
+    <xacro:include filename="$(find vx01_description)/urdf/sensors/tf_lidar.xacro"/>
+
+    <!-- ROS2 Control interfaces -->
+    <xacro:include filename="$(find vx01_description)/urdf/hexapod/hexapod_ros2_control.xacro"/>
+    <xacro:include filename="$(find vx01_description)/urdf/drone/drone_ros2_control.xacro"/>
+
+
+    <!-- Hexapod control (18 servo joints) -->
+    <xacro:hexapod_ros2_control
+        name="hexapod_controller"
+        prefix="${prefix}"
+        use_sim="${use_sim}"
+        serial_port="/dev/ttyACM0"
+        baud_rate="115200"/>
+
+    <!-- Drone arm control (4 servo joints via GPIO) -->
+    <xacro:drone_ros2_control
+        name="drone_controller"
+        prefix="${prefix}"
+        use_sim="${use_sim}"
+        pwm_frequency="50"
+        gpio_chip="gpiochip0"/>
+
+
+    <!-- GAZEBO PLUGINS (for simulation)            -->
+
+    <xacro:if value="${use_sim}">
+
+        <!-- Gazebo ROS2 Control plugin -->
+        <gazebo>
+            <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+                <robot_param>robot_description</robot_param>
+                <robot_param_node>robot_state_publisher</robot_param_node>
+                <parameters>$(find vx01_bringup)/config/hexapod/controller_manager.yaml</parameters>
+                <parameters>$(find vx01_bringup)/config/drone/controller_manager.yaml</parameters>
+            </plugin>
+        </gazebo>
+
+        <!-- Ground plane contact -->
+        <gazebo reference="base_link">
+            <mu1>0.8</mu1>
+            <mu2>0.8</mu2>
+            <kp>1000000.0</kp>
+            <kd>100.0</kd>
+            <minDepth>0.001</minDepth>
+            <maxVel>1.0</maxVel>
+        </gazebo>
+
+        <!-- Leg tip contacts -->
+        <xacro:macro name="leg_contact" params="leg_num">
+            <gazebo reference="tibia_link_${leg_num}">
+                <mu1>1.0</mu1>
+                <mu2>1.0</mu2>
+                <kp>1000000.0</kp>
+                <kd>100.0</kd>
+                <minDepth>0.001</minDepth>
+                <maxVel>1.0</maxVel>
+            </gazebo>
+        </xacro:macro>
+
+        <xacro:leg_contact leg_num="0"/>
+        <xacro:leg_contact leg_num="1"/>
+        <xacro:leg_contact leg_num="2"/>
+        <xacro:leg_contact leg_num="3"/>
+        <xacro:leg_contact leg_num="4"/>
+        <xacro:leg_contact leg_num="5"/>
+
+    </xacro:if>
+
+</robot>

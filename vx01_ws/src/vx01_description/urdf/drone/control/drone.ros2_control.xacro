@@ -5,7 +5,8 @@
         name
         prefix
         use_sim:=false
-        pwm_frequency:=50">
+        pwm_frequency:=50
+        gpio_chip:=gpiochip0">
 
         <ros2_control name="${name}" type="system">
 
@@ -22,18 +23,13 @@
                 <xacro:unless value="${use_sim}">
                     <plugin>vx01_drone_hardware/DroneHardwareInterface</plugin>
                     <param name="pwm_frequency">${pwm_frequency}</param>
-                    
-                    <!-- GPIO pins for arm servos on RDK X5 -->
-                    <param name="arm_servo_0_pin">20</param>
-                    <param name="arm_servo_1_pin">21</param>
-                    <param name="arm_servo_2_pin">22</param>
-                    <param name="arm_servo_3_pin">23</param>
+                    <param name="gpio_chip">${gpio_chip}</param>
                 </xacro:unless>
 
             </hardware>
 
-            <!-- ARM 0 - Roll axis servo -->
-            <joint name="${prefix}drone_arm0_joint">
+            <!-- ARM 0 - Roll axis servo (matches arm_joint0 in URDF) -->
+            <joint name="${prefix}arm_joint0">
 
                 <command_interface name="position">
                     <param name="min">-1.5707963</param>
@@ -54,17 +50,19 @@
                 <param name="reversed">false</param>
             </joint>
 
-            <!-- ARM 1 -->
-            <joint name="${prefix}drone_arm1_joint">
+            <!-- ARM 1 (matches arm_joint1 in URDF) -->
+            <joint name="${prefix}arm_joint1">
 
                 <command_interface name="position">
                     <param name="min">-1.5707963</param>
                     <param name="max">1.5707963</param>
                 </command_interface>
-                    <state_interface name="position">
-                        <param name="initial_value">0.0</param>
-                    </state_interface>
-                    <state_interface name="velocity"/>
+
+                <state_interface name="position">
+                    <param name="initial_value">0.0</param>
+                </state_interface>
+                <state_interface name="velocity"/>
+
                 <param name="gpio_pin">21</param>
                 <param name="min_pulse_us">500.0</param>
                 <param name="max_pulse_us">2500.0</param>
@@ -75,8 +73,8 @@
 
             </joint>
 
-            <!-- ARM 2 -->
-            <joint name="${prefix}drone_arm2_joint">
+            <!-- ARM 2 (matches arm_joint2 in URDF) -->
+            <joint name="${prefix}arm_joint2">
 
                 <command_interface name="position">
                     <param name="min">-1.5707963</param>
@@ -98,8 +96,8 @@
 
             </joint>
 
-            <!-- ARM 3 -->
-            <joint name="${prefix}drone_arm3_joint">
+            <!-- ARM 3 (matches arm_joint3 in URDF) -->
+            <joint name="${prefix}arm_joint3">
 
                 <command_interface name="position">
                     <param name="min">-1.5707963</param>
