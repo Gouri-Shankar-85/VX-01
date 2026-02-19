@@ -4,7 +4,7 @@
 # Water mode : arms tilt    (varies based on thrust vectoring)
 
 initial_positions:
-  drone_arm0_joint: 0.0
-  drone_arm1_joint: 0.0
-  drone_arm2_joint: 0.0
-  drone_arm3_joint: 0.0
+  arm_joint0: 0.0
+  arm_joint1: 0.0
+  arm_joint2: 0.0
+  arm_joint3: 0.0

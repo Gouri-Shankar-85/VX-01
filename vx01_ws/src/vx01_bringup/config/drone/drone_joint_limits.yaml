@@ -4,7 +4,7 @@ joint_limits:
   # Roll axis (X-axis)
   # GPIO PWM on RDK X5
 
-  drone_arm0_joint:
+  arm_joint0:
     has_position_limits: true
     min_position: -1.5707963    
     max_position: 1.5707963     
@@ -14,7 +14,7 @@ joint_limits:
     max_acceleration: 5.0
     has_effort_limits: false
 
-  drone_arm1_joint:
+  arm_joint1:
     has_position_limits: true
     min_position: -1.5707963
     max_position: 1.5707963
@@ -24,7 +24,7 @@ joint_limits:
     max_acceleration: 5.0
     has_effort_limits: false
 
-  drone_arm2_joint:
+  arm_joint2:
     has_position_limits: true
     min_position: -1.5707963
     max_position: 1.5707963
@@ -34,7 +34,7 @@ joint_limits:
     max_acceleration: 5.0
     has_effort_limits: false
 
-  drone_arm3_joint:
+  arm_joint3:
     has_position_limits: true
     min_position: -1.5707963
     max_position: 1.5707963

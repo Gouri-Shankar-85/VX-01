@@ -38,7 +38,7 @@
                 rpy="0 0 0" />  
             <geometry>
                 <mesh
-                    filename="package://vx01_description/meshes/imu_link.STL" />
+                    filename="package://vx01_description/meshes/sensors/imu_link.STL" />
             </geometry>
         </collision>
     </link>

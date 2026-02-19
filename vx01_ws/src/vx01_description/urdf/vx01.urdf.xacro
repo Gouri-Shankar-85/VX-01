@@ -28,8 +28,8 @@
     <xacro:include filename="$(find vx01_description)/urdf/sensors/tf_lidar.xacro"/>
 
     <!-- ROS2 Control interfaces -->
-    <xacro:include filename="$(find vx01_description)/urdf/hexapod/hexapod_ros2_control.xacro"/>
-    <xacro:include filename="$(find vx01_description)/urdf/drone/drone_ros2_control.xacro"/>
+    <xacro:include filename="$(find vx01_description)/urdf/hexapod/control/hexapod.ros2_control.xacro"/>
+    <xacro:include filename="$(find vx01_description)/urdf/drone/control/drone.ros2_control.xacro"/>
 
 
     <!-- Hexapod control (18 servo joints) -->
