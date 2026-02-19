@@ -1,0 +1,181 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <link name="coxa_link_4">
+        <inertial>
+            <origin
+                xyz="-0.031081 0.00069201 -0.027245"
+                rpy="0 0 0" />
+            <mass
+                value="0.029307" />
+            <inertia
+                ixx="1.3314E-05"
+                ixy="-3.1873E-07"
+                ixz="3.1849E-07"
+                iyy="1.0686E-05"
+                iyz="1.7973E-20"
+                izz="1.0662E-05" />
+        </inertial>
+
+        <visual>
+            <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+            <geometry>
+                <mesh
+                    filename="package://vx01_description/meshes/hexapod/coxa_link_4.STL" />
+            </geometry>
+            <material
+                name="">
+                <color
+                    rgba="1 1 1 1" />
+            </material>
+        </visual>
+
+        <collision>
+            <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+            <geometry>
+                <mesh
+                    filename="package://vx01_description/meshes/hexapod/coxa_link_4.STL" />
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="coxa_leg4_joint" type="revolute">
+        <origin
+            xyz="-0.15006 0.12422 0.0423"
+            rpy="1.5708 0 2.392" />
+        <parent
+            link="base_link" />
+        <child
+            link="coxa_link_4" />
+        <axis
+            xyz="0 -1 0" />
+        <limit
+            lower="-1.57"
+            upper="1.57"
+            effort="0"
+            velocity="0" />
+    </joint>
+
+    <link name="femur_link_4">
+        <inertial>
+            <origin
+                xyz="0.026111 -0.00084611 -0.028374"
+                rpy="0 0 0" />
+            <mass
+                value="0.050023" />
+            <inertia
+                ixx="1.1196E-05"
+                ixy="6.6735E-07"
+                ixz="2.0759E-07"
+                iyy="1.5254E-05"
+                iyz="-1.2674E-07"
+                izz="1.152E-05" />
+        </inertial>
+
+        <visual>
+            <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+            <geometry>
+                <mesh
+                    filename="package://vx01_description/meshes/hexapod/femur_link_4.STL" />
+            </geometry>
+            <material
+                name="">
+                <color
+                    rgba="0.79216 0.81961 0.93333 1" />
+            </material>
+        </visual>
+
+        <collision>
+            <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+            <geometry>
+                <mesh
+                    filename="package://vx01_description/meshes/hexapod/femur_link_4.STL" />
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="femur_leg4_joint" type="revolute">
+        <origin
+            xyz="0 0 0"
+            rpy="0 0 0" />
+        <parent
+            link="coxa_link_4" />
+        <child
+            link="femur_link_4" />
+        <axis
+            xyz="-0.0035755 0 -0.99999" />
+        <limit
+            lower="-1.57"
+            upper="1.57"
+            effort="0"
+            velocity="0" />
+    </joint>
+
+    <link name="tibia_link_4">
+        <inertial>
+            <origin
+                xyz="0.039153 -0.021424 -0.028831"
+                rpy="0 0 0" />
+            <mass
+                value="0.069329" />
+            <inertia
+                ixx="3.1913E-05"
+                ixy="7.4621E-06"
+                ixz="3.289E-09"
+                iyy="2.5552E-05"
+                iyz="-3.0921E-10"
+                izz="3.3042E-05" />
+        </inertial>
+
+        <visual>
+            <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+            <geometry>
+                <mesh
+                    filename="package://vx01_description/meshes/hexapod/tibia_link_4.STL" />
+            </geometry>
+            <material
+                name="">
+                <color
+                    rgba="0.25098 0.25098 0.25098 1" />
+            </material>
+        </visual>
+
+        <collision>
+            <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+            <geometry>
+                <mesh
+                    filename="package://vx01_description/meshes/hexapod/tibia_link_4.STL" />
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="tibia_leg4_joint" type="revolute">
+        <origin
+            xyz="0.072592 -0.013442 -0.0018"
+            rpy="0 0 -0.7854" />
+        <parent
+            link="femur_link_4" />
+        <child
+            link="tibia_link_4" />
+        <axis
+            xyz="0 0 -1" />
+        <limit
+            lower="-1.57"
+            upper="1.57" 
+            effort="0"
+            velocity="0" />
+    </joint>
+
+</robot>
