@@ -35,7 +35,7 @@
                 rpy="0 0 0" />
             <geometry>
                 <mesh
-                    filename="package://vx01_description/meshes/base_link.STL" />
+                    filename="package://vx01_description/meshes/base/base_link.STL" />
             </geometry>
             <material
                 name="">

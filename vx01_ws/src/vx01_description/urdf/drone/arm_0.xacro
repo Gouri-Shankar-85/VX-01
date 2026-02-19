@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <link name="arm_link_0">
+        <inertial>
+            <origin
+                xyz="0.006952 0.0012397 0.17654"
+                rpy="0 0 0" />
+            <mass
+                value="0.092448" />
+            <inertia
+                ixx="0.00030633"
+                ixy="3.5245E-08"
+                ixz="-1.1723E-05"
+                iyy="0.00030817"
+                iyz="8.9496E-07"
+                izz="9.1462E-06" />
+        </inertial>
+
+        <visual>
+            <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+            <geometry>
+                <mesh
+                    filename="package://vx01_description/meshes/drone/arm_link_0.STL" />
+            </geometry>
+            <material
+                name="">
+                <color
+                    rgba="0.25098 0.25098 0.25098 1" />
+            </material>
+        </visual>
+
+        <collision>
+            <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+            <geometry>
+                <mesh
+                    filename="package://vx01_description/meshes/drone/arm_link_0.STL" />
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="arm_joint0" type="revolute">
+        <origin
+            xyz="0.02791 -0.027041 0.115"
+            rpy="1.5708 0 0.7854" />
+        <parent
+            link="base_link" />
+        <child
+            link="arm_link_0" />
+        <axis
+            xyz="-0.039353 0 -0.99923" />
+        <limit
+            lower="-1.57"
+            upper="-1.57"
+            effort="0"
+            velocity="0" />
+    </joint>
+
+    <link name="prop_link_0">
+        <inertial>
+            <origin
+                xyz="-3.1595E-08 -5.7475E-08 -0.002497"
+                rpy="0 0 0" />
+            <mass
+                value="0.0055592" />
+            <inertia
+                ixx="6.7033E-06"
+                ixy="-9.2254E-06"
+                ixz="6.2283E-13"
+                iyy="1.3165E-05"
+                iyz="-4.5796E-13"
+                izz="1.983E-05" />
+        </inertial>
+
+        <visual>
+            <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+            <geometry>
+                <mesh
+                    filename="package://vx01_description/meshes/drone/prop_link_0.STL" />
+            </geometry>
+            <material
+                name="">
+                <color
+                    rgba="0.29412 0.29412 0.29412 1" />
+            </material>
+        </visual>
+
+        <collision>
+            <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+            <geometry>
+                <mesh
+                    filename="package://vx01_description/meshes/drone/prop_link_0.STL" />
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="prop_0" type="continuous">
+        <origin
+            xyz="0.010724 0.037248 0.27229"
+            rpy="-1.5708 0.039363 0" />
+        <parent
+            link="arm_link_0" />
+        <child
+            link="prop_link_0" />
+        <axis
+            xyz="0 0 1" />
+    </joint>
+
+</robot>
