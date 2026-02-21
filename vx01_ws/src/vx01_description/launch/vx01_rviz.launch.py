@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 ''' 
 *****************************************************************************************
-*  Filename:           velatrix_description.launch.py
+*  Filename:           vx01_rviz.launch.py
 *  Description:        Launch the bot in Rviz with its URDF model
 *  Modified by:        Gouri Shankar
 *****************************************************************************************

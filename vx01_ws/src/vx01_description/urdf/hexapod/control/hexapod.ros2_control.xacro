@@ -13,7 +13,7 @@
             <!-- Hardware Plugin -->
             <hardware>
                 <xacro:if value="${use_sim}">
-                    <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+                    <plugin>ign_ros2_control/IgnitionSystem</plugin>
                 </xacro:if>
 
                 <xacro:unless value="${use_sim}">
@@ -37,8 +37,8 @@
                 <param name="servo_id">0</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
-                <param name="min_angle">-1.5707963</param>
-                <param name="max_angle">1.5707963</param>
+                <param name="min_angle">-0.785398</param>
+                <param name="max_angle">0.785398</param>
                 <param name="offset">0.0</param>
                 <param name="reversed">false</param>
                 <param name="max_speed">50.0</param>
@@ -58,8 +58,8 @@
                 <param name="servo_id">1</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
-                <param name="min_angle">-1.5707963</param>
-                <param name="max_angle">1.5707963</param>
+                <param name="min_angle">-0.785398</param>
+                <param name="max_angle">0.785398</param>
                 <param name="offset">0.0</param>
                 <param name="reversed">false</param>
                 <param name="max_speed">50.0</param>
@@ -101,8 +101,8 @@
                 <param name="servo_id">3</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
-                <param name="min_angle">-1.5707963</param>
-                <param name="max_angle">1.5707963</param>
+                <param name="min_angle">-0.785398</param>
+                <param name="max_angle">0.785398</param>
                 <param name="offset">0.0</param>
                 <param name="reversed">false</param>
                 <param name="max_speed">50.0</param>
@@ -122,8 +122,8 @@
                 <param name="servo_id">4</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
-                <param name="min_angle">-1.5707963</param>
-                <param name="max_angle">1.5707963</param>
+                <param name="min_angle">-0.785398</param>
+                <param name="max_angle">0.785398</param>
                 <param name="offset">0.0</param>
                 <param name="reversed">false</param>
                 <param name="max_speed">50.0</param>
@@ -165,8 +165,8 @@
                 <param name="servo_id">6</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
-                <param name="min_angle">-1.5707963</param>
-                <param name="max_angle">1.5707963</param>
+                <param name="min_angle">-0.785398</param>
+                <param name="max_angle">0.785398</param>
                 <param name="offset">0.0</param>
                 <param name="reversed">false</param>
                 <param name="max_speed">50.0</param>
@@ -186,8 +186,8 @@
                 <param name="servo_id">7</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
-                <param name="min_angle">-1.5707963</param>
-                <param name="max_angle">1.5707963</param>
+                <param name="min_angle">-0.785398</param>
+                <param name="max_angle">0.785398</param>
                 <param name="offset">0.0</param>
                 <param name="reversed">false</param>
                 <param name="max_speed">50.0</param>
@@ -229,8 +229,8 @@
                 <param name="servo_id">9</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
-                <param name="min_angle">-1.5707963</param>
-                <param name="max_angle">1.5707963</param>
+                <param name="min_angle">-0.785398</param>
+                <param name="max_angle">0.785398</param>
                 <param name="offset">0.0</param>
                 <param name="reversed">true</param>
                 <param name="max_speed">50.0</param>
@@ -250,8 +250,8 @@
                 <param name="servo_id">10</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
-                <param name="min_angle">-1.5707963</param>
-                <param name="max_angle">1.5707963</param>
+                <param name="min_angle">-0.785398</param>
+                <param name="max_angle">0.785398</param>
                 <param name="offset">0.0</param>
                 <param name="reversed">true</param>
                 <param name="max_speed">50.0</param>
@@ -293,8 +293,8 @@
                 <param name="servo_id">12</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
-                <param name="min_angle">-1.5707963</param>
-                <param name="max_angle">1.5707963</param>
+                <param name="min_angle">-0.785398</param>
+                <param name="max_angle">0.785398</param>
                 <param name="offset">0.0</param>
                 <param name="reversed">true</param>
                 <param name="max_speed">50.0</param>
@@ -314,8 +314,8 @@
                 <param name="servo_id">13</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
-                <param name="min_angle">-1.5707963</param>
-                <param name="max_angle">1.5707963</param>
+                <param name="min_angle">-0.785398</param>
+                <param name="max_angle">0.785398</param>
                 <param name="offset">0.0</param>
                 <param name="reversed">true</param>
                 <param name="max_speed">50.0</param>
@@ -357,8 +357,8 @@
                 <param name="servo_id">15</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
-                <param name="min_angle">-1.5707963</param>
-                <param name="max_angle">1.5707963</param>
+                <param name="min_angle">-0.785398</param>
+                <param name="max_angle">0.785398</param>
                 <param name="offset">0.0</param>
                 <param name="reversed">true</param>
                 <param name="max_speed">50.0</param>
@@ -378,8 +378,8 @@
                 <param name="servo_id">16</param>
                 <param name="min_pulse">500.0</param>
                 <param name="max_pulse">2500.0</param>
-                <param name="min_angle">-1.5707963</param>
-                <param name="max_angle">1.5707963</param>
+                <param name="min_angle">-0.785398</param>
+                <param name="max_angle">0.785398</param>
                 <param name="offset">0.0</param>
                 <param name="reversed">true</param>
                 <param name="max_speed">50.0</param>

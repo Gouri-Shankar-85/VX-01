@@ -17,7 +17,7 @@
             <hardware>
 
                 <xacro:if value="${use_sim}">
-                    <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+                    <plugin>ign_ros2_control/IgnitionSystem</plugin>
                 </xacro:if>
 
                 <xacro:unless value="${use_sim}">

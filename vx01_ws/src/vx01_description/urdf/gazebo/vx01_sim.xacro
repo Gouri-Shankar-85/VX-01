@@ -1,0 +1,137 @@
+<?xml version="1.0"?>
+<robot name="vx01" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <gazebo reference="base_link">
+        <material>Gazebo/White</material>
+        <mu1>0.8</mu1><mu2>0.8</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "coxa_link_0">
+        <material>Gazebo/Red</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "femur_link_0">
+        <material>Gazebo/White</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "tibia_link_0">
+        <material>Gazebo/Red</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "coxa_link_1">
+        <material>Gazebo/Red</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "femur_link_1">
+        <material>Gazebo/White</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "tibia_link_1">
+        <material>Gazebo/Red</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "coxa_link_2">
+        <material>Gazebo/Red</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "femur_link_2">
+        <material>Gazebo/White</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "tibia_link_2">
+        <material>Gazebo/Red</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "coxa_link_3">
+        <material>Gazebo/Red</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "femur_link_3">
+        <material>Gazebo/White</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "tibia_link_3">
+        <material>Gazebo/Red</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "coxa_link_4">
+        <material>Gazebo/Red</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "femur_link_4">
+        <material>Gazebo/White</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "tibia_link_4">
+        <material>Gazebo/Red</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "coxa_link_5">
+        <material>Gazebo/Red</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "femur_link_5">
+        <material>Gazebo/White</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+    <gazebo reference = "tibia_link_5">
+        <material>Gazebo/Red</material>
+        <mu1>1.0</mu1><mu2>1.0</mu2>
+        <kp>1000000.0</kp><kd>100.0</kd>
+        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    </gazebo>
+
+</robot>

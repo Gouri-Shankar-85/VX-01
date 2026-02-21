@@ -1,0 +1,73 @@
+#  vx01_controller_manager.yaml
+
+controller_manager:
+  ros__parameters:
+    update_rate: 1000
+    use_sim_time: true
+
+    hexapod_position_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    drone_arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+joint_state_broadcaster:
+  ros__parameters:
+    use_sim_time: true
+
+hexapod_position_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints:
+      - coxa_leg0_joint
+      - femur_leg0_joint
+      - tibia_leg0_joint
+      - coxa_leg1_joint
+      - femur_leg1_joint
+      - tibia_leg1_joint
+      - coxa_leg2_joint
+      - femur_leg2_joint
+      - tibia_leg2_joint
+      - coxa_leg3_joint
+      - femur_leg3_joint
+      - tibia_leg3_joint
+      - coxa_leg4_joint
+      - femur_leg4_joint
+      - tibia_leg4_joint
+      - coxa_leg5_joint
+      - femur_leg5_joint
+      - tibia_leg5_joint
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      - velocity
+      
+    goal_time_tolerance: 0.5
+    stopped_velocity_tolerance: 0.05
+    allow_nonzero_velocity_at_trajectory_end: false
+
+drone_arm_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints:
+      - arm_joint0
+      - arm_joint1
+      - arm_joint2
+      - arm_joint3
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      - velocity
+
+    goal_time_tolerance: 0.5
+    stopped_velocity_tolerance: 0.05        
+    allow_nonzero_velocity_at_trajectory_end: false

@@ -1,58 +1,149 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
+    <!--
+        YDLIDAR HP60C RGB-D Camera
+        ─────────────────────────────────────────
+        Depth FOV  : 73.8° H × 58.8° V  (1.2878 × 1.0263 rad)
+        RGB FOV    : 80.9° H × 51.7° V  (1.4120 × 0.9024 rad)
+        Range      : 0.2 m – 4.0 m (best within 2 m)
+        Depth res  : 640×480 @ 20 fps
+        RGB res    : 640×480 @ 20 fps (recommended)
+        Interface  : USB 2.0 Type-C
+        Plugin     : ros_gz_sim (Ignition Fortress) rgbd_camera sensor
+
+        Intrinsics computed from depth FOV + 640×480:
+          fx = (640/2) / tan(73.8°/2) = 320 / tan(36.9°) = 320 / 0.75128 = 426.0
+          fy = (480/2) / tan(58.8°/2) = 240 / tan(29.4°) = 240 / 0.56208 = 426.9
+          cx = 640/2 = 320.0
+          cy = 480/2 = 240.0
+    -->
+
     <link name="depth_camera_link">
         <inertial>
-            <origin
-                xyz="-0.0098321 -0.0010768 1.0105E-09"
-                rpy="0 0 0" />
-            <mass
-                value="0.031591" />
+            <origin xyz="-0.0098321 -0.0010768 1.0105E-09" rpy="0 0 0"/>
+            <mass value="0.031591"/>
             <inertia
-                ixx="1.8776E-05"
-                ixy="1.8867E-07"
-                ixz="2.3396E-13"
-                iyy="2.0987E-06"
-                iyz="-7.3767E-13"
-                izz="1.9046E-05" />
+                ixx="1.8776E-05" ixy="1.8867E-07" ixz="2.3396E-13"
+                iyy="2.0987E-06" iyz="-7.3767E-13"
+                izz="1.9046E-05"/>
         </inertial>
 
         <visual>
-            <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
+            <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh
-                    filename="package://vx01_description/meshes/sensors/depth_camera_link.STL" />
+                <mesh filename="package://vx01_description/meshes/sensors/depth_camera_link.STL"/>
             </geometry>
-            <material
-                name="">
-                <color
-                    rgba="0.79216 0.81961 0.93333 1" />
+            <material name="">
+                <color rgba="0.79216 0.81961 0.93333 1"/>
             </material>
         </visual>
-        
+
         <collision>
-            <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
+            <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh
-                    filename="package://vx01_description/meshes/sensors/depth_camera_link.STL" />
+                <mesh filename="package://vx01_description/meshes/sensors/depth_camera_link.STL"/>
             </geometry>
         </collision>
     </link>
 
+    <!-- Optical frame — Ignition needs Z-forward optical frame -->
+    <link name="depth_camera_optical_frame"/>
+
     <joint name="depth_camera_joint" type="fixed">
-        <origin
-            xyz="0.10899 0.002292 0.1135"
-            rpy="0 0 0" />
-        <parent
-            link="base_link" />
-        <child
-            link="depth_camera_link" />
-        <axis
-            xyz="0 0 0" />
+        <origin xyz="0.10899 0.002292 0.1135" rpy="0 0 0"/>
+        <parent link="base_link"/>
+        <child  link="depth_camera_link"/>
+        <axis xyz="0 0 0"/>
     </joint>
+
+    <!-- Rotate from ROS body frame to optical frame (X right, Y down, Z forward) -->
+    <joint name="depth_camera_optical_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="-1.5707963 0 -1.5707963"/>
+        <parent link="depth_camera_link"/>
+        <child  link="depth_camera_optical_frame"/>
+    </joint>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         Ignition Gazebo RGBD sensor — YDLIDAR HP60C
+         Single sensor outputs both /depth and /color on subtopics.
+         Reference must match the optical frame link name exactly.
+         ══════════════════════════════════════════════════════════════════ -->
+    <gazebo reference="depth_camera_optical_frame">
+        <sensor name="depth_camera" type="rgbd_camera">
+            <ignition_frame_id>depth_camera_optical_frame</ignition_frame_id>
+
+            <camera name="depth_camera">
+
+                <!-- HP60C depth image HFOV: 73.8° = 1.2878 rad -->
+                <horizontal_fov>1.2878</horizontal_fov>
+
+                <lens>
+                    <intrinsics>
+                        <!-- fx = (W/2) / tan(HFOV/2) = 320 / tan(36.9°) -->
+                        <fx>426.0</fx>
+                        <!-- fy = (H/2) / tan(VFOV/2) = 240 / tan(29.4°) -->
+                        <fy>426.9</fy>
+                        <!-- Principal point at image centre -->
+                        <cx>320.0</cx>
+                        <cy>240.0</cy>
+                        <s>0</s>
+                    </intrinsics>
+                </lens>
+
+                <!-- HP60C has no measurable lens distortion in simulation -->
+                <distortion>
+                    <k1>0.0</k1>
+                    <k2>0.0</k2>
+                    <k3>0.0</k3>
+                    <p1>0.0</p1>
+                    <p2>0.0</p2>
+                    <center>0.5 0.5</center>
+                </distortion>
+
+                <!-- RGB output: 640×480 (HP60C recommended resolution) -->
+                <image>
+                    <width>640</width>
+                    <height>480</height>
+                    <format>R8G8B8</format>
+                </image>
+
+                <!-- RGB clip — near kept at 0.1 for rendering -->
+                <clip>
+                    <near>0.1</near>
+                    <far>10.0</far>
+                </clip>
+
+                <!-- Depth clip — HP60C min range 0.2 m, usable to 4.0 m -->
+                <depth_camera>
+                    <clip>
+                        <near>0.2</near>
+                        <far>4.0</far>
+                    </clip>
+                </depth_camera>
+
+                <!-- Depth noise: ~2mm accuracy at 1m per datasheet -->
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.002</stddev>
+                </noise>
+
+            </camera>
+
+            <always_on>1</always_on>
+            <!-- HP60C max depth fps: 20. Using 20 for full fidelity in sim. -->
+            <update_rate>20</update_rate>
+            <visualize>0</visualize>
+            <!-- Topics published:
+                 /depth_camera/depth/image_raw
+                 /depth_camera/color/image_raw
+                 /depth_camera/depth/camera_info
+                 /depth_camera/color/camera_info
+                 /depth_camera/points  (PointCloud2)        -->
+            <topic>depth_camera</topic>
+
+        </sensor>
+    </gazebo>
 
 </robot>

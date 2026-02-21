@@ -3,8 +3,8 @@ joint_limits:
   # LEG 0
   coxa_leg0_joint:
     has_position_limits: true
-    min_position: -1.5707963   
-    max_position: 1.5707963    
+    min_position: -0.785398   
+    max_position: 0.785398    
     has_velocity_limits: true
     max_velocity: 3.14159     
     has_acceleration_limits: true
@@ -13,8 +13,8 @@ joint_limits:
 
   femur_leg0_joint:
     has_position_limits: true
-    min_position: -1.5707963
-    max_position: 1.5707963
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -23,8 +23,8 @@ joint_limits:
 
   tibia_leg0_joint:
     has_position_limits: true
-    min_position: -2.3561944   
-    max_position: 0.0          
+    min_position: -0.785398   
+    max_position: 0.785398          
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -34,8 +34,8 @@ joint_limits:
   # LEG 1
   coxa_leg1_joint:
     has_position_limits: true
-    min_position: -1.5707963
-    max_position: 1.5707963
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -44,8 +44,8 @@ joint_limits:
 
   femur_leg1_joint:
     has_position_limits: true
-    min_position: -1.5707963
-    max_position: 1.5707963
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -54,8 +54,8 @@ joint_limits:
 
   tibia_leg1_joint:
     has_position_limits: true
-    min_position: -2.3561944
-    max_position: 0.0
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -65,8 +65,8 @@ joint_limits:
   # LEG 2
   coxa_leg2_joint:
     has_position_limits: true
-    min_position: -1.5707963
-    max_position: 1.5707963
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -75,8 +75,8 @@ joint_limits:
 
   femur_leg2_joint:
     has_position_limits: true
-    min_position: -1.5707963
-    max_position: 1.5707963
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -85,8 +85,8 @@ joint_limits:
 
   tibia_leg2_joint:
     has_position_limits: true
-    min_position: -2.3561944
-    max_position: 0.0
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -96,8 +96,8 @@ joint_limits:
   # LEG 3
   coxa_leg3_joint:
     has_position_limits: true
-    min_position: -1.5707963
-    max_position: 1.5707963
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -106,8 +106,8 @@ joint_limits:
 
   femur_leg3_joint:
     has_position_limits: true
-    min_position: -1.5707963
-    max_position: 1.5707963
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -116,8 +116,8 @@ joint_limits:
 
   tibia_leg3_joint:
     has_position_limits: true
-    min_position: -2.3561944
-    max_position: 0.0
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -127,8 +127,8 @@ joint_limits:
   # LEG 4
   coxa_leg4_joint:
     has_position_limits: true
-    min_position: -1.5707963
-    max_position: 1.5707963
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -137,8 +137,8 @@ joint_limits:
 
   femur_leg4_joint:
     has_position_limits: true
-    min_position: -1.5707963
-    max_position: 1.5707963
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -147,8 +147,8 @@ joint_limits:
 
   tibia_leg4_joint:
     has_position_limits: true
-    min_position: -2.3561944
-    max_position: 0.0
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -158,8 +158,8 @@ joint_limits:
   # LEG 5
   coxa_leg5_joint:
     has_position_limits: true
-    min_position: -1.5707963
-    max_position: 1.5707963
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -168,8 +168,8 @@ joint_limits:
 
   femur_leg5_joint:
     has_position_limits: true
-    min_position: -1.5707963
-    max_position: 1.5707963
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true
@@ -178,8 +178,8 @@ joint_limits:
 
   tibia_leg5_joint:
     has_position_limits: true
-    min_position: -2.3561944
-    max_position: 0.0
+    min_position: -0.785398
+    max_position: 0.785398
     has_velocity_limits: true
     max_velocity: 3.14159
     has_acceleration_limits: true

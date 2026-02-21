@@ -1,63 +1,110 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
+    <!--
+        Benewake TFmini-S — Single-point ToF LiDAR
+        ─────────────────────────────────────────────────────────────────
+        Range      : 0.1 m – 12 m @ 90% reflectivity
+                     0.1 m –  7 m @ 10% reflectivity (low reflectivity)
+        Accuracy   : ±6 cm  (0.1–6 m)  |  ±1%  (6–12 m)
+        Resolution : 1 cm  (0.01 m)
+        FoV        : 2° (single-point — modelled as 2°×2° ray)
+        Frame rate : 1–1000 Hz  (default 100 Hz)
+        Wavelength : 850 nm VCSEL
+        Interface  : UART 115200 bps (default) / I²C
+        Voltage    : 5V ± 0.1V  |  Current ≤ 140 mA  |  Power ≤ 0.7 W
+        Size       : 42 × 15 × 16 mm  |  Weight: 5 g
+
+        Noise derivation:
+          Accuracy ±6 cm means 99.7% (3σ) of readings are within ±6 cm
+          → stddev = 0.06 / 3 = 0.02 m
+    -->
+
     <link name="lidar_link">
         <inertial>
-            <origin
-                xyz="-0.010087 0.00016968 8.5648E-05"
-                rpy="0 0 0" />
-            <mass
-                value="0.0060491" />
+            <origin xyz="-0.010087 0.00016968 8.5648E-05" rpy="0 0 0"/>
+            <mass value="0.0060491"/>
             <inertia
-                ixx="6.6215E-07"
-                ixy="4.0559E-09"
-                ixz="2.4269E-09"
-                iyy="1.8783E-07"
-                iyz="-4.799E-11"
-                izz="6.474E-07" />
+                ixx="6.6215E-07" ixy="4.0559E-09" ixz="2.4269E-09"
+                iyy="1.8783E-07" iyz="-4.799E-11"
+                izz="6.474E-07"/>
         </inertial>
 
         <visual>
-            <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
+            <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh
-                    filename="package://vx01_description/meshes/sensors/lidar_link.STL" />
+                <mesh filename="package://vx01_description/meshes/sensors/lidar_link.STL"/>
             </geometry>
-            <material
-                name="">
-                <color
-                    rgba="0.29804 0.29804 0.29804 1" />
+            <material name="">
+                <color rgba="0.29804 0.29804 0.29804 1"/>
             </material>
         </visual>
 
         <collision>
-            <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
+            <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh
-                    filename="package://vx01_description/meshes/sensors/lidar_link.STL" />
+                <mesh filename="package://vx01_description/meshes/sensors/lidar_link.STL"/>
             </geometry>
         </collision>
     </link>
 
+    <!-- Sensor faces forward (X axis) via 90° pitch rotation -->
     <joint name="lidar_joint" type="fixed">
-        <origin
-            xyz="-0.070325 -0.00034592 0"
-            rpy="0.0057344 1.5708 0" />
-        <parent
-            link="base_link" />
-        <child
-            link="lidar_link" />
-        <axis
-            xyz="0 0 0" />
+        <origin xyz="-0.070325 -0.00034592 0" rpy="0.0057344 1.5708 0"/>
+        <parent link="base_link"/>
+        <child  link="lidar_link"/>
+        <axis xyz="0 0 0"/>
     </joint>
 
-</robot>  
-  
-  
-  
-  
-  
+    <!-- ══════════════════════════════════════════════════════════════════
+         Ignition Gazebo GPU Ray sensor — Benewake TFmini-S
+         type="gpu_ray"  ← correct for Ignition Fortress (not gpu_lidar)
+         Single-point modelled as a 2°×2° ray fan (1×1 sample).
+         Publishes: sensor_msgs/msg/LaserScan on /lidar/scan
+         ══════════════════════════════════════════════════════════════════ -->
+    <gazebo reference="lidar_link">
+        <sensor name="tfmini_s" type="gpu_ray">
+            <ignition_frame_id>lidar_link</ignition_frame_id>
+            <always_on>1</always_on>
+            <!-- TFmini-S default frame rate: 100 Hz -->
+            <update_rate>100</update_rate>
+            <visualize>false</visualize>
+            <topic>lidar/scan</topic>
+
+            <ray>
+                <scan>
+                    <!-- 1 sample spanning the full 2° (0.03491 rad) beam -->
+                    <horizontal>
+                        <samples>1</samples>
+                        <resolution>1</resolution>
+                        <min_angle>-0.01745</min_angle>  <!-- -1° -->
+                        <max_angle>0.01745</max_angle>   <!-- +1° -->
+                    </horizontal>
+                    <vertical>
+                        <samples>1</samples>
+                        <resolution>1</resolution>
+                        <min_angle>-0.01745</min_angle>  <!-- -1° -->
+                        <max_angle>0.01745</max_angle>   <!-- +1° -->
+                    </vertical>
+                </scan>
+
+                <range>
+                    <!-- TFmini-S: 0.1 m min blind-zone end, 12 m max -->
+                    <min>0.1</min>
+                    <max>12.0</max>
+                    <!-- Datasheet resolution: 1 cm -->
+                    <resolution>0.01</resolution>
+                </range>
+
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <!-- ±6 cm accuracy @ 3σ → stddev = 0.06/3 = 0.02 m -->
+                    <stddev>0.02</stddev>
+                </noise>
+            </ray>
+
+        </sensor>
+    </gazebo>
+
+</robot>

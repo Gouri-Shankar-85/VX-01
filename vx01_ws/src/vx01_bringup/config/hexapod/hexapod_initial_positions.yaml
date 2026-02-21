@@ -3,30 +3,30 @@
 initial_positions:
   # LEG 0
   coxa_leg0_joint: 0.0
-  femur_leg0_joint: 0.6911503
-  tibia_leg0_joint: -2.0647985
+  femur_leg0_joint: 0.0
+  tibia_leg0_joint: 0.0
 
   # LEG 1
   coxa_leg1_joint: 0.0
-  femur_leg1_joint: 0.6911503
-  tibia_leg1_joint: -2.0647985
+  femur_leg1_joint: 0.0
+  tibia_leg1_joint: 0.0
 
   # LEG 2
   coxa_leg2_joint: 0.0
-  femur_leg2_joint: 0.6911503
-  tibia_leg2_joint: -2.0647985
+  femur_leg2_joint: 0.0
+  tibia_leg2_joint: 0.0
 
   # LEG 3
   coxa_leg3_joint: 0.0
-  femur_leg3_joint: 0.6911503
-  tibia_leg3_joint: -2.0647985
+  femur_leg3_joint: 0.0
+  tibia_leg3_joint: 0.0
 
   # LEG 4
   coxa_leg4_joint: 0.0
-  femur_leg4_joint: 0.6911503
-  tibia_leg4_joint: -2.0647985
+  femur_leg4_joint: 0.0
+  tibia_leg4_joint: 0.0
 
   # LEG 5
   coxa_leg5_joint: 0.0
-  femur_leg5_joint: 0.6911503
-  tibia_leg5_joint: -2.0647985
+  femur_leg5_joint: 0.0
+  tibia_leg5_joint: 0.0

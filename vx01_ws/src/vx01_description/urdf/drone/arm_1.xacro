@@ -43,7 +43,7 @@
         </collision>
     </link>
 
-    <joint name="arm_joint_1" type="revolute">
+    <joint name="arm_joint1" type="revolute">
         <origin
             xyz="0.02791 0.027022 0.115"
             rpy="-1.5708 0 -0.82476" />

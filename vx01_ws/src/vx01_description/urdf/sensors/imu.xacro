@@ -1,58 +1,164 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
+    <!--
+        Hiwonder IM10A — 10-axis AHRS/INS IMU
+        ─────────────────────────────────────────────────────────────────
+        Accelerometer  : ±16g,  RMS noise 0.75 mg-rms @ 100Hz BW
+                         Zero drift ±20–40 mg,  Temp drift ±0.15 mg/°C
+        Gyroscope      : ±2000°/s, RMS noise 0.028–0.07 °/s-rms @ 100Hz
+                         Zero drift ±0.5–1 °/s, Temp drift ±0.005–0.015 °/s/°C
+        Magnetometer   : ±2 Gauss, 0.0667 mGauss/LSB
+        Barometer      : 300–1100 hPa, RMS noise 0.5 Pa
+        Output rate    : 10 Hz default, up to 200 Hz
+        Interface      : UART (9600–921600 bps) / I2C (up to 400 kHz)
+        Voltage        : 5V or 3.3V  |  Current: 12 mA
+
+        Noise conversions used for Gazebo:
+          Accel stddev  = 0.75e-3 g × 9.81        = 0.007358 m/s²
+          Accel bias    = 30e-3 g × 9.81 (mid)    = 0.2943  m/s²  ← zero drift mid
+          Gyro stddev   = 0.049 °/s × π/180       = 0.000855 rad/s  (mid of 0.028–0.07)
+          Gyro bias     = 0.75 °/s × π/180 (mid)  = 0.01309  rad/s  ← zero drift mid
+    -->
+
     <link name="imu_link">
         <inertial>
-            <origin
-                xyz="-4.9599E-19 -9.0896E-20 0.005"
-                rpy="0 0 0" />
-            <mass
-                value="0.0045937" />
+            <origin xyz="-4.9599E-19 -9.0896E-20 0.005" rpy="0 0 0"/>
+            <mass value="0.0045937"/>
             <inertia
-                ixx="1.9002E-07"
-                ixy="1.1915E-23"
-                ixz="5.4526E-24"
-                iyy="2.7817E-07"
-                iyz="-4.039E-25"
-                izz="3.9603E-07" />
+                ixx="1.9002E-07" ixy="1.1915E-23" ixz="5.4526E-24"
+                iyy="2.7817E-07" iyz="-4.039E-25"
+                izz="3.9603E-07"/>
         </inertial>
 
         <visual>
-            <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
+            <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh
-                    filename="package://vx01_description/meshes/sensors/imu_link.STL" />
+                <mesh filename="package://vx01_description/meshes/sensors/imu_link.STL"/>
             </geometry>
-            <material
-                name="">
-                <color
-                    rgba="0.79216 0.81961 0.93333 1" />
+            <material name="">
+                <color rgba="0.79216 0.81961 0.93333 1"/>
             </material>
         </visual>
-        
+
         <collision>
-            <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />  
+            <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh
-                    filename="package://vx01_description/meshes/sensors/imu_link.STL" />
+                <mesh filename="package://vx01_description/meshes/sensors/imu_link.STL"/>
             </geometry>
         </collision>
     </link>
 
     <joint name="imu_joint" type="fixed">
-        <origin
-            xyz="-0.0013383 0 0.0025"
-            rpy="0 0 0" />
-        <parent
-            link="base_link" />
-        <child
-            link="imu_link" />
-        <axis
-            xyz="0 0 0" />
+        <origin xyz="-0.0013383 0 0.0025" rpy="0 0 0"/>
+        <parent link="base_link"/>
+        <child  link="imu_link"/>
+        <axis xyz="0 0 0"/>
     </joint>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         Ignition Gazebo IMU sensor — Hiwonder IM10A
+
+         Topic published: /imu/data  (sensor_msgs/msg/Imu)
+         ══════════════════════════════════════════════════════════════════ -->
+    <gazebo reference="imu_link">
+        <sensor name="imu_sensor" type="imu">
+            <ignition_frame_id>imu_link</ignition_frame_id>
+            <always_on>1</always_on>
+            <!-- IM10A: up to 200 Hz; 100 Hz is the practical sim rate -->
+            <update_rate>100</update_rate>
+            <visualize>false</visualize>
+            <topic>imu/data</topic>
+
+            <imu>
+                <!-- Orientation is fused on the real hardware by the Kalman filter.
+                     In sim we let the EKF node do it, so disable built-in orientation. -->
+                <enable_orientation>0</enable_orientation>
+
+                <!-- ── Gyroscope (IM10A: ±2000°/s, 0.028–0.07 °/s-rms noise) ── -->
+                <angular_velocity>
+                    <x>
+                        <noise type="gaussian">
+                            <mean>0.0</mean>
+                            <!-- RMS noise mid: 0.049 °/s = 0.000855 rad/s -->
+                            <stddev>0.000855</stddev>
+                            <!-- Zero drift mid: 0.75 °/s = 0.01309 rad/s -->
+                            <bias_mean>0.01309</bias_mean>
+                            <!-- Temp drift: 0.01 °/s/°C = 0.000175 rad/s/°C -->
+                            <bias_stddev>0.000175</bias_stddev>
+                            <dynamic_bias_stddev>0.000175</dynamic_bias_stddev>
+                            <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                            <!-- Resolution: 0.061 (°/s)/LSB = 0.001065 rad/s -->
+                            <precision>0.001065</precision>
+                        </noise>
+                    </x>
+                    <y>
+                        <noise type="gaussian">
+                            <mean>0.0</mean>
+                            <stddev>0.000855</stddev>
+                            <bias_mean>0.01309</bias_mean>
+                            <bias_stddev>0.000175</bias_stddev>
+                            <dynamic_bias_stddev>0.000175</dynamic_bias_stddev>
+                            <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                            <precision>0.001065</precision>
+                        </noise>
+                    </y>
+                    <z>
+                        <noise type="gaussian">
+                            <mean>0.0</mean>
+                            <stddev>0.000855</stddev>
+                            <bias_mean>0.01309</bias_mean>
+                            <bias_stddev>0.000175</bias_stddev>
+                            <dynamic_bias_stddev>0.000175</dynamic_bias_stddev>
+                            <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                            <precision>0.001065</precision>
+                        </noise>
+                    </z>
+                </angular_velocity>
+
+                <!-- ── Accelerometer (IM10A: ±16g, 0.75 mg-rms noise) ── -->
+                <linear_acceleration>
+                    <x>
+                        <noise type="gaussian">
+                            <mean>0.0</mean>
+                            <!-- RMS noise: 0.75 mg × 9.81 = 0.007358 m/s² -->
+                            <stddev>0.007358</stddev>
+                            <!-- Zero drift mid: 30 mg × 9.81 = 0.2943 m/s² -->
+                            <bias_mean>0.2943</bias_mean>
+                            <!-- Temp drift: 0.15 mg/°C × 9.81 = 0.001472 m/s²/°C -->
+                            <bias_stddev>0.001472</bias_stddev>
+                            <dynamic_bias_stddev>0.001472</dynamic_bias_stddev>
+                            <dynamic_bias_correlation_time>175.0</dynamic_bias_correlation_time>
+                            <!-- Resolution: 0.0005 g/LSB × 9.81 = 0.004905 m/s² -->
+                            <precision>0.004905</precision>
+                        </noise>
+                    </x>
+                    <y>
+                        <noise type="gaussian">
+                            <mean>0.0</mean>
+                            <stddev>0.007358</stddev>
+                            <bias_mean>0.2943</bias_mean>
+                            <bias_stddev>0.001472</bias_stddev>
+                            <dynamic_bias_stddev>0.001472</dynamic_bias_stddev>
+                            <dynamic_bias_correlation_time>175.0</dynamic_bias_correlation_time>
+                            <precision>0.004905</precision>
+                        </noise>
+                    </y>
+                    <z>
+                        <noise type="gaussian">
+                            <mean>0.0</mean>
+                            <stddev>0.007358</stddev>
+                            <bias_mean>0.2943</bias_mean>
+                            <bias_stddev>0.001472</bias_stddev>
+                            <dynamic_bias_stddev>0.001472</dynamic_bias_stddev>
+                            <dynamic_bias_correlation_time>175.0</dynamic_bias_correlation_time>
+                            <precision>0.004905</precision>
+                        </noise>
+                    </z>
+                </linear_acceleration>
+
+            </imu>
+        </sensor>
+    </gazebo>
 
 </robot>
