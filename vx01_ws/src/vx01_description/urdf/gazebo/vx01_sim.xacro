@@ -341,6 +341,64 @@
         <selfCollide>false</selfCollide>
     </gazebo>
 
+
+    <!-- ── Drone Motors ─────────────────────────────────────────────────────── -->
+    <gazebo reference="motor_link_0">
+        <visual>
+            <material>
+                <ambient>0.25 0.25 0.25 1.0</ambient>
+                <diffuse>0.25 0.25 0.25 1.0</diffuse>
+                <specular>0.4 0.4 0.4 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+
+    <gazebo reference="motor_link_1">
+        <visual>
+            <material>
+                <ambient>0.25 0.25 0.25 1.0</ambient>
+                <diffuse>0.25 0.25 0.25 1.0</diffuse>
+                <specular>0.4 0.4 0.4 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+
+    <gazebo reference="motor_link_2">
+        <visual>
+            <material>
+                <ambient>0.25 0.25 0.25 1.0</ambient>
+                <diffuse>0.25 0.25 0.25 1.0</diffuse>
+                <specular>0.4 0.4 0.4 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+
+    <gazebo reference="motor_link_3">
+        <visual>
+            <material>
+                <ambient>0.25 0.25 0.25 1.0</ambient>
+                <diffuse>0.25 0.25 0.25 1.0</diffuse>
+                <specular>0.4 0.4 0.4 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+
     <!-- ── Propellers ─────────────────────────────────────────────────────── -->
     <gazebo reference="prop_link_0">
         <visual>

@@ -43,7 +43,7 @@
     <xacro:if value="${use_sim}">
 
         <gazebo>
-            <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+            <plugin name="ign_ros2_control::IgnitionROS2ControlPlugin" filename="ign_ros2_control-system">
                 <parameters>$(find vx01_bringup)/config/vx01_controller_manager.yaml</parameters>
             </plugin>
         </gazebo>

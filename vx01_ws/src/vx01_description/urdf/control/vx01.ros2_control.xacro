@@ -13,8 +13,7 @@
         <ros2_control name="vx01_hardware" type="system">
 
             <hardware>
-                <plugin>gz_ros2_control/GazeboSimSystem</plugin>
-                <param name="position_proportional_gain">20.0</param>
+                <plugin>ign_ros2_control/IgnitionSystem</plugin>
             </hardware>
 
             <!-- ── Hexapod legs (18 joints) ── -->

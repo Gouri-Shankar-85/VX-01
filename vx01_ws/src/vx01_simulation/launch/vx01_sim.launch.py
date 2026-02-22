@@ -93,73 +93,91 @@ def generate_launch_description():
                 arguments=[
                     '-topic', 'robot_description',
                     '-entity', 'vx01',
-                    '-x', '0.0', '-y', '0.0', '-z', '0.035', '-Y', '0.0',
+                    '-x', '0.0', '-y', '0.0', '-z', '0.4', '-Y', '0.0',
                 ],
                 output='screen'
             )
         ]
     )
 
-    # ── Controller spawners ───────────────────────────────────────────────────
-    # Chain: t+8s → JSB → hexapod_controller → drone_arm_controller
+    # ── Controller spawner nodes ──────────────────────────────────────────────
 
-    joint_state_broadcaster_spawner = Node(
-        package='controller_manager',
-        executable='spawner',
-        name='joint_state_broadcaster_spawner',
-        arguments=[
-            'joint_state_broadcaster',
-            '--controller-manager', '/controller_manager',
-            '--controller-manager-timeout', '30',
-        ],
-        output='screen',
-    )
+    def make_spawner(name):
+        return Node(
+            package='controller_manager',
+            executable='spawner',
+            name=f'{name}_spawner',
+            arguments=[
+                name,
+                '--controller-manager', '/controller_manager',
+                '--controller-manager-timeout', '30',
+            ],
+            output='screen',
+        )
 
-    hexapod_controller_spawner = Node(
-        package='controller_manager',
-        executable='spawner',
-        name='hexapod_controller_spawner',
-        arguments=[
-            'hexapod_controller',
-            '--controller-manager', '/controller_manager',
-            '--controller-manager-timeout', '30',
-        ],
-        output='screen',
-    )
-
-    drone_arm_controller_spawner = Node(
-        package='controller_manager',
-        executable='spawner',
-        name='drone_arm_controller_spawner',
-        arguments=[
-            'drone_arm_controller',
-            '--controller-manager', '/controller_manager',
-            '--controller-manager-timeout', '30',
-        ],
-        output='screen',
-    )
+    joint_state_broadcaster_spawner = make_spawner('joint_state_broadcaster')
+    leg_0_spawner  = make_spawner('leg_0_controller')
+    leg_1_spawner  = make_spawner('leg_1_controller')
+    leg_2_spawner  = make_spawner('leg_2_controller')
+    leg_3_spawner  = make_spawner('leg_3_controller')
+    leg_4_spawner  = make_spawner('leg_4_controller')
+    leg_5_spawner  = make_spawner('leg_5_controller')
+    drone_arm_spawner = make_spawner('drone_arm_controller')
 
     # ── Sequential loading chain ──────────────────────────────────────────────
-    # t+8s → JSB → hexapod_controller → drone_arm_controller
+    # t+8s → JSB → leg_0 → leg_1 → leg_2 → leg_3 → leg_4 → leg_5 → drone_arm
 
     load_jsb = TimerAction(
         period=8.0,
         actions=[joint_state_broadcaster_spawner]
     )
 
-    # JSB exits → hexapod_controller
-    load_hexapod = RegisterEventHandler(
+    load_leg_0 = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=joint_state_broadcaster_spawner,
-            on_exit=[hexapod_controller_spawner],
+            on_exit=[leg_0_spawner],
         )
     )
 
-    # hexapod_controller exits → drone_arm_controller
+    load_leg_1 = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=leg_0_spawner,
+            on_exit=[leg_1_spawner],
+        )
+    )
+
+    load_leg_2 = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=leg_1_spawner,
+            on_exit=[leg_2_spawner],
+        )
+    )
+
+    load_leg_3 = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=leg_2_spawner,
+            on_exit=[leg_3_spawner],
+        )
+    )
+
+    load_leg_4 = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=leg_3_spawner,
+            on_exit=[leg_4_spawner],
+        )
+    )
+
+    load_leg_5 = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=leg_4_spawner,
+            on_exit=[leg_5_spawner],
+        )
+    )
+
     load_drone = RegisterEventHandler(
         event_handler=OnProcessExit(
-            target_action=hexapod_controller_spawner,
-            on_exit=[drone_arm_controller_spawner],
+            target_action=leg_5_spawner,
+            on_exit=[drone_arm_spawner],
         )
     )
 
@@ -171,6 +189,11 @@ def generate_launch_description():
         bridge_node,
         spawn_entity,
         load_jsb,
-        load_hexapod,
+        load_leg_0,
+        load_leg_1,
+        load_leg_2,
+        load_leg_3,
+        load_leg_4,
+        load_leg_5,
         load_drone,
     ])

@@ -5,14 +5,29 @@ controller_manager:
     update_rate: 1000
     use_sim_time: true
 
-    hexapod_controller:
-      type: position_controllers/JointGroupPositionController
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    leg_0_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    leg_1_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    leg_2_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    leg_3_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    leg_4_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    leg_5_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
 
     drone_arm_controller:
       type: joint_trajectory_controller/JointTrajectoryController
-
-    joint_state_broadcaster:
-      type: joint_state_broadcaster/JointStateBroadcaster
 
 
 # ── Joint State Broadcaster ────────────────────────────────────────────────
@@ -21,29 +36,154 @@ joint_state_broadcaster:
     use_sim_time: true
 
 
-# ── Hexapod Controller ─────────────────────────────────────────────────────
-hexapod_controller:
+# ── Leg 0 Controller ───────────────────────────────────────────────────────
+leg_0_controller:
   ros__parameters:
     use_sim_time: true
     joints:
       - coxa_leg0_joint
       - femur_leg0_joint
       - tibia_leg0_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    allow_integration_in_goal_trajectories: true
+    constraints:
+      stopped_velocity_tolerance: 0.1
+      goal_time: 0.0
+      coxa_leg0_joint:  { trajectory: 1.0, goal: 0.8 }
+      femur_leg0_joint: { trajectory: 1.0, goal: 0.8 }
+      tibia_leg0_joint: { trajectory: 1.0, goal: 0.8 }
+
+
+# ── Leg 1 Controller ───────────────────────────────────────────────────────
+leg_1_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints:
       - coxa_leg1_joint
       - femur_leg1_joint
       - tibia_leg1_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    allow_integration_in_goal_trajectories: true
+    constraints:
+      stopped_velocity_tolerance: 0.1
+      goal_time: 0.0
+      coxa_leg1_joint:  { trajectory: 1.0, goal: 0.8 }
+      femur_leg1_joint: { trajectory: 1.0, goal: 0.8 }
+      tibia_leg1_joint: { trajectory: 1.0, goal: 0.8 }
+
+
+# ── Leg 2 Controller ───────────────────────────────────────────────────────
+leg_2_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints:
       - coxa_leg2_joint
       - femur_leg2_joint
       - tibia_leg2_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    allow_integration_in_goal_trajectories: true
+    constraints:
+      stopped_velocity_tolerance: 0.1
+      goal_time: 0.0
+      coxa_leg2_joint:  { trajectory: 1.0, goal: 0.8 }
+      femur_leg2_joint: { trajectory: 1.0, goal: 0.8 }
+      tibia_leg2_joint: { trajectory: 1.0, goal: 0.8 }
+
+
+# ── Leg 3 Controller ───────────────────────────────────────────────────────
+leg_3_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints:
       - coxa_leg3_joint
       - femur_leg3_joint
       - tibia_leg3_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    allow_integration_in_goal_trajectories: true
+    constraints:
+      stopped_velocity_tolerance: 0.1
+      goal_time: 0.0
+      coxa_leg3_joint:  { trajectory: 1.0, goal: 0.8 }
+      femur_leg3_joint: { trajectory: 1.0, goal: 0.8 }
+      tibia_leg3_joint: { trajectory: 1.0, goal: 0.8 }
+
+
+# ── Leg 4 Controller ───────────────────────────────────────────────────────
+leg_4_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints:
       - coxa_leg4_joint
       - femur_leg4_joint
       - tibia_leg4_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    allow_integration_in_goal_trajectories: true
+    constraints:
+      stopped_velocity_tolerance: 0.1
+      goal_time: 0.0
+      coxa_leg4_joint:  { trajectory: 1.0, goal: 0.8 }
+      femur_leg4_joint: { trajectory: 1.0, goal: 0.8 }
+      tibia_leg4_joint: { trajectory: 1.0, goal: 0.8 }
+
+
+# ── Leg 5 Controller ───────────────────────────────────────────────────────
+leg_5_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints:
       - coxa_leg5_joint
       - femur_leg5_joint
       - tibia_leg5_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    allow_integration_in_goal_trajectories: true
+    constraints:
+      stopped_velocity_tolerance: 0.1
+      goal_time: 0.0
+      coxa_leg5_joint:  { trajectory: 1.0, goal: 0.8 }
+      femur_leg5_joint: { trajectory: 1.0, goal: 0.8 }
+      tibia_leg5_joint: { trajectory: 1.0, goal: 0.8 }
 
 
 # ── Drone Arm Controller ───────────────────────────────────────────────────
@@ -59,20 +199,16 @@ drone_arm_controller:
       - prop_1
       - prop_2
       - prop_3
-
     command_interfaces:
       - position
     state_interfaces:
       - position
-
     interpolation_method: splines
     state_publish_rate: 50.0
     action_monitor_rate: 20.0
     allow_partial_joints_goal: true
-
     goal_time_tolerance: 0.5
     allow_nonzero_velocity_at_trajectory_end: false
-
     constraints:
       stopped_velocity_tolerance: 0.05
       goal_time: 0.0
