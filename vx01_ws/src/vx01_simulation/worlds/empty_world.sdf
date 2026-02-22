@@ -5,14 +5,20 @@
 <sdf version="1.8">
   <world name="empty">
 
-    <!-- 100 Hz physics — matches controller_manager update_rate: 100 -->
-    <physics name="100hz" type="ignored">
+    <!-- Gravity — explicit so Ignition does not silently default or vary -->
+    <gravity>0 0 -9.8</gravity>
+
+    <!-- 1000 Hz physics — MUST match controller_manager update_rate: 1000
+         real_time_update_rate was 100 before — this was the MISMATCH
+         causing joints to appear frozen / robot to drift under gravity.
+         Rule: real_time_update_rate == 1 / max_step_size               -->
+    <physics name="1000hz" type="ignored">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1.0</real_time_factor>
-      <real_time_update_rate>100</real_time_update_rate>
+      <real_time_update_rate>1000</real_time_update_rate>
     </physics>
 
-    <!-- Core world plugins (Physics, UserCommands, SceneBroadcaster are WORLD-level) -->
+    <!-- Core world plugins -->
     <plugin
       filename="libignition-gazebo-physics-system.so"
       name="ignition::gazebo::systems::Physics">

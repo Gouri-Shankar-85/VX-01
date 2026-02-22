@@ -1,137 +1,401 @@
 <?xml version="1.0"?>
 <robot name="vx01" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
+    <!-- ═══════════════════════════════════════════════════════════════════
+         Color key:
+           base_link      → White       (1.0  1.0  1.0)
+           coxa_link_*    → Red         (0.8  0.0  0.0)
+           femur_link_*   → White       (1.0  1.0  1.0)
+           tibia_link_*   → Red         (0.8  0.0  0.0)
+           arm_link_*     → Dark Grey   (0.25 0.25 0.25)
+           prop_link_*    → Grey        (0.29 0.29 0.29)
+         ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- ── Base ──────────────────────────────────────────────────────────── -->
     <gazebo reference="base_link">
-        <material>Gazebo/White</material>
-        <mu1>0.8</mu1><mu2>0.8</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+        <visual>
+            <material>
+                <ambient>1.0 1.0 1.0 1.0</ambient>
+                <diffuse>1.0 1.0 1.0 1.0</diffuse>
+                <specular>0.3 0.3 0.3 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "coxa_link_0">
-        <material>Gazebo/Red</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <!-- ── Leg 0 ──────────────────────────────────────────────────────────── -->
+    <gazebo reference="coxa_link_0">
+        <visual>
+            <material>
+                <ambient>0.8 0.0 0.0 1.0</ambient>
+                <diffuse>0.8 0.0 0.0 1.0</diffuse>
+                <specular>0.3 0.1 0.1 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "femur_link_0">
-        <material>Gazebo/White</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <gazebo reference="femur_link_0">
+        <visual>
+            <material>
+                <ambient>1.0 1.0 1.0 1.0</ambient>
+                <diffuse>1.0 1.0 1.0 1.0</diffuse>
+                <specular>0.3 0.3 0.3 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "tibia_link_0">
-        <material>Gazebo/Red</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <gazebo reference="tibia_link_0">
+        <visual>
+            <material>
+                <ambient>0.8 0.0 0.0 1.0</ambient>
+                <diffuse>0.8 0.0 0.0 1.0</diffuse>
+                <specular>0.3 0.1 0.1 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "coxa_link_1">
-        <material>Gazebo/Red</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <!-- ── Leg 1 ──────────────────────────────────────────────────────────── -->
+    <gazebo reference="coxa_link_1">
+        <visual>
+            <material>
+                <ambient>0.8 0.0 0.0 1.0</ambient>
+                <diffuse>0.8 0.0 0.0 1.0</diffuse>
+                <specular>0.3 0.1 0.1 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "femur_link_1">
-        <material>Gazebo/White</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <gazebo reference="femur_link_1">
+        <visual>
+            <material>
+                <ambient>1.0 1.0 1.0 1.0</ambient>
+                <diffuse>1.0 1.0 1.0 1.0</diffuse>
+                <specular>0.3 0.3 0.3 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "tibia_link_1">
-        <material>Gazebo/Red</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <gazebo reference="tibia_link_1">
+        <visual>
+            <material>
+                <ambient>0.8 0.0 0.0 1.0</ambient>
+                <diffuse>0.8 0.0 0.0 1.0</diffuse>
+                <specular>0.3 0.1 0.1 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "coxa_link_2">
-        <material>Gazebo/Red</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <!-- ── Leg 2 ──────────────────────────────────────────────────────────── -->
+    <gazebo reference="coxa_link_2">
+        <visual>
+            <material>
+                <ambient>0.8 0.0 0.0 1.0</ambient>
+                <diffuse>0.8 0.0 0.0 1.0</diffuse>
+                <specular>0.3 0.1 0.1 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "femur_link_2">
-        <material>Gazebo/White</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <gazebo reference="femur_link_2">
+        <visual>
+            <material>
+                <ambient>1.0 1.0 1.0 1.0</ambient>
+                <diffuse>1.0 1.0 1.0 1.0</diffuse>
+                <specular>0.3 0.3 0.3 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "tibia_link_2">
-        <material>Gazebo/Red</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <gazebo reference="tibia_link_2">
+        <visual>
+            <material>
+                <ambient>0.8 0.0 0.0 1.0</ambient>
+                <diffuse>0.8 0.0 0.0 1.0</diffuse>
+                <specular>0.3 0.1 0.1 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "coxa_link_3">
-        <material>Gazebo/Red</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <!-- ── Leg 3 ──────────────────────────────────────────────────────────── -->
+    <gazebo reference="coxa_link_3">
+        <visual>
+            <material>
+                <ambient>0.8 0.0 0.0 1.0</ambient>
+                <diffuse>0.8 0.0 0.0 1.0</diffuse>
+                <specular>0.3 0.1 0.1 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "femur_link_3">
-        <material>Gazebo/White</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <gazebo reference="femur_link_3">
+        <visual>
+            <material>
+                <ambient>1.0 1.0 1.0 1.0</ambient>
+                <diffuse>1.0 1.0 1.0 1.0</diffuse>
+                <specular>0.3 0.3 0.3 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "tibia_link_3">
-        <material>Gazebo/Red</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <gazebo reference="tibia_link_3">
+        <visual>
+            <material>
+                <ambient>0.8 0.0 0.0 1.0</ambient>
+                <diffuse>0.8 0.0 0.0 1.0</diffuse>
+                <specular>0.3 0.1 0.1 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "coxa_link_4">
-        <material>Gazebo/Red</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <!-- ── Leg 4 ──────────────────────────────────────────────────────────── -->
+    <gazebo reference="coxa_link_4">
+        <visual>
+            <material>
+                <ambient>0.8 0.0 0.0 1.0</ambient>
+                <diffuse>0.8 0.0 0.0 1.0</diffuse>
+                <specular>0.3 0.1 0.1 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "femur_link_4">
-        <material>Gazebo/White</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <gazebo reference="femur_link_4">
+        <visual>
+            <material>
+                <ambient>1.0 1.0 1.0 1.0</ambient>
+                <diffuse>1.0 1.0 1.0 1.0</diffuse>
+                <specular>0.3 0.3 0.3 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "tibia_link_4">
-        <material>Gazebo/Red</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <gazebo reference="tibia_link_4">
+        <visual>
+            <material>
+                <ambient>0.8 0.0 0.0 1.0</ambient>
+                <diffuse>0.8 0.0 0.0 1.0</diffuse>
+                <specular>0.3 0.1 0.1 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "coxa_link_5">
-        <material>Gazebo/Red</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <!-- ── Leg 5 ──────────────────────────────────────────────────────────── -->
+    <gazebo reference="coxa_link_5">
+        <visual>
+            <material>
+                <ambient>0.8 0.0 0.0 1.0</ambient>
+                <diffuse>0.8 0.0 0.0 1.0</diffuse>
+                <specular>0.3 0.1 0.1 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "femur_link_5">
-        <material>Gazebo/White</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <gazebo reference="femur_link_5">
+        <visual>
+            <material>
+                <ambient>1.0 1.0 1.0 1.0</ambient>
+                <diffuse>1.0 1.0 1.0 1.0</diffuse>
+                <specular>0.3 0.3 0.3 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
-    <gazebo reference = "tibia_link_5">
-        <material>Gazebo/Red</material>
-        <mu1>1.0</mu1><mu2>1.0</mu2>
-        <kp>1000000.0</kp><kd>100.0</kd>
-        <minDepth>0.001</minDepth><maxVel>1.0</maxVel>
+    <gazebo reference="tibia_link_5">
+        <visual>
+            <material>
+                <ambient>0.8 0.0 0.0 1.0</ambient>
+                <diffuse>0.8 0.0 0.0 1.0</diffuse>
+                <specular>0.3 0.1 0.1 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+
+    <!-- ── Drone Arms ─────────────────────────────────────────────────────── -->
+    <gazebo reference="arm_link_0">
+        <visual>
+            <material>
+                <ambient>0.25 0.25 0.25 1.0</ambient>
+                <diffuse>0.25 0.25 0.25 1.0</diffuse>
+                <specular>0.4 0.4 0.4 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+
+    <gazebo reference="arm_link_1">
+        <visual>
+            <material>
+                <ambient>0.25 0.25 0.25 1.0</ambient>
+                <diffuse>0.25 0.25 0.25 1.0</diffuse>
+                <specular>0.4 0.4 0.4 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+
+    <gazebo reference="arm_link_2">
+        <visual>
+            <material>
+                <ambient>0.25 0.25 0.25 1.0</ambient>
+                <diffuse>0.25 0.25 0.25 1.0</diffuse>
+                <specular>0.4 0.4 0.4 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+
+    <gazebo reference="arm_link_3">
+        <visual>
+            <material>
+                <ambient>0.25 0.25 0.25 1.0</ambient>
+                <diffuse>0.25 0.25 0.25 1.0</diffuse>
+                <specular>0.4 0.4 0.4 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+
+    <!-- ── Propellers ─────────────────────────────────────────────────────── -->
+    <gazebo reference="prop_link_0">
+        <visual>
+            <material>
+                <ambient>0.29 0.29 0.29 1.0</ambient>
+                <diffuse>0.29 0.29 0.29 1.0</diffuse>
+                <specular>0.4 0.4 0.4 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+
+    <gazebo reference="prop_link_1">
+        <visual>
+            <material>
+                <ambient>0.29 0.29 0.29 1.0</ambient>
+                <diffuse>0.29 0.29 0.29 1.0</diffuse>
+                <specular>0.4 0.4 0.4 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+
+    <gazebo reference="prop_link_2">
+        <visual>
+            <material>
+                <ambient>0.29 0.29 0.29 1.0</ambient>
+                <diffuse>0.29 0.29 0.29 1.0</diffuse>
+                <specular>0.4 0.4 0.4 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
+    </gazebo>
+
+    <gazebo reference="prop_link_3">
+        <visual>
+            <material>
+                <ambient>0.29 0.29 0.29 1.0</ambient>
+                <diffuse>0.29 0.29 0.29 1.0</diffuse>
+                <specular>0.4 0.4 0.4 1.0</specular>
+                <emissive>0.0 0.0 0.0 1.0</emissive>
+            </material>
+        </visual>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
+        <selfCollide>false</selfCollide>
     </gazebo>
 
 </robot>

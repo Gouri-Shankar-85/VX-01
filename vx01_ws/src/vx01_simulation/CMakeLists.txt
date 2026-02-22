@@ -7,6 +7,8 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(vx01_description REQUIRED)
+find_package(vx01_bringup REQUIRED)
 
 install (
   DIRECTORY

@@ -93,16 +93,15 @@ def generate_launch_description():
                 arguments=[
                     '-topic', 'robot_description',
                     '-entity', 'vx01',
-                    '-x', '0.0', '-y', '0.0', '-z', '0.2', '-Y', '0.0',
+                    '-x', '0.0', '-y', '0.0', '-z', '0.035', '-Y', '0.0',
                 ],
                 output='screen'
             )
         ]
     )
 
-    # ── Controllers: strict sequential chain ─────────────────────────────────
-    # JSB → (exit) → hexapod → (exit) → drone arm
-    # One configure+switch at a time prevents CM update loop from blocking.
+    # ── Controller spawners ───────────────────────────────────────────────────
+    # Chain: t+8s → JSB → hexapod_controller → drone_arm_controller
 
     joint_state_broadcaster_spawner = Node(
         package='controller_manager',
@@ -119,9 +118,9 @@ def generate_launch_description():
     hexapod_controller_spawner = Node(
         package='controller_manager',
         executable='spawner',
-        name='hexapod_position_controller_spawner',
+        name='hexapod_controller_spawner',
         arguments=[
-            'hexapod_position_controller',
+            'hexapod_controller',
             '--controller-manager', '/controller_manager',
             '--controller-manager-timeout', '30',
         ],
@@ -140,13 +139,15 @@ def generate_launch_description():
         output='screen',
     )
 
-    # t+8s → JSB
+    # ── Sequential loading chain ──────────────────────────────────────────────
+    # t+8s → JSB → hexapod_controller → drone_arm_controller
+
     load_jsb = TimerAction(
         period=8.0,
         actions=[joint_state_broadcaster_spawner]
     )
 
-    # JSB exits → hexapod
+    # JSB exits → hexapod_controller
     load_hexapod = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=joint_state_broadcaster_spawner,
@@ -154,7 +155,7 @@ def generate_launch_description():
         )
     )
 
-    # hexapod exits → drone arm
+    # hexapod_controller exits → drone_arm_controller
     load_drone = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=hexapod_controller_spawner,

@@ -2,8 +2,7 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
 <xacro:macro name="vx01_ros2_control" params="
-    prefix
-    use_sim:=false
+    use_sim:=true
     serial_port:=/dev/ttyACM0
     baud_rate:=115200
     pwm_frequency:=50
@@ -15,136 +14,129 @@
 
             <hardware>
                 <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+                <param name="position_proportional_gain">20.0</param>
             </hardware>
 
             <!-- ── Hexapod legs (18 joints) ── -->
 
-            <joint name="${prefix}coxa_leg0_joint">
+            <joint name="coxa_leg0_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}femur_leg0_joint">
+            <joint name="femur_leg0_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}tibia_leg0_joint">
+            <joint name="tibia_leg0_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
 
-            <joint name="${prefix}coxa_leg1_joint">
+            <joint name="coxa_leg1_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}femur_leg1_joint">
+            <joint name="femur_leg1_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}tibia_leg1_joint">
+            <joint name="tibia_leg1_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
 
-            <joint name="${prefix}coxa_leg2_joint">
+            <joint name="coxa_leg2_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}femur_leg2_joint">
+            <joint name="femur_leg2_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}tibia_leg2_joint">
+            <joint name="tibia_leg2_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
 
-            <joint name="${prefix}coxa_leg3_joint">
+            <joint name="coxa_leg3_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}femur_leg3_joint">
+            <joint name="femur_leg3_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}tibia_leg3_joint">
+            <joint name="tibia_leg3_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
 
-            <joint name="${prefix}coxa_leg4_joint">
+            <joint name="coxa_leg4_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}femur_leg4_joint">
+            <joint name="femur_leg4_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}tibia_leg4_joint">
+            <joint name="tibia_leg4_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
 
-            <joint name="${prefix}coxa_leg5_joint">
+            <joint name="coxa_leg5_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}femur_leg5_joint">
+            <joint name="femur_leg5_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}tibia_leg5_joint">
+            <joint name="tibia_leg5_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
 
             <!-- ── Drone arms (4 joints) ── -->
 
-            <joint name="${prefix}arm_joint0">
+            <joint name="arm_joint0">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}arm_joint1">
+            <joint name="arm_joint1">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}arm_joint2">
+            <joint name="arm_joint2">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}arm_joint3">
+            <joint name="arm_joint3">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
+            </joint>
+
+            <joint name="prop_0">
+                <command_interface name="position"></command_interface>
+                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+            </joint>
+            <joint name="prop_1">
+                <command_interface name="position"></command_interface>
+                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+            </joint>
+            <joint name="prop_2">
+                <command_interface name="position"></command_interface>
+                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+            </joint>
+            <joint name="prop_3">
+                <command_interface name="position"></command_interface>
+                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
 
         </ros2_control>
 
     </xacro:if>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         REAL HARDWARE: Two separate blocks — each with its own plugin
-         ══════════════════════════════════════════════════════════════════════ -->
     <xacro:unless value="${use_sim}">
 
         <ros2_control name="vx01_hexapod_hardware" type="system">
@@ -153,95 +145,77 @@
                 <param name="serial_port">${serial_port}</param>
                 <param name="baud_rate">${baud_rate}</param>
             </hardware>
-            <joint name="${prefix}coxa_leg0_joint">
+            <joint name="coxa_leg0_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}femur_leg0_joint">
+            <joint name="femur_leg0_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}tibia_leg0_joint">
+            <joint name="tibia_leg0_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}coxa_leg1_joint">
+            <joint name="coxa_leg1_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}femur_leg1_joint">
+            <joint name="femur_leg1_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}tibia_leg1_joint">
+            <joint name="tibia_leg1_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}coxa_leg2_joint">
+            <joint name="coxa_leg2_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}femur_leg2_joint">
+            <joint name="femur_leg2_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}tibia_leg2_joint">
+            <joint name="tibia_leg2_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}coxa_leg3_joint">
+            <joint name="coxa_leg3_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}femur_leg3_joint">
+            <joint name="femur_leg3_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}tibia_leg3_joint">
+            <joint name="tibia_leg3_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}coxa_leg4_joint">
+            <joint name="coxa_leg4_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}femur_leg4_joint">
+            <joint name="femur_leg4_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}tibia_leg4_joint">
+            <joint name="tibia_leg4_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}coxa_leg5_joint">
+            <joint name="coxa_leg5_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}femur_leg5_joint">
+            <joint name="femur_leg5_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}tibia_leg5_joint">
+            <joint name="tibia_leg5_joint">
                 <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
         </ros2_control>
 
@@ -251,25 +225,38 @@
                 <param name="pwm_frequency">${pwm_frequency}</param>
                 <param name="gpio_chip">${gpio_chip}</param>
             </hardware>
-            <joint name="${prefix}arm_joint0">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+            <joint name="arm_joint0">
+                <command_interface name="position"><param name="min">-1.57</param><param name="max">1.57</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}arm_joint1">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+            <joint name="arm_joint1">
+                <command_interface name="position"><param name="min">-1.57</param><param name="max">1.57</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}arm_joint2">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+            <joint name="arm_joint2">
+                <command_interface name="position"><param name="min">-1.57</param><param name="max">1.57</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
             </joint>
-            <joint name="${prefix}arm_joint3">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+            <joint name="arm_joint3">
+                <command_interface name="position"><param name="min">-1.57</param><param name="max">1.57</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-                <state_interface name="velocity"/>
+            </joint>
+
+            <joint name="prop_0">
+                <command_interface name="position"></command_interface>
+                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+            </joint>
+            <joint name="prop_1">
+                <command_interface name="position"></command_interface>
+                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+            </joint>
+            <joint name="prop_2">
+                <command_interface name="position"></command_interface>
+                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
+            </joint>
+            <joint name="prop_3">
+                <command_interface name="position"></command_interface>
+                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
         </ros2_control>
 

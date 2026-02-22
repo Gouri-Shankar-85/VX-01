@@ -1,0 +1,33 @@
+digraph G {
+"base_footprint" -> "base_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"base_link" -> "depth_camera_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"depth_camera_link" -> "depth_camera_optical_frame"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"base_link" -> "imu_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"base_link" -> "lidar_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"base_link" -> "arm_link_0"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"base_link" -> "arm_link_1"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"base_link" -> "arm_link_2"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"base_link" -> "arm_link_3"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"base_link" -> "coxa_link_0"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"base_link" -> "coxa_link_1"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"base_link" -> "coxa_link_2"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"base_link" -> "coxa_link_3"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"base_link" -> "coxa_link_4"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"base_link" -> "coxa_link_5"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"coxa_link_0" -> "femur_link_0"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"coxa_link_1" -> "femur_link_1"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"coxa_link_2" -> "femur_link_2"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"coxa_link_3" -> "femur_link_3"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"coxa_link_4" -> "femur_link_4"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"coxa_link_5" -> "femur_link_5"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"femur_link_0" -> "tibia_link_0"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"femur_link_1" -> "tibia_link_1"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"femur_link_2" -> "tibia_link_2"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"femur_link_3" -> "tibia_link_3"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"femur_link_4" -> "tibia_link_4"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+"femur_link_5" -> "tibia_link_5"[label=" Broadcaster: default_authority\nAverage rate: 20.323\nBuffer length: 3.1\nMost recent transform: 152.579\nOldest transform: 149.479\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1771695133.7850673"[ shape=plaintext ] ;
+}->"base_footprint";
+}

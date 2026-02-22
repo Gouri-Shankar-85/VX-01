@@ -56,8 +56,8 @@
         <limit
             lower="-0.78"
             upper="0.78"
-            effort="0"
-            velocity="0" />
+            effort="1.5"
+            velocity="3.14" />
     </joint>
 
     <link name="femur_link_5">
@@ -111,12 +111,12 @@
         <child
             link="femur_link_5" />
         <axis
-            xyz="0 0 1" />
+            xyz="0 0 -1" />
         <limit
             lower="-0.78"
             upper="0.78"
-            effort="0"
-            velocity="0" />
+            effort="1.5"
+            velocity="3.14" />
     </joint>
 
     <link name="tibia_link_5">
@@ -174,8 +174,8 @@
         <limit
             lower="-0.78"
             upper="0.78"
-            effort="0"
-            velocity="0" />
+            effort="1.5"
+            velocity="3.14" />
     </joint>
 
 </robot>

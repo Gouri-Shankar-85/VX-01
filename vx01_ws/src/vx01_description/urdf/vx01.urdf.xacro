@@ -4,9 +4,6 @@
     <xacro:arg name="use_sim" default="false"/>
     <xacro:property name="use_sim" value="$(arg use_sim)"/>
 
-    <xacro:arg name="prefix" default=""/>
-    <xacro:property name="prefix" value="$(arg prefix)"/>
-
     <!-- ── Base body ── -->
     <xacro:include filename="$(find vx01_description)/urdf/base/base.xacro"/>
 
@@ -36,7 +33,6 @@
     <xacro:include filename="$(find vx01_description)/urdf/gazebo/vx01_sim.xacro"/>
 
     <xacro:vx01_ros2_control
-        prefix="${prefix}"
         use_sim="${use_sim}"
         serial_port="/dev/ttyACM0"
         baud_rate="115200"
