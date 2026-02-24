@@ -117,8 +117,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-smbus2 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --no-cache-dir \
-    hidapi transforms3d pymavlink dronekit
+RUN pip3 install --no-cache-dir --prefer-binary \
+    pymavlink \
+    transforms3d
 
 # ─── udev rules ───────────────────────────────────────────────────────────────
 COPY docker/udev/ /etc/udev/rules.d/
