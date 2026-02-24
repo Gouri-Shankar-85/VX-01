@@ -73,7 +73,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-robot-localization \
     && rm -rf /var/lib/apt/lists/*
 
-# ─── MAVROS for Radilink PIX6 + ArduPilot ─────────────────────────────────────
+# ─── MAVROS for Radilink PIX6 + ArduPilot ────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-mavros \
     ros-humble-mavros-msgs \
@@ -108,10 +108,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libhidapi-dev libhidapi-hidraw0 libhidapi-libusb0 \
     && rm -rf /var/lib/apt/lists/*
 
-# ─── Python packages ──────────────────────────────────────────────────────────
-RUN pip3 install --no-cache-dir --break-system-packages \
-    pyserial pyusb hidapi \
-    numpy scipy transforms3d pymavlink dronekit smbus2
+# ─── Python packages via apt (works on all pip versions, AMD64 and ARM64) ────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-serial \
+    python3-usb \
+    python3-numpy \
+    python3-scipy \
+    python3-smbus2 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install --no-cache-dir \
+    hidapi transforms3d pymavlink dronekit
 
 # ─── udev rules ───────────────────────────────────────────────────────────────
 COPY docker/udev/ /etc/udev/rules.d/
