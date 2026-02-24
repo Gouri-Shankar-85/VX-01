@@ -6,6 +6,14 @@
 
 FROM ros:humble-ros-base
 
+RUN apt-get update -o Acquire::Check-Valid-Until=false && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        ntpdate \
+    && ntpdate -u pool.ntp.org 2>/dev/null || true \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV ROS_DISTRO=humble
 ENV WORKSPACE=/vx01_ws
 ENV DEBIAN_FRONTEND=noninteractive
