@@ -14,22 +14,22 @@ This project focuses on designing and developing a scalable robotic system capab
 
 **Hardware**
 
-RDK X5 8GB Development Board (Microprocessor)
-PIX6 Flight Controller
-Polulu Maestro Mini Servo Controller
-BLDC Motors
-ESC
-IMU
-Ultrasonic Sensors
-Depth Sensing Camera
-LiPo Battery
+1) RDK X5 8GB Development Board (Microprocessor)
+2) PIX6 Flight Controller
+3) Polulu Maestro Mini Servo Controller
+4) BLDC Motors
+5) ESC
+6) IMU
+7) Ultrasonic Sensors
+8) Depth Sensing Camera
+9) LiPo Battery
 
 **Software Stack**
 
-Python
-C/C++
-OpenCV
-ROS 2
+1) Python
+2) C/C++
+3) OpenCV
+4) ROS 2
 
 **Repository Structure**
 
@@ -41,7 +41,7 @@ multi-terrain-robot
 
 ├── software...............# Source code
 
-│   ├── pi...............# Raspberry Pi code
+│   ├── rdk...............# ROS 2 code
 
 │   ├── controller...............# Microcontroller code
 
@@ -55,28 +55,29 @@ multi-terrain-robot
 
 **Installation**
 
-Clone Repository
-git clone https://github.com/your-username/multi-terrain-robot.git
-cd multi-terrain-robot
-Install Dependencies
-sudo apt update
-pip3 install -r requirements.txt
+1) Clone Repository
+2) git clone https://github.com/your-username/multi-terrain-robot.git
+3) cd multi-terrain-robot
+4) Install Dependencies
+5) sudo apt update
+6) pip3 install -r requirements.txt
+
 Usage
 
 **Features**
 
-PWM motor control
-Sensor-based obstacle detection
-Modular software architecture
-Expandable for autonomous navigation
+1) PWM motor control
+2) Sensor-based obstacle detection
+3) Modular software architecture
+4) Expandable for autonomous navigation
 
 **Future Work**
 
-SLAM integration
-LIDAR support
-Terrain classification
-Waypoint-based navigation
-Cloud telemetry
+1) SLAM integration
+2) LIDAR support
+3) Terrain classification
+4) Waypoint-based navigation
+5) Cloud telemetry
 
 **Contributing**
 
