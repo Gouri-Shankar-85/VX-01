@@ -6,10 +6,11 @@
 
 FROM ros:humble-ros-base
 
-RUN apt-get update -o Acquire::Check-Valid-Until=false && \
-    apt-get install -y --no-install-recommends \
-        ca-certificates \
-        ntpdate \
+# ─── Fix GPG / clock-skew errors globally ────────────────────────────────────
+RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid \
+    && echo 'Acquire::AllowInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99no-check-valid \
+    && apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates ntpdate \
     && ntpdate -u pool.ntp.org 2>/dev/null || true \
     && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
@@ -50,7 +51,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-serial-driver ros-humble-io-context \
     && rm -rf /var/lib/apt/lists/*
 
-# ─── Navigation & SLAM (RTAB-Map for RGB-D camera SLAM, Nav2 full stack) ──────
+# ─── Navigation & SLAM ────────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-navigation2 \
     ros-humble-nav2-bringup \
@@ -79,8 +80,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-mavros-extras \
     && rm -rf /var/lib/apt/lists/*
 
-# Download GeographicLib datasets required by MAVROS — done here so nobody
-# ever has to run this manually
+# Download GeographicLib datasets required by MAVROS
 RUN wget -q \
     https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh \
     -O /tmp/geo.sh && chmod +x /tmp/geo.sh && bash /tmp/geo.sh && rm /tmp/geo.sh
@@ -91,44 +91,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpcl-dev libboost-all-dev libeigen3-dev libflann-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# ─── YDLIDAR HP60C (USB2.0 UVC depth camera, structured light, /dev/video0) ──
-# Uses standard UVC — no proprietary SDK. OpenNI2 gives depth stream access.
+# ─── YDLIDAR HP60C (USB2.0 UVC depth camera) ─────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libuvc-dev \
     libopenni2-dev openni2-utils \
     libgflags-dev libgoogle-glog-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# ─── TFmini-S (UART 115200 baud, /dev/ttyUSB* or symlink /dev/ttyTFMINI) ─────
+# ─── TFmini-S LiDAR (UART) ───────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-serial picocom \
     && rm -rf /var/lib/apt/lists/*
-
-# ─── Hiwonder IM10A IMU (UART 9600 default, or I2C up to 400kHz) ─────────────
-# ros-humble-serial-driver already installed above
 
 # ─── Pololu Mini Maestro 18-channel USB Servo Controller ─────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libhidapi-dev libhidapi-hidraw0 libhidapi-libusb0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Build libpololu-usb from Pololu's open-source SDK
-RUN cd /tmp && \
-    git clone --depth 1 https://github.com/pololu/pololu-usb-sdk.git && \
-    cd pololu-usb-sdk/Maestro/libusc && \
-    # The library uses a simple Makefile; patch for ARM64 if needed
-    make && \
-    cp libusc.a /usr/local/lib/ && \
-    cp ../libusc.h /usr/local/include/ && \
-    ldconfig && \
-    cd /tmp && rm -rf pololu-usb-sdk
-
-# Python binding for Maestro (works on both AMD64 and ARM64)
-RUN pip3 install --no-cache-dir --break-system-packages \
-    pyserial pyusb hidapi
-
 # ─── Python packages ──────────────────────────────────────────────────────────
 RUN pip3 install --no-cache-dir --break-system-packages \
+    pyserial pyusb hidapi \
     numpy scipy transforms3d pymavlink dronekit smbus2
 
 # ─── udev rules ───────────────────────────────────────────────────────────────
