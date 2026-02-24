@@ -52,12 +52,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Rebuild workspace so sim packages are included
 WORKDIR /vx01_ws
-RUN . /opt/ros/humble/setup.sh && \
-    . /vx01_ws/install/setup.bash 2>/dev/null || true && \
+COPY vx01_ws/src ./src
+RUN bash -c "source /opt/ros/humble/setup.bash && \
     colcon build \
         --symlink-install \
         --cmake-args -DCMAKE_BUILD_TYPE=Release \
-        --parallel-workers 4 \
+        --parallel-workers 4" \
     || echo "Sim rebuild done"
 
 ENTRYPOINT ["/entrypoint.sh"]

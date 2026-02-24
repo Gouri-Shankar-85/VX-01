@@ -1,0 +1,5 @@
+vx01_ws/build
+vx01_ws/install
+vx01_ws/log
+.git
+.gitignore
