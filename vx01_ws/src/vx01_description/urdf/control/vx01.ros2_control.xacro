@@ -23,11 +23,11 @@
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="femur_leg0_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="tibia_leg0_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
 
@@ -36,11 +36,11 @@
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="femur_leg1_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="tibia_leg1_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
 
@@ -49,11 +49,11 @@
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="femur_leg2_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="tibia_leg2_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
 
@@ -62,11 +62,11 @@
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="femur_leg3_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="tibia_leg3_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
 
@@ -75,11 +75,11 @@
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="femur_leg4_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="tibia_leg4_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
 
@@ -88,11 +88,11 @@
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="femur_leg5_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="tibia_leg5_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
 
@@ -149,11 +149,11 @@
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="femur_leg0_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="tibia_leg0_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="coxa_leg1_joint">
@@ -161,11 +161,11 @@
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="femur_leg1_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="tibia_leg1_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="coxa_leg2_joint">
@@ -173,11 +173,11 @@
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="femur_leg2_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="tibia_leg2_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="coxa_leg3_joint">
@@ -185,11 +185,11 @@
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="femur_leg3_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="tibia_leg3_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="coxa_leg4_joint">
@@ -197,11 +197,11 @@
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="femur_leg4_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="tibia_leg4_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="coxa_leg5_joint">
@@ -209,11 +209,11 @@
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="femur_leg5_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
             <joint name="tibia_leg5_joint">
-                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.785398</param></command_interface>
+                <command_interface name="position"><param name="min">-0.785398</param><param name="max">0.10</param></command_interface>
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
         </ros2_control>

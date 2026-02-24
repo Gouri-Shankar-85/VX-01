@@ -1,0 +1,62 @@
+# =============================================================================
+# VX-01 udev rules
+# These create STABLE device symlinks regardless of which USB port you use.
+# /dev/ttyUSB0 might change — /dev/ttyTFMINI never changes.
+#
+# Install on HOST (both AMD64 and RDK X5):
+#   sudo cp 99-vx01-devices.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+#
+# The build.sh / deploy-rdk.sh scripts do this automatically.
+# =============================================================================
+
+# ─── Pololu Mini Maestro 18-Channel USB Servo Controller ─────────────────────
+# USB vendor 1ffb is Pololu. Product 0089 = Maestro 18-channel.
+SUBSYSTEM=="usb",  ATTR{idVendor}=="1ffb", MODE="0666", GROUP="plugdev"
+SUBSYSTEM=="tty",  ATTRS{idVendor}=="1ffb", MODE="0666", GROUP="plugdev", \
+    SYMLINK+="ttyMAESTRO"
+
+# ─── Benewake TFmini-S LiDAR ─────────────────────────────────────────────────
+# CP2102 USB-UART bridge (most common with TFmini-S)
+SUBSYSTEM=="tty",  ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", \
+    MODE="0666", GROUP="dialout", SYMLINK+="ttyTFMINI"
+# CH340 USB-UART bridge (alternate)
+SUBSYSTEM=="tty",  ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", \
+    MODE="0666", GROUP="dialout", SYMLINK+="ttyTFMINI"
+# FTDI USB-UART bridge
+SUBSYSTEM=="tty",  ATTRS{idVendor}=="0403", \
+    MODE="0666", GROUP="dialout"
+
+# ─── Hiwonder IM10A IMU ───────────────────────────────────────────────────────
+# IM10A uses UART. If connected via CP2102 on a second port:
+# We use ATTRS{serial} to distinguish it from TFmini if both use CP2102.
+# If you only have one CP2102 device, TFmINI rule above covers it.
+# For I2C mode:
+SUBSYSTEM=="i2c-dev", MODE="0666", GROUP="i2c"
+# For dedicated IMU USB adapter (CH9329 or similar):
+SUBSYSTEM=="tty",  ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="55d4", \
+    MODE="0666", GROUP="dialout", SYMLINK+="ttyIMU"
+# Fallback: if plugged after TFmini, it lands on ttyUSB1 — symlink that too
+# You can fine-tune this by checking: udevadm info -a -n /dev/ttyUSB1
+SUBSYSTEM=="tty",  KERNEL=="ttyUSB1", MODE="0666", GROUP="dialout", \
+    SYMLINK+="ttyIMU"
+
+# ─── Radilink PIX6 Flight Controller (ArduPilot, ACM virtual serial) ─────────
+SUBSYSTEM=="tty",  ATTRS{idVendor}=="26ac", \
+    MODE="0666", GROUP="dialout", SYMLINK+="ttyPIXHAWK"
+# Generic Pixhawk family fallback
+SUBSYSTEM=="tty",  ATTRS{idVendor}=="1209", \
+    MODE="0666", GROUP="dialout", SYMLINK+="ttyPIXHAWK"
+# ACM fallback for any flight controller
+SUBSYSTEM=="tty",  KERNEL=="ttyACM0", MODE="0666", GROUP="dialout"
+
+# ─── YDLIDAR HP60C Depth Camera (USB 2.0 UVC standard) ───────────────────────
+# UVC cameras appear as /dev/video* automatically. This just sets permissions.
+SUBSYSTEM=="video4linux", MODE="0666", GROUP="video"
+# YDLidar USB vendor (if known)
+SUBSYSTEM=="usb",  ATTR{idVendor}=="2e1a", MODE="0666", GROUP="plugdev"
+
+# ─── Generic fallback for any unmatched serial/USB ────────────────────────────
+SUBSYSTEM=="tty",  KERNEL=="ttyUSB*", MODE="0666", GROUP="dialout"
+SUBSYSTEM=="tty",  KERNEL=="ttyACM*", MODE="0666", GROUP="dialout"
+SUBSYSTEM=="tty",  KERNEL=="ttyS*",   MODE="0666", GROUP="dialout"

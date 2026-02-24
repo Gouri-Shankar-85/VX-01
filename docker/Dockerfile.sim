@@ -1,0 +1,64 @@
+# =============================================================================
+# VX-01 Simulation Image — (AMD64) Only
+# Extends the base image and adds Ignition Fortress + RViz2 + ROS-GZ bridge
+# Never built for ARM64 / RDK X5
+# =============================================================================
+
+FROM vx01-base:humble
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV QT_X11_NO_MITSHM=1
+
+# ─── Ignition Fortress ────────────────────────────────────────────────────────
+RUN wget https://packages.osrfoundation.org/gazebo.gpg \
+         -O /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] \
+         http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" \
+         > /etc/apt/sources.list.d/gazebo-stable.list && \
+    apt-get update && apt-get install -y --no-install-recommends \
+        ignition-fortress \
+    && rm -rf /var/lib/apt/lists/*
+
+# ─── ROS2 ↔ Ignition bridge ───────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-humble-ros-gz \
+    ros-humble-ros-gz-bridge \
+    ros-humble-ros-gz-sim \
+    ros-humble-ros-gz-image \
+    ros-humble-ros-gz-interfaces \
+    && rm -rf /var/lib/apt/lists/*
+
+# ─── Visualization ────────────────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-humble-rviz2 \
+    ros-humble-rviz-common \
+    ros-humble-rviz-default-plugins \
+    ros-humble-rqt \
+    ros-humble-rqt-common-plugins \
+    ros-humble-rqt-robot-steering \
+    ros-humble-rqt-tf-tree \
+    ros-humble-rqt-graph \
+    ros-humble-foxglove-bridge \
+    && rm -rf /var/lib/apt/lists/*
+
+# ─── Simulation controllers ───────────────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-humble-gz-ros2-control \
+    ros-humble-joint-trajectory-controller \
+    ros-humble-position-controllers \
+    ros-humble-velocity-controllers \
+    ros-humble-effort-controllers \
+    && rm -rf /var/lib/apt/lists/*
+
+# Rebuild workspace so sim packages are included
+WORKDIR /vx01_ws
+RUN . /opt/ros/humble/setup.sh && \
+    . /vx01_ws/install/setup.bash 2>/dev/null || true && \
+    colcon build \
+        --symlink-install \
+        --cmake-args -DCMAKE_BUILD_TYPE=Release \
+        --parallel-workers 4 \
+    || echo "Sim rebuild done"
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["bash"]

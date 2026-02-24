@@ -1,0 +1,50 @@
+# =============================================================================
+# VX-01 docker-compose — RDK X5
+# Run: docker compose -f docker-compose.rdk.yml up -d
+# =============================================================================
+
+name: vx01-rdk
+
+services:
+
+  vx01-robot:
+    image: ${DOCKER_REGISTRY}/vx01-base:humble-arm64
+    container_name: vx01-robot
+    network_mode: host
+    privileged: true
+    ipc: host
+    restart: unless-stopped
+    environment:
+      - ROS_DOMAIN_ID=0
+    volumes:
+      - /dev:/dev
+      - vx01_logs:/vx01_ws/log
+      - /root/.ssh:/root/.ssh:ro
+      - /root/.gitconfig:/root/.gitconfig:ro
+    # Stable symlinks — no /dev/ttyUSB0 guessing
+    devices:
+      - /dev/ttyPIXHAWK:/dev/ttyPIXHAWK
+      - /dev/ttyMAESTRO:/dev/ttyMAESTRO
+      - /dev/ttyTFMINI:/dev/ttyTFMINI
+      - /dev/ttyIMU:/dev/ttyIMU
+      - /dev/video0:/dev/video0
+    command: ros2 launch vx01_hardware hardware.launch.py
+
+  vx01-mavros:
+    image: ${DOCKER_REGISTRY}/vx01-base:humble-arm64
+    container_name: vx01-mavros
+    network_mode: host
+    privileged: true
+    ipc: host
+    restart: unless-stopped
+    environment:
+      - ROS_DOMAIN_ID=0
+    devices:
+      - /dev/ttyPIXHAWK:/dev/ttyPIXHAWK
+    command: >
+      ros2 launch mavros apm.launch
+      fcu_url:=serial:///dev/ttyPIXHAWK:921600
+      gcs_url:=udp://:14550@0.0.0.0:14555
+
+volumes:
+  vx01_logs:

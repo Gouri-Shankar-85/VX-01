@@ -1,0 +1,106 @@
+# =============================================================================
+# VX-01 docker-compose — AMD64 configuration
+#
+# Profiles:
+#   sim       → Ignition Fortress simulation
+#   hardware  → Real sensors + flight controller
+#   dev       → Interactive shell with everything
+#
+# =============================================================================
+
+name: vx01-laptop
+
+services:
+
+  # ─── Simulation (Ignition Fortress + RViz2) ───────────────────────────────
+  vx01-sim:
+    profiles: ["sim"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.sim
+    image: vx01-sim:humble
+    container_name: vx01-sim
+    network_mode: host
+    ipc: host
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=0
+    volumes:
+      - ../vx01_ws/src:/vx01_ws/src
+      - vx01_build_sim:/vx01_ws/build
+      - vx01_install_sim:/vx01_ws/install
+      - vx01_log_sim:/vx01_ws/log
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${HOME}/.ssh:/root/.ssh:ro
+      - ${HOME}/.gitconfig:/root/.gitconfig:ro
+    command: ros2 launch vx01_sim sim.launch.py
+
+  # ─── Hardware (real devices) ──────────────────────────────────────────────
+  vx01-hardware:
+    profiles: ["hardware"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.base
+    image: vx01-base:humble
+    container_name: vx01-hardware
+    network_mode: host
+    privileged: true
+    ipc: host
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=0
+    volumes:
+      - ../vx01_ws/src:/vx01_ws/src
+      - vx01_build_hw:/vx01_ws/build
+      - vx01_install_hw:/vx01_ws/install
+      - vx01_log_hw:/vx01_ws/log
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${HOME}/.ssh:/root/.ssh:ro
+      - ${HOME}/.gitconfig:/root/.gitconfig:ro
+      - /dev:/dev
+    # Uses stable udev symlinks — not /dev/ttyUSB0 which can change
+    devices:
+      - /dev/ttyPIXHAWK:/dev/ttyPIXHAWK     # Radilink PIX6 ArduPilot
+      - /dev/ttyMAESTRO:/dev/ttyMAESTRO     # Pololu Maestro
+      - /dev/ttyTFMINI:/dev/ttyTFMINI       # TFmini-S LiDAR
+      - /dev/ttyIMU:/dev/ttyIMU             # IM10A IMU
+      - /dev/video0:/dev/video0             # HP60C depth camera
+    command: ros2 launch vx01_hardware hardware.launch.py
+
+  # ─── Dev shell (everything, interactive) ─────────────────────────────────
+  vx01-dev:
+    profiles: ["dev"]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.sim
+    image: vx01-sim:humble
+    container_name: vx01-dev
+    network_mode: host
+    privileged: true
+    ipc: host
+    stdin_open: true
+    tty: true
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=0
+    volumes:
+      - ../vx01_ws/src:/vx01_ws/src
+      - vx01_build_sim:/vx01_ws/build
+      - vx01_install_sim:/vx01_ws/install
+      - vx01_log_sim:/vx01_ws/log
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${HOME}/.ssh:/root/.ssh:ro
+      - ${HOME}/.gitconfig:/root/.gitconfig:ro
+      - /dev:/dev
+    command: bash
+
+volumes:
+  vx01_build_sim:
+  vx01_install_sim:
+  vx01_log_sim:
+  vx01_build_hw:
+  vx01_install_hw:
+  vx01_log_hw:

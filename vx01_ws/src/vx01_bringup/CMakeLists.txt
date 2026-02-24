@@ -7,15 +7,40 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(trajectory_msgs REQUIRED)
+find_package(control_msgs REQUIRED)
+find_package(builtin_interfaces REQUIRED)
+find_package(vx01_hexapod_locomotion REQUIRED)
 
-install (
+# ── C++ walk node ─────────────────────────────────────────────────────────────
+add_executable(hexapod_walk_node
+  scripts/hexapod_walk_node.cpp
+)
+
+ament_target_dependencies(hexapod_walk_node
+  rclcpp
+  rclcpp_action
+  trajectory_msgs
+  control_msgs
+  builtin_interfaces
+  vx01_hexapod_locomotion
+)
+
+install(TARGETS hexapod_walk_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# ── Install config and scripts directories ────────────────────────────────────
+install(
   DIRECTORY
-    config 
+    config
     scripts
   DESTINATION share/${PROJECT_NAME}/
 )
 
-# Add to vx01_bringup/CMakeLists.txt
+# ── Python scripts ────────────────────────────────────────────────────────────
 install(
   PROGRAMS
     scripts/test_single_leg.py

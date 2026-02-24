@@ -8,53 +8,141 @@
 
 namespace vx01_hexapod_locomotion {
 
-    class HexapodLocomotion {
+        enum class LocomotionState {
+            STANDING,
+            WALKING,
+            STOPPED
+        };
 
-        private:
+        class HexapodLocomotion {
+            private:
+                // Leg controllers (one per leg)
+                // LegController lives in the control sub-namespace
+                std::vector<std::shared_ptr<control::LegController>> leg_controllers_;
 
-            std::vector<std::shared_ptr<control::LegController>> legs_;
-            std::shared_ptr<gait::GaitPattern> gait_;     
-            
-            double L1_;
-            double L2_;
-            double L3_;
+                // Gait pattern generator lives in the gait sub-namespace
+                std::shared_ptr<gait::GaitPattern> gait_pattern_;
 
-            double stride_length_;
-            double track_width_;
-            double step_height_;
+                // Robot dimensions (mm)
+                double L1_;          // Coxa  length
+                double L2_;          // Femur length
+                double L3_;          // Tibia length
+                double body_radius_; // Distance from body centre to coxa pivot
+                double beta_angle_;  // Angular separation between adjacent legs (rad)
 
-            double body_radius_;
-            double leg_spacing_;
+                // Leg mounting angles measured from body +X axis (rad)
+                std::vector<double> leg_angles_;
 
-            bool is_walking_;
-            double current_time_in_block_;
+                // Current locomotion state
+                LocomotionState state_;
 
-        public:
-        
-            HexapodLocomotion(double L1, double L2, double L3, 
-                              double stride_length, double track_width, double step_height,
-                              double body_radius, double leg_spacing);
+                // Velocity commands
+                double velocity_x_;      // Forward  velocity (mm/s)
+                double velocity_y_;      // Lateral  velocity (mm/s)
+                double velocity_omega_;  // Yaw-rate            (rad/s)
 
-            void initializeLegs();
+                // Gait timing
+                double gait_time_;   // Elapsed time inside the current gait cycle (s)
+                double step_period_; // Duration of one complete gait cycle        (s)
 
-            void moveToHome(double home_x, double home_y, double home_z);
+                // Step geometry
+                double step_length_; // Stride length (mm)  – maps to S in GaitPattern
+                double step_height_; // Lift  height  (mm)  – maps to A in GaitPattern
+                double track_width_; // Lateral track width (mm) – maps to T in GaitPattern
 
-            void startWalking();
+                // Neutral / home foot position in the leg-local frame (mm)
+                double home_x_;
+                double home_y_;
+                double home_z_;
 
-            void stopWalking();
+                // Flat storage of all 18 joint angles  [leg0_t1, leg0_t2, leg0_t3, ...]
+                std::vector<double> current_joint_angles_;
 
-            void updateGait(double dt);
+            public:
+                // ------------------------------------------------------------
+                // Construction / destruction
+                // ------------------------------------------------------------
+                HexapodLocomotion(double L1, double L2, double L3,
+                                double body_radius, double beta_angle);
+                ~HexapodLocomotion();
 
-            void turn(double gamma);
+                // ------------------------------------------------------------
+                // High-level commands
+                // ------------------------------------------------------------
+                void stand();  // Move all legs to home position and hold
+                void walk();   // Begin walking with the currently set velocity
+                void stop();   // Stop motion immediately
 
-            void getLegJointAngles(int leg_id, double& theta1, double& theta2, double& theta3);
+                // ------------------------------------------------------------
+                // State query
+                // ------------------------------------------------------------
+                LocomotionState getState() const;
 
-            void getLegFootPosition(int leg_id, double& x, double& y, double& z);
+                // ------------------------------------------------------------
+                // Velocity interface
+                // ------------------------------------------------------------
+                void setVelocity(double vx, double vy, double omega);
+                void getVelocity(double& vx, double& vy, double& omega) const;
 
-            bool isWalking() const;
+                // ------------------------------------------------------------
+                // Main update – call at a fixed rate (e.g. 50 Hz)
+                // ------------------------------------------------------------
+                void update(double dt);
 
-            int getCurrentBlock() const;
-    };
-}
+                // ------------------------------------------------------------
+                // Joint-angle accessors
+                // ------------------------------------------------------------
+                std::vector<double> getJointAngles() const;
+                void getLegAngles(int leg_index,
+                                double& theta1, double& theta2, double& theta3) const;
 
-#endif
+                // ------------------------------------------------------------
+                // Gait parameter setters / getters
+                // ------------------------------------------------------------
+                void   setStepLength(double length);
+                void   setStepHeight(double height);
+                void   setStepPeriod(double period);
+
+                double getStepLength() const;
+                double getStepHeight() const;
+                double getStepPeriod() const;
+
+                // ------------------------------------------------------------
+                // Home-position setters / getters (leg-local frame, mm)
+                // ------------------------------------------------------------
+                void setHomePosition(double x, double y, double z);
+                void getHomePosition(double& x, double& y, double& z) const;
+
+            private:
+                // ------------------------------------------------------------
+                // Internal helpers
+                // ------------------------------------------------------------
+
+                // Build one LegController per leg with the correct arguments
+                void initializeLegControllers();
+
+                // Apply IK for a single leg and store the resulting joint angles.
+                // foot_x/y/z are given in the leg-local frame.
+                void applyIK(int leg_index, double foot_x, double foot_y, double foot_z);
+
+                // Compute target foot position (leg-local frame) for the given
+                // normalised gait phase [0, 1).
+                void calculateFootTarget(int leg_index, double phase,
+                                        double& x, double& y, double& z);
+
+                // Drive one leg for the current gait_time_
+                void updateLeg(int leg_index);
+
+                // Rotate the body-frame velocity command into leg-i's local frame
+                // and add the contribution from the yaw-rate command.
+                void transformVelocity(int leg_index, double vx, double vy,
+                                    double& local_vx, double& local_vy);
+
+                // Return the (x, y) position of leg i's coxa pivot in the body frame
+                void getLegBasePosition(int leg_index,
+                                        double& base_x, double& base_y);
+        };
+
+    } 
+
+#endif 
