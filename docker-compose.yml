@@ -27,7 +27,7 @@ services:
       - QT_X11_NO_MITSHM=1
       - ROS_DOMAIN_ID=0
     volumes:
-      - ../vx01_ws/src:/vx01_ws/src
+      - ./vx01_ws/src:/vx01_ws/src
       - vx01_build_sim:/vx01_ws/build
       - vx01_install_sim:/vx01_ws/install
       - vx01_log_sim:/vx01_ws/log
@@ -52,7 +52,7 @@ services:
       - QT_X11_NO_MITSHM=1
       - ROS_DOMAIN_ID=0
     volumes:
-      - ../vx01_ws/src:/vx01_ws/src
+      - ./vx01_ws/src:/vx01_ws/src
       - vx01_build_hw:/vx01_ws/build
       - vx01_install_hw:/vx01_ws/install
       - vx01_log_hw:/vx01_ws/log
@@ -87,7 +87,7 @@ services:
       - QT_X11_NO_MITSHM=1
       - ROS_DOMAIN_ID=0
     volumes:
-      - ../vx01_ws/src:/vx01_ws/src
+      - ./vx01_ws/src:/vx01_ws/src
       - vx01_build_sim:/vx01_ws/build
       - vx01_install_sim:/vx01_ws/install
       - vx01_log_sim:/vx01_ws/log
