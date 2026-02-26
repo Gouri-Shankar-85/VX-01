@@ -55,6 +55,7 @@
 using FollowJT      = control_msgs::action::FollowJointTrajectory;
 using GoalHandleFJT = rclcpp_action::ClientGoalHandle<FollowJT>;
 
+
 // ═════════════════════════════════════════════════════════════════════════
 class HexapodWalkNode : public rclcpp::Node
 {
@@ -132,6 +133,8 @@ public:
             std::chrono::milliseconds(100),
             std::bind(&HexapodWalkNode::timerCallback, this));
 
+        clock_ = this->get_clock();
+
         RCLCPP_INFO(get_logger(), "HexapodWalkNode started — waiting for action servers...");
     }
 
@@ -146,6 +149,8 @@ private:
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
     rclcpp::TimerBase::SharedPtr timer_;
     State state_;
+
+    rclcpp::Clock::SharedPtr clock_;
 
     std::mutex vel_mutex_;
     double vel_x_{0.0}, vel_y_{0.0}, vel_omega_{0.0};
@@ -254,7 +259,7 @@ private:
             double t1, t2, t3;
             if (!ikEU(ik_x, ik_y, ik_z, t1, t2, t3)) {
                 t1 = h1; t2 = h2; t3 = h3;
-                RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000,
+                RCLCPP_WARN_THROTTLE(this->get_logger(), *clock_, 2000,
                     "IK fallback leg=%d t=%.2f (x=%.1f y=%.1f z=%.1f)",
                     leg, t_abs, ik_x, ik_y, ik_z);
             }
