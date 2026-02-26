@@ -27,6 +27,9 @@ namespace vx01_hexapod_locomotion {
         //   theta2 = phi1 + phi2
         //   phi3   = acos( (r1^2 - L2^2 - L3^2) / (-2*L2*L3) )
         //   theta3 = -(pi - phi3)
+        // Joint limits (rad) — must match the YAML hardware_interface limits
+        static constexpr double JOINT_LIMIT = 0.785398;  // ±45°
+
         bool InverseKinematics::compute(double xp, double yp, double zp,
                                         double& theta1, double& theta2, double& theta3) {
                                                         
@@ -83,6 +86,15 @@ namespace vx01_hexapod_locomotion {
 
             // ELBOW-UP: tibia angles positively back toward body (within ±45°)
             theta3 = M_PI - phi3;
+
+            // Enforce joint limits — reject solutions the hardware cannot reach.
+            // isReachable() only checks Euclidean distance; this catches
+            // configurations that are kinematically valid but mechanically impossible.
+            if (std::abs(theta1) > JOINT_LIMIT ||
+                std::abs(theta2) > JOINT_LIMIT ||
+                std::abs(theta3) > JOINT_LIMIT) {
+                return false;
+            }
 
             return true;
         }

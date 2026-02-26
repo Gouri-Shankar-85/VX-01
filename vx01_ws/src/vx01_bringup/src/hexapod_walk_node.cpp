@@ -256,8 +256,10 @@ private:
         const int my_gen = ++stand_generation_;
         stand_goals_done_ = 0;
 
-        // Duration for the stand move (nice slow movement to home)
-        const double stand_duration = 2.0; // seconds
+        // Duration for the stand move — slow enough for joints to travel
+        // from 0.0 (spawn position) to standing angles (~0.53 rad tibia)
+        // without exceeding the 1.0 rad position tolerance window.
+        const double stand_duration = 3.0; // seconds (was 2.0, needs more for safety)
 
         for (int i = 0; i < NUM_LEGS; ++i)
         {
@@ -356,7 +358,12 @@ private:
                 // angles via update(dt) above; for intra-block smoothness we rely
                 // on the JTC's own interpolation between waypoints.
                 trajectory_msgs::msg::JointTrajectoryPoint pt;
-                pt.positions  = {t1, t2, t3};
+                // Clamp to ±45° — prevents tolerance abort if IK gives OOB angles
+                pt.positions  = {
+                    clampJoint(i, 0, t1),
+                    clampJoint(i, 1, t2),
+                    clampJoint(i, 2, t3)
+                };
                 pt.velocities = {0.0, 0.0, 0.0};
                 pt.time_from_start = rclcpp::Duration::from_seconds(t_wp);
                 goal_msg.trajectory.points.push_back(pt);
@@ -402,12 +409,19 @@ private:
     }
 
     // ── Core helper: send one FollowJointTrajectory goal to one leg ───────
-    /**
-     * @param leg_index   0-5
-     * @param angles      {theta1, theta2, theta3} in radians (IK output)
-     * @param duration    time in seconds to reach the target
-     * @param on_done     optional callback(bool success) when goal finishes
-     */
+    static constexpr double JOINT_LIMIT = 0.785398;  // ±45° — must match YAML
+
+    // Clamp a single angle to ±JOINT_LIMIT and warn if it was out of range.
+    double clampJoint(int leg, int joint_idx, double angle) const {
+        if (std::abs(angle) > JOINT_LIMIT) {
+            RCLCPP_WARN(this->get_logger(),
+                "Leg %d joint %d angle %.4f rad CLAMPED to ±%.4f",
+                leg, joint_idx, angle, JOINT_LIMIT);
+            return std::copysign(JOINT_LIMIT, angle);
+        }
+        return angle;
+    }
+
     void sendLegGoal(int leg_index,
                      const std::array<double,3>& angles,
                      double duration,
@@ -424,7 +438,12 @@ private:
 
         // Single waypoint at time=duration
         trajectory_msgs::msg::JointTrajectoryPoint pt;
-        pt.positions  = {angles[0], angles[1], angles[2]};
+        // Clamp to ±45° hard limit before sending — prevents tolerance violations
+        pt.positions  = {
+            clampJoint(leg_index, 0, angles[0]),
+            clampJoint(leg_index, 1, angles[1]),
+            clampJoint(leg_index, 2, angles[2])
+        };
         pt.velocities = {0.0, 0.0, 0.0};
         pt.time_from_start = rclcpp::Duration::from_seconds(duration);
         goal_msg.trajectory.points.push_back(pt);

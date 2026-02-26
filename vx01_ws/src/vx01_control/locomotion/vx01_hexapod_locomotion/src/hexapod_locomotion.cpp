@@ -109,46 +109,42 @@ namespace vx01_hexapod_locomotion {
         for (int i = 0; i < 6; ++i) updateLeg(i);
     }
 
-    // updateLeg: get O-frame pos from pattern → apply velocity scaling → IK
+    // updateLeg: map gait pattern output → leg-local IK frame → IK
     //
-    // GaitPattern::getFootPosition now returns in leg-local O-frame:
-    //   o_x = reach along coxa axis (= S, constant)
-    //   o_y = stride forward/backward (±T/2)
-    //   o_z = vertical height (0=ground, +A=peak)
+    // GaitPattern::getFootPosition returns in gait O-frame:
+    //   o_x = reach (= S = track_width_, constant at 108.67mm) — abstract gait unit
+    //   o_y = stride offset along leg axis (±T/2 = ±55mm)
+    //   o_z = vertical lift above ground (0 = ground, +A = peak of swing)
     //
-    // The IK (leg-local frame) expects:
-    //   ik_x = forward reach along coxa X axis
-    //   ik_y = lateral (coxa swing = 0 for straight walk; stride goes into theta1)
-    //   ik_z = vertical height (negative = below coxa pivot = normal standing)
+    // IMPORTANT: o_x = S is the gait-frame "reach depth", which is NOT the
+    // same as the leg-local IK x (home_x_ = 230mm from coxa pivot).
+    // S is an abstract parameter defining the Bezier arc shape.
+    // The actual foot reach in IK space is always home_x_.
     //
-    // Mapping:
-    //   ik_x = o_x  (reach, constant S)
-    //   ik_y = o_y  (stride offset → becomes theta1 via atan2(ik_y, ik_x))
-    //   ik_z = o_z - stand_z  (height above ground → offset by standing height)
-    //
-    // stand_z is negative (foot is below coxa pivot when standing).
-    // o_z=0 → foot at ground → ik_z = stand_z (home)
-    // o_z=A → foot lifted A mm → ik_z = stand_z + A
+    // Leg-local IK frame mapping:
+    //   ik_x = home_x_              (constant reach along coxa axis)
+    //   ik_y = o_y * velocity_scale (stride → coxa swing via theta1 = atan2(ik_y, ik_x))
+    //   ik_z = home_z_ + o_z        (standing height + lift from Bezier)
     void HexapodLocomotion::updateLeg(int leg_index) {
         double block_period = step_period_ / 6.0;
         double t = (block_period > 1e-9) ? (gait_time_ / block_period) : 0.0;
         t = std::max(0.0, std::min(1.0, t));
 
-        // Step 1: O-frame foot position from gait pattern
-        // o_x = reach (S), o_y = stride offset (±T/2), o_z = height (0..A)
+        // Step 1: gait pattern foot position
+        // o_x = S (constant reach, not used directly as IK x)
+        // o_y = stride offset ±T/2
+        // o_z = vertical lift 0..A
         double o_x, o_y, o_z;
         gait_pattern_->getFootPosition(leg_index, t, o_x, o_y, o_z);
 
-        // Step 2: scale stride (o_y) by velocity
-        // nominal speed = T / (2 * block_period) since one block covers half-cycle
+        // Step 2: scale stride by forward velocity
         double nominal_speed = step_length_ / (2.0 * block_period);
         double scale = (nominal_speed > 1e-6) ? (velocity_x_ / nominal_speed) : 0.0;
-        double ik_y = o_y * scale;
 
         // Step 3: map to leg-local IK frame
-        // reach stays as ik_x, height offset from standing position
-        double ik_x = o_x;                       // reach along coxa = S
-        double ik_z = home_z_ + o_z;             // standing height + lift
+        double ik_x = home_x_;               // reach = home reach (NOT S from gait)
+        double ik_y = o_y * scale;            // stride → coxa rotation via theta1
+        double ik_z = home_z_ + o_z;         // standing height + Bezier lift
 
         // Step 4: IK
         applyIK(leg_index, ik_x, ik_y, ik_z);
