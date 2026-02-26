@@ -70,7 +70,7 @@ public:
     static constexpr double STEP_PERIOD    = 3.0;      // s — full 6-block cycle
     static constexpr double HOME_X         = 230.0;    // mm leg-local reach
     static constexpr double HOME_Y         = 0.0;
-    static constexpr double HOME_Z         = -60.0;    // mm standing height
+    static constexpr double HOME_Z         = -40.0;    // mm standing height
     static constexpr double JOINT_LIMIT    = 0.785398; // ±45° rad
     static constexpr double STAND_DURATION = 3.0;      // s for initial stand move
     // Gait params (Bezier shape)
