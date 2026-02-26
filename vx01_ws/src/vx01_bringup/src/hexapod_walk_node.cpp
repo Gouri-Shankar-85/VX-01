@@ -63,7 +63,7 @@ public:
         // Initial posture angles applied before stand IK
         declare_parameter("init_coxa_angle",   0.0);
         declare_parameter("init_femur_angle", -0.785);
-        declare_parameter("init_tibia_angle",  0.6);
+        declare_parameter("init_tibia_angle",  -0.785);
         declare_parameter("init_pose_duration", 2.0);
 
         L1_             = get_parameter("L1").as_double();
