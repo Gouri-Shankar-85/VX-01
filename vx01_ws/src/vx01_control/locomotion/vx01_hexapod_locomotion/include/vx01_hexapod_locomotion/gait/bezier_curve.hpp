@@ -5,6 +5,23 @@ namespace vx01_hexapod_locomotion {
 
     namespace gait {
 
+        // Quadratic Bezier curve used for the swing-phase foot trajectory.
+        //
+        // The curve lives in the leg's O-frame (body-stationary frame):
+        //   - The Y axis points outward along the leg (depth/reach direction)
+        //   - The Z axis points upward
+        //   - The X axis is the forward-walking direction
+        //
+        // Control points (from slide):
+        //   P1 = [-T/2,  S,      0]    -- start  (foot at back of stance)
+        //   P2 = [ 0,    S+2*A,  0]    -- apex   (foot lifted to height A above stance)
+        //   P3 = [ T/2,  S,      0]    -- end    (foot at front of stance)
+        //
+        // where T = stride length (X extent), S = reach depth (Y), A = step height (Z).
+        // Note: Z is stored in the P_z fields; after createSwingTrajectory the curve is
+        // entirely in the X-Y plane of the O-frame.  The caller maps Y→depth, Z→height
+        // via the coordinate convention used in gait_pattern.cpp.
+
         class BezierCurve {
 
             private:
@@ -27,6 +44,8 @@ namespace vx01_hexapod_locomotion {
 
                 void getPoint(double t, double& x, double& y, double& z);
 
+                // Build the swing trajectory control points.
+                // T = stride length, S = reach depth, A = step height.
                 void createSwingTrajectory(double T, double S, double A);
             
         };

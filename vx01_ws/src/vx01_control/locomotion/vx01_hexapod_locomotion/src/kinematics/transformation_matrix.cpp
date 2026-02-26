@@ -19,9 +19,9 @@ namespace vx01_hexapod_locomotion {
         }
 
         void TransformationMatrix::buildFromDH(const DHParameters& dh) {
-            double a = dh.getA();
+            double a     = dh.getA();
             double alpha = dh.getAlpha();
-            double d = dh.getD();
+            double d     = dh.getD();
             double theta = dh.getTheta();
 
             double c_theta = cos(theta);
@@ -29,18 +29,18 @@ namespace vx01_hexapod_locomotion {
             double c_alpha = cos(alpha);
             double s_alpha = sin(alpha);
             
-            // Standard DH transformation matrix
+            // Standard DH transformation matrix  i-1_A_i
             // Row 0
             matrix_[0][0] = c_theta;
             matrix_[0][1] = -s_theta * c_alpha;
-            matrix_[0][2] = s_theta * s_alpha;
-            matrix_[0][3] = a * c_theta;
+            matrix_[0][2] =  s_theta * s_alpha;
+            matrix_[0][3] =  a * c_theta;
             
             // Row 1
             matrix_[1][0] = s_theta;
-            matrix_[1][1] = c_theta * c_alpha;
+            matrix_[1][1] =  c_theta * c_alpha;
             matrix_[1][2] = -c_theta * s_alpha;
-            matrix_[1][3] = a * s_theta;
+            matrix_[1][3] =  a * s_theta;
             
             // Row 2
             matrix_[2][0] = 0.0;
