@@ -38,30 +38,31 @@ namespace vx01_hexapod_locomotion {
             z = term1 * P1z_ + term2 * P2z_ + term3 * P3z_;
         }
 
-        // Build swing-phase control points from slide definition:
+        // Build swing-phase control points.
         //
-        //   P1 = [-T/2,  S,      0]
-        //   P2 = [  0,   S+2*A,  0]    <-- FIX: was "S + 2.0 + A" (wrong), must be S + 2*A
-        //   P3 = [ T/2,  S,      0]
+        // Coordinate convention (leg-local O-frame used by GaitPattern):
+        //   x = reach/depth along coxa axis  (constant = S during swing)
+        //   y = stride forward/backward      (foot sweeps ±T/2 along y)
+        //   z = vertical height              (foot lifts to +A at apex)
         //
-        // In the O-frame (body-stationary) convention used by GaitPattern:
-        //   x  = forward/backward direction  (stride)
-        //   y  = leg depth/reach direction
-        //   z  = 0  (height is encoded in y via the curved apex)
+        // Control points:
+        //   P1 = (S,  -T/2,  0)   -- swing start: foot at rear of stride, on ground
+        //   P2 = (S,   0,    A)   -- swing apex:  foot at mid-stride, lifted to height A
+        //   P3 = (S,  +T/2,  0)   -- swing end:   foot at front of stride, on ground
         //
-        // GaitPattern::getFootPosition maps these back to x,y,z in its own convention.
+        // This correctly encodes: reach=S constant, stride sweeps in Y, height in Z.
         void BezierCurve::createSwingTrajectory(double T, double S, double A) {
 
-            P1x_ = -T / 2.0;
-            P1y_ =  S;
+            P1x_ =  S;
+            P1y_ = -T / 2.0;
             P1z_ =  0.0;
 
-            P2x_ =  0.0;
-            P2y_ =  S + 2.0 * A;   // FIX: S + 2*A  (not S + 2.0 + A)
-            P2z_ =  0.0;
+            P2x_ =  S;
+            P2y_ =  0.0;
+            P2z_ =  A;       // height lift encoded in Z
 
-            P3x_ =  T / 2.0;
-            P3y_ =  S;
+            P3x_ =  S;
+            P3y_ =  T / 2.0;
             P3z_ =  0.0;
         }
     }

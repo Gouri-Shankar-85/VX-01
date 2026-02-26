@@ -14,7 +14,7 @@ namespace vx01_hexapod_locomotion {
           step_length_(110.0),
           step_height_(22.78),
           track_width_(108.67),
-          home_x_(170.0), home_y_(0.0), home_z_(-100.0)
+          home_x_(230.0), home_y_(0.0), home_z_(-60.0)  // within ±45° joint limits
     {
         leg_angles_ = {
              0.0,
@@ -109,27 +109,49 @@ namespace vx01_hexapod_locomotion {
         for (int i = 0; i < 6; ++i) updateLeg(i);
     }
 
-    // updateLeg: get O-frame pos from pattern → scale → bodyToLegFrame → IK
+    // updateLeg: get O-frame pos from pattern → apply velocity scaling → IK
+    //
+    // GaitPattern::getFootPosition now returns in leg-local O-frame:
+    //   o_x = reach along coxa axis (= S, constant)
+    //   o_y = stride forward/backward (±T/2)
+    //   o_z = vertical height (0=ground, +A=peak)
+    //
+    // The IK (leg-local frame) expects:
+    //   ik_x = forward reach along coxa X axis
+    //   ik_y = lateral (coxa swing = 0 for straight walk; stride goes into theta1)
+    //   ik_z = vertical height (negative = below coxa pivot = normal standing)
+    //
+    // Mapping:
+    //   ik_x = o_x  (reach, constant S)
+    //   ik_y = o_y  (stride offset → becomes theta1 via atan2(ik_y, ik_x))
+    //   ik_z = o_z - stand_z  (height above ground → offset by standing height)
+    //
+    // stand_z is negative (foot is below coxa pivot when standing).
+    // o_z=0 → foot at ground → ik_z = stand_z (home)
+    // o_z=A → foot lifted A mm → ik_z = stand_z + A
     void HexapodLocomotion::updateLeg(int leg_index) {
         double block_period = step_period_ / 6.0;
         double t = (block_period > 1e-9) ? (gait_time_ / block_period) : 0.0;
         t = std::max(0.0, std::min(1.0, t));
 
         // Step 1: O-frame foot position from gait pattern
+        // o_x = reach (S), o_y = stride offset (±T/2), o_z = height (0..A)
         double o_x, o_y, o_z;
         gait_pattern_->getFootPosition(leg_index, t, o_x, o_y, o_z);
 
-        // Step 2: scale stride by velocity
+        // Step 2: scale stride (o_y) by velocity
+        // nominal speed = T / (2 * block_period) since one block covers half-cycle
         double nominal_speed = step_length_ / (2.0 * block_period);
-        double scale_x = (nominal_speed > 1e-6) ? (velocity_x_ / nominal_speed) : 1.0;
-        o_x *= scale_x;
+        double scale = (nominal_speed > 1e-6) ? (velocity_x_ / nominal_speed) : 0.0;
+        double ik_y = o_y * scale;
 
-        // Step 3: O-frame → leg-local frame
-        double leg_x, leg_y, leg_z;
-        leg_controllers_[leg_index]->bodyToLegFrame(o_x, o_y, o_z, leg_x, leg_y, leg_z);
+        // Step 3: map to leg-local IK frame
+        // reach stays as ik_x, height offset from standing position
+        double ik_x = o_x;                       // reach along coxa = S
+        double ik_z = home_z_ + o_z;             // standing height + lift
 
         // Step 4: IK
-        applyIK(leg_index, leg_x, leg_y, leg_z);
+        applyIK(leg_index, ik_x, ik_y, ik_z);
     }
 
     // calculateFootTarget: satisfies hpp declaration, delegates to gait_pattern_
@@ -215,4 +237,4 @@ namespace vx01_hexapod_locomotion {
         x = home_x_; y = home_y_; z = home_z_;
     }
 
-} 
+}

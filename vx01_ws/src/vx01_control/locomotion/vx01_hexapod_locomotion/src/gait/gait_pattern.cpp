@@ -106,60 +106,54 @@ namespace vx01_hexapod_locomotion {
         // =====================================================================
         // getFootPosition
         //
-        // Returns foot position in the O-frame (body-stationary frame).
+        // Returns foot position in the leg-local O-frame:
+        //   x = reach along coxa axis (= S, constant during all phases)
+        //   y = stride forward/backward (sweeps ±T/2)
+        //   z = vertical height above ground level (0 = ground, +A = peak lift)
         //
-        // time_in_block: normalised time within the current block [0, 1].
+        // SWING phases (LIFT_UP, LIFT_DOWN):
+        //   Traces the Bezier curve P1=(S,-T/2,0) P2=(S,0,A) P3=(S,+T/2,0)
+        //   LIFT_UP   : Bezier t = 0.0 → 0.5  (rear to apex)
+        //   LIFT_DOWN : Bezier t = 0.5 → 1.0  (apex to front)
         //
-        // LIFT_UP:
-        //   Traces the 1st half of the Bezier swing curve (t: 0.0 → 0.5).
-        //   At t=0   foot is at the rear start position   (-T/2, S, 0).
-        //   At t=0.5 foot is at the apex (extended outward) (0, S+2A, 0).
-        //
-        // LIFT_DOWN:
-        //   Traces the 2nd half of the Bezier swing curve (t: 0.5 → 1.0).
-        //   At t=0.5 foot is at apex (0, S+2A, 0).
-        //   At t=1.0 foot is at front position (T/2, S, 0).
-        //
-        // DRAG:
-        //   Foot moves linearly along x from +T/2 back to -T/2 at depth S.
-        //   (Foot is on the ground, body moves forward over it.)
+        // DRAG (stance):
+        //   Foot on ground (z=0), sweeps from front (+T/2) to rear (-T/2) in y.
+        //   Reach stays at S.
         //
         // HOLD:
-        //   Foot stays at home: (0, S, 0).
-        //   In a full implementation each leg would hold its last known position;
-        //   for the standard forward tripod gait this is equivalent.
+        //   Foot stationary at home: (S, 0, 0).
         // =====================================================================
         void GaitPattern::getFootPosition(int leg_id, double time_in_block,
                                           double& x, double& y, double& z) {
             
             LegPhase phase = getLegPhase(leg_id);
-
             double t = time_in_block < 0.0 ? 0.0 : (time_in_block > 1.0 ? 1.0 : time_in_block);
 
             switch (phase) {
 
                 case LegPhase::LIFT_UP:
-                    // 1st half of swing Bezier: Bezier parameter t_b goes 0.0 → 0.5
+                    // 1st half of swing Bezier: t_bezier goes 0.0 → 0.5
                     swing_curve_.getPoint(t * 0.5, x, y, z);
                     break;
 
                 case LegPhase::LIFT_DOWN:
-                    // 2nd half of swing Bezier: Bezier parameter t_b goes 0.5 → 1.0
+                    // 2nd half of swing Bezier: t_bezier goes 0.5 → 1.0
                     swing_curve_.getPoint(0.5 + t * 0.5, x, y, z);
                     break;
 
                 case LegPhase::DRAG:
-                    // Stance: foot slides from front (+T/2) to rear (-T/2) at depth S
-                    x =  (T_ / 2.0) - t * T_;
-                    y =  S_;
+                    // Stance: foot slides from front (+T/2) to rear (-T/2) along y
+                    // Reach stays at S, foot stays on ground (z=0)
+                    x =  S_;
+                    y =  (T_ / 2.0) - t * T_;
                     z =  0.0;
                     break;
 
                 case LegPhase::HOLD:
                 default:
                     // Hold at neutral home position
-                    x = 0.0;
-                    y = S_;
+                    x = S_;
+                    y = 0.0;
                     z = 0.0;
                     break;
             }

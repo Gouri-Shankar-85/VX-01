@@ -60,7 +60,10 @@ namespace vx01_hexapod_locomotion {
 
             double phi1 = std::acos(cos_phi1);
 
-            theta2 = phi1 + phi2;
+            // ELBOW-UP solution: femur angles downward, tibia angles back up.
+            // Elbow-down (phi1+phi2) causes theta3 to violate ±45° joint limits.
+            // Elbow-up: theta2 = phi2 - phi1 (femur dips below horizontal)
+            theta2 = phi2 - phi1;
 
             // Step 5: phi3 via cosine rule (r1 opposite side)
             numerator   = r1*r1 - L2_*L2_ - L3_*L3_;
@@ -78,7 +81,8 @@ namespace vx01_hexapod_locomotion {
 
             double phi3 = std::acos(cos_phi3);
 
-            theta3 = -(M_PI - phi3);
+            // ELBOW-UP: tibia angles positively back toward body (within ±45°)
+            theta3 = M_PI - phi3;
 
             return true;
         }

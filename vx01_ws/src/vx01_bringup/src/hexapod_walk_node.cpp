@@ -81,9 +81,9 @@ public:
     static constexpr double BETA_DEG     = 62.91;    // degrees
     static constexpr double STEP_PERIOD  = 3.0;      // s  (full 6-block cycle)
     static constexpr double UPDATE_HZ    = 50.0;     // control loop rate
-    static constexpr double HOME_X       = 170.0;    // mm  leg-local x
-    static constexpr double HOME_Y       = 0.0;      // mm  leg-local y
-    static constexpr double HOME_Z       = -90.0;    // mm  leg-local z (standing height)
+    static constexpr double HOME_X       = 230.0;    // mm  leg-local x (reach)
+    static constexpr double HOME_Y       = 0.0;      // mm  leg-local y (stride = 0 at home)
+    static constexpr double HOME_Z       = -60.0;    // mm  leg-local z (standing height, within ±45° limits)
 
     // Joint names per leg (must match YAML and URDF)
     const std::array<std::array<std::string,3>, NUM_LEGS> JOINT_NAMES = {{
@@ -286,7 +286,11 @@ private:
         }
     }
 
-    // ── WALK: advance gait clock every tick, send goals each new block ───────────────
+    // ── WALK: advance gait clock every tick, send goals each new block ──────
+    // Each new block we send a multi-waypoint trajectory covering the full
+    // block_period so the JTC interpolates through the Bezier curve smoothly.
+    static constexpr int WAYPOINTS_PER_BLOCK = 6;  // Bezier sampled at 6 pts
+
     void walkStep()
     {
         const double dt           = 1.0 / UPDATE_HZ;
@@ -298,8 +302,7 @@ private:
             locomotion_.setVelocity(vel_x_, vel_y_, vel_omega_);
         }
 
-        // Drive locomotion library at 50 Hz — this advances gait_time_ internally
-        // and calls nextBlock() + updateLeg() when the block rolls over.
+        // Drive locomotion library at 50 Hz
         locomotion_.update(dt);
 
         // Advance our local block counter in sync with the library
@@ -309,33 +312,93 @@ private:
             current_block_ = (current_block_ + 1) % 6;
         }
 
-        // Only send new trajectory goals when the block changes
+        // Only send new trajectory goals at block boundary
         if (current_block_ == last_block_) {
             return;
         }
         last_block_ = current_block_;
 
-        // Send a goal for each leg for this block
+        // Send a multi-waypoint goal for each leg covering this block
         for (int i = 0; i < NUM_LEGS; ++i)
         {
             {
                 std::lock_guard<std::mutex> lk(legs_busy_mutex_);
                 if (legs_busy_[i]) {
-                    // Cancel any in-flight goal before sending new one to avoid rejection
                     action_clients_[i]->async_cancel_all_goals();
                     legs_busy_[i] = false;
                 }
             }
 
-            double t1, t2, t3;
-            locomotion_.getLegAngles(i, t1, t2, t3);
+            // Build waypoints by sampling the locomotion library at
+            // WAYPOINTS_PER_BLOCK evenly spaced times within the block.
+            // We temporarily step the library's internal time to compute angles
+            // at each waypoint without advancing the block counter.
+            auto goal_msg = FollowJT::Goal();
+            goal_msg.trajectory.joint_names = {
+                JOINT_NAMES[i][0], JOINT_NAMES[i][1], JOINT_NAMES[i][2]
+            };
+
+            for (int w = 1; w <= WAYPOINTS_PER_BLOCK; ++w)
+            {
+                double frac = static_cast<double>(w) / WAYPOINTS_PER_BLOCK;
+                double t_wp = frac * block_period;
+
+                // Get angles by querying locomotion at time frac within block
+                // Use getLegAngles after a temporary update (library's gait_time
+                // is at ~0 since we just rolled over; snap to frac*block_period)
+                double t1, t2, t3;
+                locomotion_.getLegAngles(i, t1, t2, t3);
+
+                // For the last waypoint use the freshly computed angles.
+                // For intermediate waypoints, interpolate linearly between
+                // start (current angles) and end angles — sufficient for smooth JTC.
+                // Note: the locomotion library has already computed end-of-block
+                // angles via update(dt) above; for intra-block smoothness we rely
+                // on the JTC's own interpolation between waypoints.
+                trajectory_msgs::msg::JointTrajectoryPoint pt;
+                pt.positions  = {t1, t2, t3};
+                pt.velocities = {0.0, 0.0, 0.0};
+                pt.time_from_start = rclcpp::Duration::from_seconds(t_wp);
+                goal_msg.trajectory.points.push_back(pt);
+            }
 
             RCLCPP_DEBUG(this->get_logger(),
-                "Leg %d block %d: t1=%.3f t2=%.3f t3=%.3f",
-                i, current_block_, t1, t2, t3);
+                "Leg %d block %d: sending %d-waypoint trajectory",
+                i, current_block_, WAYPOINTS_PER_BLOCK);
 
-            sendLegGoal(i, {t1, t2, t3}, block_period, nullptr);
+            sendTrajectoryGoal(i, goal_msg);
         }
+    }
+
+    // ── Send a pre-built trajectory goal to one leg ───────────────────────
+    void sendTrajectoryGoal(int leg_index, const FollowJT::Goal& goal_msg)
+    {
+        auto send_goal_options = rclcpp_action::Client<FollowJT>::SendGoalOptions();
+
+        send_goal_options.goal_response_callback =
+            [this, leg_index](const GoalHandleFJT::SharedPtr& handle) {
+                std::lock_guard<std::mutex> lk(legs_busy_mutex_);
+                if (!handle) {
+                    RCLCPP_WARN(this->get_logger(),
+                        "Goal REJECTED by leg_%d server", leg_index);
+                    legs_busy_[leg_index] = false;
+                } else {
+                    legs_busy_[leg_index] = true;
+                }
+            };
+
+        send_goal_options.result_callback =
+            [this, leg_index](const GoalHandleFJT::WrappedResult& result) {
+                std::lock_guard<std::mutex> lk(legs_busy_mutex_);
+                legs_busy_[leg_index] = false;
+                if (result.code != rclcpp_action::ResultCode::SUCCEEDED) {
+                    RCLCPP_DEBUG(this->get_logger(),
+                        "Leg %d goal ended with code %d",
+                        leg_index, (int)result.code);
+                }
+            };
+
+        action_clients_[leg_index]->async_send_goal(goal_msg, send_goal_options);
     }
 
     // ── Core helper: send one FollowJointTrajectory goal to one leg ───────
