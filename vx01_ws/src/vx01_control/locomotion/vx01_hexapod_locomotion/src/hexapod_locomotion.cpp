@@ -10,11 +10,11 @@ namespace vx01_hexapod_locomotion {
           body_radius_(body_radius), beta_angle_(beta_angle),
           state_(LocomotionState::STOPPED),
           velocity_x_(0.0), velocity_y_(0.0), velocity_omega_(0.0),
-          gait_time_(0.0), step_period_(4.0),   // FIXED: was 3.0
-          step_length_(80.0),                    // FIXED: was 110.0
-          step_height_(20.0),                    // FIXED: was 22.78
+          gait_time_(0.0), step_period_(4.0),
+          step_length_(80.0),
+          step_height_(20.0),
           track_width_(108.67),
-          home_x_(230.0), home_y_(0.0), home_z_(-60.0)  // FIXED: was -40 in node
+          home_x_(230.0), home_y_(0.0), home_z_(-60.0)
     {
         leg_angles_ = {
              0.0,
@@ -30,10 +30,6 @@ namespace vx01_hexapod_locomotion {
 
         initializeLegControllers();
         current_joint_angles_.resize(18, 0.0);
-
-        std::cout << "[HexapodLocomotion] Initialized L1=" << L1_
-                  << " L2=" << L2_ << " L3=" << L3_
-                  << " home_z=" << home_z_ << "\n";
     }
 
     HexapodLocomotion::~HexapodLocomotion() { stop(); }
@@ -53,21 +49,19 @@ namespace vx01_hexapod_locomotion {
     }
 
     void HexapodLocomotion::applyIK(int leg_index,
-                                    double foot_x, double foot_y, double foot_z)
-    {
+                                    double foot_x, double foot_y, double foot_z) {
         bool ok = leg_controllers_[leg_index]->setFootPosition(foot_x, foot_y, foot_z);
         if (!ok) {
             std::cerr << "[HexapodLocomotion] IK failed leg=" << leg_index
                       << " (" << foot_x << "," << foot_y << "," << foot_z << ")\n";
             return;
         }
-        current_joint_angles_[leg_index * 3 + 0] = leg_controllers_[leg_index]->getTheta1();
-        current_joint_angles_[leg_index * 3 + 1] = leg_controllers_[leg_index]->getTheta2();
-        current_joint_angles_[leg_index * 3 + 2] = leg_controllers_[leg_index]->getTheta3();
+        current_joint_angles_[leg_index*3+0] = leg_controllers_[leg_index]->getTheta1();
+        current_joint_angles_[leg_index*3+1] = leg_controllers_[leg_index]->getTheta2();
+        current_joint_angles_[leg_index*3+2] = leg_controllers_[leg_index]->getTheta3();
     }
 
     void HexapodLocomotion::stand() {
-        std::cout << "[HexapodLocomotion] Stand\n";
         state_ = LocomotionState::STANDING;
         velocity_x_ = velocity_y_ = velocity_omega_ = 0.0;
         gait_time_ = 0.0;
@@ -78,14 +72,12 @@ namespace vx01_hexapod_locomotion {
     }
 
     void HexapodLocomotion::walk() {
-        std::cout << "[HexapodLocomotion] Walk vx=" << velocity_x_ << "\n";
         state_ = LocomotionState::WALKING;
         gait_time_ = 0.0;
         gait_pattern_->reset();
     }
 
     void HexapodLocomotion::stop() {
-        std::cout << "[HexapodLocomotion] Stop\n";
         state_ = LocomotionState::STOPPED;
         velocity_x_ = velocity_y_ = velocity_omega_ = 0.0;
     }
@@ -118,53 +110,26 @@ namespace vx01_hexapod_locomotion {
         double t = (block_period > 1e-9) ? (gait_time_ / block_period) : 0.0;
         t = std::max(0.0, std::min(1.0, t));
 
-        double o_x, o_y, o_z;
-        gait_pattern_->getFootPosition(leg_index, t, o_x, o_y, o_z);
+        // gait_pattern returns in leg-local O-frame:
+        //   gait_x = reach (= S, constant)
+        //   gait_y = stride offset in [-T/2, +T/2]
+        //   gait_z = height above ground [0, A]
+        double gait_x, gait_y, gait_z;
+        gait_pattern_->getFootPosition(leg_index, t, gait_x, gait_y, gait_z);
 
-        double nominal_speed = step_length_ / (2.0 * block_period);
+        // Scale stride by velocity ratio
+        double nominal_speed = step_length_ / (step_period_ * 0.5);
         double scale = (nominal_speed > 1e-6) ? (velocity_x_ / nominal_speed) : 0.0;
 
-        double ik_x = home_x_;
-        double ik_y = o_y * scale;
-        double ik_z = home_z_ + o_z;
+        // Final IK target in leg-local frame:
+        //   x = home reach (gait_x from pattern, already = S)
+        //   y = scaled stride offset
+        //   z = standing height + gait lift
+        double ik_x = gait_x;
+        double ik_y = gait_y * scale;
+        double ik_z = home_z_ + gait_z;
 
         applyIK(leg_index, ik_x, ik_y, ik_z);
-    }
-
-    void HexapodLocomotion::calculateFootTarget(int leg_index, double phase,
-                                                double& x, double& y, double& z)
-    {
-        int saved_block = gait_pattern_->getCurrentBlock();
-        int block_index   = static_cast<int>(phase * 6.0) % 6;
-        double t_in_block = std::fmod(phase * 6.0, 1.0);
-
-        gait_pattern_->reset();
-        for (int b = 0; b < block_index; ++b) gait_pattern_->nextBlock();
-        gait_pattern_->getFootPosition(leg_index, t_in_block, x, y, z);
-
-        gait_pattern_->reset();
-        for (int b = 0; b < saved_block; ++b) gait_pattern_->nextBlock();
-    }
-
-    void HexapodLocomotion::transformVelocity(int leg_index,
-                                              double vx, double vy,
-                                              double& local_vx, double& local_vy)
-    {
-        double a     = leg_angles_[leg_index];
-        double cos_a = std::cos(a), sin_a = std::sin(a);
-        local_vx =  vx * cos_a + vy * sin_a;
-        local_vy = -vx * sin_a + vy * cos_a;
-        double base_x, base_y;
-        getLegBasePosition(leg_index, base_x, base_y);
-        local_vx += -velocity_omega_ * base_y;
-        local_vy +=  velocity_omega_ * base_x;
-    }
-
-    void HexapodLocomotion::getLegBasePosition(int leg_index,
-                                               double& base_x, double& base_y)
-    {
-        base_x = body_radius_ * std::cos(leg_angles_[leg_index]);
-        base_y = body_radius_ * std::sin(leg_angles_[leg_index]);
     }
 
     std::vector<double> HexapodLocomotion::getJointAngles() const {
@@ -172,24 +137,15 @@ namespace vx01_hexapod_locomotion {
     }
 
     void HexapodLocomotion::getLegAngles(int leg_index,
-                                         double& theta1, double& theta2, double& theta3) const
-    {
+                                         double& theta1, double& theta2, double& theta3) const {
         if (leg_index < 0 || leg_index >= 6) { theta1=theta2=theta3=0.0; return; }
-        theta1 = current_joint_angles_[leg_index * 3 + 0];
-        theta2 = current_joint_angles_[leg_index * 3 + 1];
-        theta3 = current_joint_angles_[leg_index * 3 + 2];
+        theta1 = current_joint_angles_[leg_index*3+0];
+        theta2 = current_joint_angles_[leg_index*3+1];
+        theta3 = current_joint_angles_[leg_index*3+2];
     }
 
-    void HexapodLocomotion::setStepLength(double length) {
-        step_length_ = length;
-        rebuildGaitPattern();
-    }
-
-    void HexapodLocomotion::setStepHeight(double height) {
-        step_height_ = height;
-        rebuildGaitPattern();
-    }
-
+    void HexapodLocomotion::setStepLength(double length) { step_length_ = length; rebuildGaitPattern(); }
+    void HexapodLocomotion::setStepHeight(double height) { step_height_ = height; rebuildGaitPattern(); }
     void HexapodLocomotion::setStepPeriod(double period) { step_period_ = period; }
 
     double HexapodLocomotion::getStepLength() const { return step_length_; }

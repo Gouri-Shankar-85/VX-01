@@ -1,0 +1,40 @@
+/**:
+  ros__parameters:
+
+    # Robot kinematics (mm)
+    L1: 60.55
+    L2: 73.84
+    L3: 112.16
+    body_radius: 100.0
+    beta_deg:     62.91
+
+    # Home standing position in leg-local frame (mm)
+    # x = reach along coxa axis, z = height below coxa pivot (negative = down)
+    home_x: 230.0
+    home_y:   0.0
+    home_z:  -60.0
+
+    # Initial posture angles (radians) — applied before standing IK.
+    # Robot moves to this pose first, then transitions to IK-computed stand.
+    # coxa=0 keeps legs symmetric, femur=-0.785 lowers femur, tibia=0.6 tucks tibia.
+    init_coxa_angle:    0.0
+    init_femur_angle:  -0.785
+    init_tibia_angle:   0.6
+    init_pose_duration: 2.0
+
+    # Gait timing
+    step_period:    4.0      # full 6-block cycle in seconds
+    stride_length: 80.0      # total stride in mm
+    step_height:   20.0      # foot lift height in mm
+
+    # Trajectory
+    traj_hz: 50              # waypoints per second
+
+    # Joint limits (must match joint_limits.yaml)
+    joint_limit_rad: 0.7854  # +/- 45 deg
+
+    # Stand transition duration (seconds)
+    stand_duration: 3.0
+
+    # Velocity debounce threshold (mm/s) — prevents goal spam on small vel changes
+    vel_debounce_threshold: 5.0
