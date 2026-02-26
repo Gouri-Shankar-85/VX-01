@@ -148,6 +148,8 @@ private:
 
     // ── Analytical IK (elbow-up) in leg-local frame ──────────────────────
     // Uses L2^2 in cosine rule for phi1 (not L3^2 as was wrong in original)
+    static constexpr double TIBIA_FIXED = -0.78;  // tibia always at this angle
+
     bool ikEU(double xp, double yp, double zp,
               double& t1, double& t2, double& t3) const
     {
@@ -264,7 +266,7 @@ private:
             }
 
             trajectory_msgs::msg::JointTrajectoryPoint pt;
-            pt.positions  = { clamp(t1), clamp(t2), clamp(t3) };
+            pt.positions  = { clamp(t1), clamp(t2), TIBIA_FIXED };  // tibia fixed at -0.78
             pt.velocities = { 0.0, 0.0, 0.0 };
             pt.time_from_start = rclcpp::Duration::from_seconds(t_abs);
             goal.trajectory.points.push_back(pt);
@@ -329,7 +331,7 @@ private:
                 JOINT_NAMES[i][0], JOINT_NAMES[i][1], JOINT_NAMES[i][2]
             };
             trajectory_msgs::msg::JointTrajectoryPoint pt;
-            pt.positions  = { clamp(init_coxa_), clamp(init_femur_), clamp(init_tibia_) };
+            pt.positions  = { clamp(init_coxa_), clamp(init_femur_), TIBIA_FIXED };  // tibia fixed at -0.78
             pt.velocities = { 0.0, 0.0, 0.0 };
             pt.time_from_start = rclcpp::Duration::from_seconds(init_pose_dur_);
             goal.trajectory.points.push_back(pt);
@@ -364,7 +366,7 @@ private:
                 JOINT_NAMES[i][0], JOINT_NAMES[i][1], JOINT_NAMES[i][2]
             };
             trajectory_msgs::msg::JointTrajectoryPoint pt;
-            pt.positions  = { clamp(t1), clamp(t2), clamp(t3) };
+            pt.positions  = { clamp(t1), clamp(t2), TIBIA_FIXED };  // tibia fixed at -0.78
             pt.velocities = { 0.0, 0.0, 0.0 };
             pt.time_from_start = rclcpp::Duration::from_seconds(stand_duration_);
             goal.trajectory.points.push_back(pt);
