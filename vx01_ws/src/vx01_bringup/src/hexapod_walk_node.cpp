@@ -63,7 +63,7 @@ public:
         // Initial posture angles applied before stand IK
         declare_parameter("init_coxa_angle",   0.0);
         declare_parameter("init_femur_angle", -0.785);
-        declare_parameter("init_tibia_angle",  -0.785);
+        declare_parameter("init_tibia_angle",  0.6);
         declare_parameter("init_pose_duration", 2.0);
 
         L1_             = get_parameter("L1").as_double();
@@ -148,8 +148,6 @@ private:
 
     // ── Analytical IK (elbow-up) in leg-local frame ──────────────────────
     // Uses L2^2 in cosine rule for phi1 (not L3^2 as was wrong in original)
-    static constexpr double TIBIA_FIXED = -0.78;  // tibia always at this angle
-
     bool ikEU(double xp, double yp, double zp,
               double& t1, double& t2, double& t3) const
     {
@@ -185,6 +183,45 @@ private:
         return (std::abs(t1) <= joint_limit_ &&
                 std::abs(t2) <= joint_limit_ &&
                 std::abs(t3) <= joint_limit_);
+    }
+
+    // ── 2-DOF IK: solve coxa (t1) and femur (t2) with tibia FIXED at TIBIA_FIXED ──
+    // With tibia fixed, femur+tibia act as ONE rigid virtual link of length Lv at
+    // angle (t2 + alpha) where:
+    //   Lv    = sqrt(L2^2 + L3^2 + 2*L2*L3*cos(t3))
+    //   alpha = atan2(L3*sin(t3), L2 + L3*cos(t3))
+    // So: t2 = atan2(z, r) - alpha   (single rigid link, no cosine rule needed)
+    static constexpr double TIBIA_FIXED = -0.78;
+
+    bool ikFixed(double xp, double yp, double zp,
+                 double& t1, double& t2) const
+    {
+        // Coxa yaw
+        t1 = std::atan2(yp, xp);
+        double ct1 = std::cos(t1);
+        if (std::abs(ct1) < 1e-9) return false;
+
+        // Distance in leg plane after subtracting coxa length L1
+        double r = xp / ct1 - L1_;
+        double z = zp;
+
+        // Virtual rigid link properties for fixed tibia
+        double t3    = TIBIA_FIXED;
+        double Lv    = std::sqrt(L2_*L2_ + L3_*L3_ + 2.0*L2_*L3_*std::cos(t3));
+        double alpha = std::atan2(L3_*std::sin(t3), L2_ + L3_*std::cos(t3));
+
+        // Check reach
+        double d = std::sqrt(r*r + z*z);
+        if (d > Lv * 0.99) {
+            double sc = (Lv * 0.99) / d;
+            r *= sc; z *= sc;
+        }
+
+        // Solve: virtual link points directly at foot
+        t2 = std::atan2(z, r) - alpha;
+
+        return (std::abs(t1) <= joint_limit_ &&
+                std::abs(t2) <= joint_limit_);
     }
 
     double clamp(double a) const {
@@ -236,9 +273,9 @@ private:
         double dt = 1.0 / static_cast<double>(traj_hz_);
         int    n  = static_cast<int>(std::ceil(step_period_ * traj_hz_));
 
-        // Precompute home IK for fallback
-        double h1=0.0, h2=0.0, h3=0.0;
-        ikEU(home_x_, 0.0, home_z_, h1, h2, h3);
+        // Precompute home angles for fallback using 2-DOF IK
+        double h1=0.0, h2=0.0;
+        ikFixed(home_x_, 0.0, home_z_, h1, h2);
 
         FollowJT::Goal goal;
         goal.trajectory.joint_names = {
@@ -257,16 +294,16 @@ private:
             double ik_y = stride * scale;
             double ik_z = home_z_ + lift;
 
-            double t1, t2, t3;
-            if (!ikEU(ik_x, ik_y, ik_z, t1, t2, t3)) {
-                t1 = h1; t2 = h2; t3 = h3;
+            double t1, t2;
+            if (!ikFixed(ik_x, ik_y, ik_z, t1, t2)) {
+                t1 = h1; t2 = h2;
                 RCLCPP_WARN_THROTTLE(get_logger(), *clock_, 2000,
                     "IK fallback leg=%d t=%.2f (%.1f,%.1f,%.1f)",
                     leg, t_abs, ik_x, ik_y, ik_z);
             }
 
             trajectory_msgs::msg::JointTrajectoryPoint pt;
-            pt.positions  = { clamp(t1), clamp(t2), TIBIA_FIXED };  // tibia fixed at -0.78
+            pt.positions  = { clamp(t1), clamp(t2), TIBIA_FIXED };
             pt.velocities = { 0.0, 0.0, 0.0 };
             pt.time_from_start = rclcpp::Duration::from_seconds(t_abs);
             goal.trajectory.points.push_back(pt);
@@ -331,7 +368,7 @@ private:
                 JOINT_NAMES[i][0], JOINT_NAMES[i][1], JOINT_NAMES[i][2]
             };
             trajectory_msgs::msg::JointTrajectoryPoint pt;
-            pt.positions  = { clamp(init_coxa_), clamp(init_femur_), TIBIA_FIXED };  // tibia fixed at -0.78
+            pt.positions  = { clamp(init_coxa_), clamp(init_femur_), TIBIA_FIXED };
             pt.velocities = { 0.0, 0.0, 0.0 };
             pt.time_from_start = rclcpp::Duration::from_seconds(init_pose_dur_);
             goal.trajectory.points.push_back(pt);
@@ -358,15 +395,16 @@ private:
         locomotion_->stand();
 
         for (int i = 0; i < NUM_LEGS; ++i) {
-            double t1, t2, t3;
-            locomotion_->getLegAngles(i, t1, t2, t3);
+            // Use 2-DOF IK with fixed tibia for stand position
+            double t1, t2;
+            ikFixed(home_x_, 0.0, home_z_, t1, t2);
 
             FollowJT::Goal goal;
             goal.trajectory.joint_names = {
                 JOINT_NAMES[i][0], JOINT_NAMES[i][1], JOINT_NAMES[i][2]
             };
             trajectory_msgs::msg::JointTrajectoryPoint pt;
-            pt.positions  = { clamp(t1), clamp(t2), TIBIA_FIXED };  // tibia fixed at -0.78
+            pt.positions  = { clamp(t1), clamp(t2), TIBIA_FIXED };
             pt.velocities = { 0.0, 0.0, 0.0 };
             pt.time_from_start = rclcpp::Duration::from_seconds(stand_duration_);
             goal.trajectory.points.push_back(pt);
