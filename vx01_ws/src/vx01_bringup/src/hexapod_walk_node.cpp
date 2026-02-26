@@ -1,50 +1,38 @@
 /**
  * hexapod_walk_node.cpp
  *
- * ROS 2 Humble node for VX-01 hexapod locomotion.
+ * ROS 2 node for VX-01 hexapod locomotion.
  *
- * Architecture
- * ─────────────
- *  • Uses the vx01_hexapod_locomotion library (IK + gait pattern).
- *  • Sends joint-position goals via six FollowJointTrajectory ACTION CLIENTS
- *    (one per leg controller) — the method confirmed to work on this robot.
- *  • Subscribes to /cmd_vel (geometry_msgs/Twist) for velocity commands
- *    from the teleop keyboard node.
+ * Architecture — Full-Cycle Trajectory Streaming
+ * ───────────────────────────────────────────────
+ * Previous approach sent a new goal every block_period (0.5 s) and
+ * cancelled in-flight goals at each block boundary.  This caused every
+ * trajectory to be aborted ~100 ms after sending — legs never moved.
  *
- * Start-up sequence
- * ──────────────────
- *  1. INIT  : Wait for all six action servers to become available.
- *  2. STAND : Send all legs to the home (standing) position and wait for
- *             completion before starting the gait loop.
- *  3. WALK  : Run a 50 Hz timer that drives the gait pattern, computes IK,
- *             and sends one FollowJointTrajectory goal per leg per block
- *             (every block_period seconds).
+ * Correct approach:
+ *   1. Compute ONE trajectory per leg covering a FULL gait cycle
+ *      (step_period = 3 s) sampled at TRAJ_HZ = 30 Hz → 90 waypoints.
+ *   2. Send that goal once per leg.  The JTC's spline interpolator
+ *      follows the complete smooth Bezier arc with ZERO cancellations.
+ *   3. When the goal COMPLETES (3 s later), auto-loop for next cycle.
+ *   4. When velocity changes: cancel current goals, resend new cycle.
+ *   5. When stop: cancel + send stand goal.
  *
- * Joint naming (from xacro files)
- * ────────────────────────────────
- *  leg_N_controller controls: [coxa_legN_joint, femur_legN_joint, tibia_legN_joint]
- *  N = 0 … 5
+ * Tripod gait (6 blocks per cycle, block_period = step_period/6 = 0.5 s):
+ *   Legs 0,2,4:  LIFT_UP | HOLD | LIFT_DOWN | HOLD | DRAG | HOLD
+ *   Legs 1,3,5:  HOLD    | DRAG | HOLD      | LIFT_UP | HOLD | LIFT_DOWN
  *
- * Angle convention
- * ─────────────────
- *  IK angles (theta1, theta2, theta3) are sent DIRECTLY to the JointTrajectoryController.
- *  The URDF axis="0 0 -1" on femur and tibia is already accounted for inside the
- *  DH / IK model — the simulation accepts these values and produces correct motion.
+ * Bezier swing trajectory (in stride/height space):
+ *   P1=(−T/2, 0)  P2=(0, A)  P3=(+T/2, 0)
+ *   where  T=stride length, A=step height
+ *   x=foot position along stride axis, z=vertical lift
  *
- * Robot dimensions (from engineering drawings)
- * ──────────────────────────────────────────────
- *  L1 = 60.55 mm  (coxa)
- *  L2 = 73.84 mm  (femur)
- *  L3 = 112.16 mm (tibia)
- *  body_radius = 100 mm
- *  beta_angle  = 62.91 deg = 1.0977 rad
+ * IK mapping (leg-local frame):
+ *   ik_x = HOME_X (constant reach along coxa axis)
+ *   ik_y = stride_offset * velocity_scale  (→ theta1 coxa swing)
+ *   ik_z = HOME_Z + vertical_lift           (→ theta2/3 femur+tibia)
  *
- * Gait parameters (from bezier_curve engineering drawing)
- * ─────────────────────────────────────────────────────────
- *  S (reach depth / track_width) = 108.67 mm
- *  T (stride length / step_length) = 110.00 mm
- *  A (step height) = 22.78 mm
- *  block_period = step_period / 6  (default step_period = 3.0 s)
+ * Joint limits (±45° = ±0.7854 rad, from YAML hardware_interface limits)
  */
 
 #include <rclcpp/rclcpp.hpp>
@@ -58,11 +46,10 @@
 #include <string>
 #include <memory>
 #include <functional>
-#include <atomic>
 #include <mutex>
 #include <cmath>
+#include <algorithm>
 
-// ── Locomotion library ────────────────────────────────────────────────────
 #include "vx01_hexapod_locomotion/hexapod_locomotion.hpp"
 
 using FollowJT      = control_msgs::action::FollowJointTrajectory;
@@ -72,21 +59,38 @@ using GoalHandleFJT = rclcpp_action::ClientGoalHandle<FollowJT>;
 class HexapodWalkNode : public rclcpp::Node
 {
 public:
-    // ── Constants ────────────────────────────────────────────────────────
-    static constexpr int    NUM_LEGS     = 6;
-    static constexpr double L1           = 60.55;    // mm coxa
-    static constexpr double L2           = 73.84;    // mm femur
-    static constexpr double L3           = 112.16;   // mm tibia
-    static constexpr double BODY_RADIUS  = 100.0;    // mm
-    static constexpr double BETA_DEG     = 62.91;    // degrees
-    static constexpr double STEP_PERIOD  = 3.0;      // s  (full 6-block cycle)
-    static constexpr double UPDATE_HZ    = 50.0;     // control loop rate
-    static constexpr double HOME_X       = 230.0;    // mm  leg-local x (reach)
-    static constexpr double HOME_Y       = 0.0;      // mm  leg-local y (stride = 0 at home)
-    static constexpr double HOME_Z       = -60.0;    // mm  leg-local z (standing height, within ±45° limits)
+    // ── Robot / gait constants ────────────────────────────────────────────
+    static constexpr int    NUM_LEGS       = 6;
+    static constexpr double L1             = 60.55;    // coxa  mm
+    static constexpr double L2             = 73.84;    // femur mm
+    static constexpr double L3             = 112.16;   // tibia mm
+    static constexpr double BODY_RADIUS    = 100.0;    // mm
+    static constexpr double BETA_DEG       = 62.91;
+    static constexpr double STEP_PERIOD    = 3.0;      // s — full 6-block cycle
+    static constexpr double HOME_X         = 230.0;    // mm leg-local reach
+    static constexpr double HOME_Y         = 0.0;
+    static constexpr double HOME_Z         = -60.0;    // mm standing height
+    static constexpr double JOINT_LIMIT    = 0.785398; // ±45° rad
+    static constexpr double STAND_DURATION = 3.0;      // s for initial stand move
+    // Gait params (Bezier shape)
+    static constexpr double STRIDE         = 110.0;    // T mm
+    static constexpr double STEP_HEIGHT    = 22.78;    // A mm
+    // Trajectory sampling: 30 Hz → 90 waypoints per 3 s cycle
+    static constexpr int    TRAJ_HZ        = 30;
 
-    // Joint names per leg (must match YAML and URDF)
-    const std::array<std::array<std::string,3>, NUM_LEGS> JOINT_NAMES = {{
+    // ── Gait phase table ──────────────────────────────────────────────────
+    enum class Phase { LIFT_UP, HOLD, LIFT_DOWN, DRAG };
+
+    // Group A = legs 0,2,4;  Group B = legs 1,3,5
+    static const Phase GAIT_A[6];
+    static const Phase GAIT_B[6];
+
+    const Phase* legPhaseTable(int leg) const {
+        return (leg==0 || leg==2 || leg==4) ? GAIT_A : GAIT_B;
+    }
+
+    // ── Joint / action names ──────────────────────────────────────────────
+    const std::array<std::array<std::string,3>,NUM_LEGS> JOINT_NAMES = {{
         {"coxa_leg0_joint","femur_leg0_joint","tibia_leg0_joint"},
         {"coxa_leg1_joint","femur_leg1_joint","tibia_leg1_joint"},
         {"coxa_leg2_joint","femur_leg2_joint","tibia_leg2_joint"},
@@ -94,146 +98,327 @@ public:
         {"coxa_leg4_joint","femur_leg4_joint","tibia_leg4_joint"},
         {"coxa_leg5_joint","femur_leg5_joint","tibia_leg5_joint"}
     }};
-
-    // Action server names (must match YAML controller names)
-    const std::array<std::string, NUM_LEGS> ACTION_NAMES = {
+    const std::array<std::string,NUM_LEGS> ACTION_NAMES = {{
         "/leg_0_controller/follow_joint_trajectory",
         "/leg_1_controller/follow_joint_trajectory",
         "/leg_2_controller/follow_joint_trajectory",
         "/leg_3_controller/follow_joint_trajectory",
         "/leg_4_controller/follow_joint_trajectory",
         "/leg_5_controller/follow_joint_trajectory"
-    };
+    }};
 
     // ── Constructor ───────────────────────────────────────────────────────
-    explicit HexapodWalkNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
-    : Node("hexapod_walk_node", options),
+    explicit HexapodWalkNode(const rclcpp::NodeOptions& opts = rclcpp::NodeOptions())
+    : Node("hexapod_walk_node", opts),
       locomotion_(L1, L2, L3, BODY_RADIUS, BETA_DEG * M_PI / 180.0),
-      state_(State::INIT),
-      stand_goals_done_(0),
-      gait_time_(0.0),
-      current_block_(0),
-      last_block_(-1)
+      state_(State::INIT)
     {
-        // Set gait parameters
         locomotion_.setStepPeriod(STEP_PERIOD);
         locomotion_.setHomePosition(HOME_X, HOME_Y, HOME_Z);
 
-        // Velocity command subscriber
-        cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
+        cmd_vel_sub_ = create_subscription<geometry_msgs::msg::Twist>(
             "/cmd_vel", 10,
             std::bind(&HexapodWalkNode::cmdVelCallback, this, std::placeholders::_1));
 
-        // Create one action client per leg
-        for (int i = 0; i < NUM_LEGS; ++i) {
+        for (int i=0; i<NUM_LEGS; ++i) {
             action_clients_[i] = rclcpp_action::create_client<FollowJT>(
                 this, ACTION_NAMES[i]);
-            legs_ready_[i]  = false;
-            legs_busy_[i]   = false;
+            legs_ready_[i]   = false;
+            legs_cycling_[i] = false;
         }
 
-        // Main state-machine timer at UPDATE_HZ
-        timer_ = this->create_wall_timer(
-            std::chrono::duration<double>(1.0 / UPDATE_HZ),
+        // 10 Hz timer only used in INIT state to poll server availability
+        timer_ = create_wall_timer(
+            std::chrono::milliseconds(100),
             std::bind(&HexapodWalkNode::timerCallback, this));
 
-        RCLCPP_INFO(this->get_logger(),
-            "HexapodWalkNode started. Waiting for action servers...");
+        RCLCPP_INFO(get_logger(), "HexapodWalkNode started — waiting for action servers...");
     }
 
 private:
-    // ── State machine ─────────────────────────────────────────────────────
     enum class State { INIT, STANDING, WALKING };
 
-    // ── Members ───────────────────────────────────────────────────────────
     vx01_hexapod_locomotion::HexapodLocomotion locomotion_;
-
     std::array<rclcpp_action::Client<FollowJT>::SharedPtr, NUM_LEGS> action_clients_;
     std::array<bool, NUM_LEGS> legs_ready_;
-    std::array<bool, NUM_LEGS> legs_busy_;   // guarded by legs_busy_mutex_
-    std::mutex legs_busy_mutex_;
+    std::array<bool, NUM_LEGS> legs_cycling_;  // true while cycle goal is running
 
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
     rclcpp::TimerBase::SharedPtr timer_;
-
     State state_;
-    std::atomic<int>  stand_goals_done_;
-    std::atomic<int>  stand_generation_{0};  // incremented each sendStandGoal() call
-    std::mutex        vel_mutex_;
-    double            vel_x_{0.0}, vel_y_{0.0}, vel_omega_{0.0};
 
-    // Gait timing (mirrors HexapodLocomotion internals, driven here for action timing)
-    double gait_time_;
-    int    current_block_;
-    int    last_block_;
+    std::mutex vel_mutex_;
+    double vel_x_{0.0}, vel_y_{0.0}, vel_omega_{0.0};
 
-    // ── /cmd_vel callback ─────────────────────────────────────────────────
-    void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
+    // ── Math helpers ──────────────────────────────────────────────────────
+    static double bz(double t, double p1, double p2, double p3) {
+        double u = 1.0 - t;
+        return u*u*p1 + 2.0*u*t*p2 + t*t*p3;
+    }
+
+    // Foot position in (stride-offset, vertical-lift) space for phase+t
+    void phaseFootPos(Phase ph, double t,
+                      double& stride_out, double& lift_out) const
     {
-        std::lock_guard<std::mutex> lock(vel_mutex_);
-        // Convert ROS Twist (m/s) → mm/s for the locomotion library
-        vel_x_     = msg->linear.x  * 1000.0;
-        vel_y_     = msg->linear.y  * 1000.0;
-        vel_omega_ = msg->angular.z;
-
-        // If we were standing and a non-zero velocity arrives, start walking
-        if (state_ == State::STANDING &&
-            (std::abs(vel_x_) > 1.0 || std::abs(vel_y_) > 1.0 || std::abs(vel_omega_) > 0.01))
-        {
-            RCLCPP_INFO(this->get_logger(),
-                "cmd_vel received — starting walk  vx=%.1f vy=%.1f omega=%.3f",
-                vel_x_, vel_y_, vel_omega_);
-
-            locomotion_.setVelocity(vel_x_, vel_y_, vel_omega_);
-            locomotion_.walk();
-            gait_time_    = 0.0;
-            current_block_ = 0;
-            last_block_    = -1;
-            state_ = State::WALKING;
+        switch (ph) {
+            case Phase::LIFT_UP: {
+                // First half of Bezier arc
+                double tb = t * 0.5;
+                stride_out = bz(tb, -STRIDE/2.0, 0.0, STRIDE/2.0);
+                lift_out   = bz(tb,  0.0, STEP_HEIGHT, 0.0);
+                break;
+            }
+            case Phase::LIFT_DOWN: {
+                // Second half of Bezier arc
+                double tb = 0.5 + t * 0.5;
+                stride_out = bz(tb, -STRIDE/2.0, 0.0, STRIDE/2.0);
+                lift_out   = bz(tb,  0.0, STEP_HEIGHT, 0.0);
+                break;
+            }
+            case Phase::DRAG:
+                // Stance: sweep from front to rear (body moves forward)
+                stride_out = STRIDE/2.0 - t * STRIDE;
+                lift_out   = 0.0;
+                break;
+            case Phase::HOLD:
+            default:
+                stride_out = 0.0;
+                lift_out   = 0.0;
+                break;
         }
-        else if (state_ == State::WALKING)
-        {
-            locomotion_.setVelocity(vel_x_, vel_y_, vel_omega_);
+    }
 
-            // Stop walking if velocity drops to zero
-            if (std::abs(vel_x_) < 1.0 && std::abs(vel_y_) < 1.0 &&
-                std::abs(vel_omega_) < 0.01)
-            {
-                RCLCPP_INFO(this->get_logger(), "cmd_vel zero — returning to stand");
-                locomotion_.stand();   // recomputes home IK angles and zeroes velocity
-                state_ = State::STANDING;
-                sendStandGoal(); // Re-send stand to get all legs home
+    // Elbow-up IK with joint limit check
+    bool ikEU(double xp, double yp, double zp,
+              double& t1, double& t2, double& t3) const
+    {
+        t1 = std::atan2(yp, xp);
+        double ct1 = std::cos(t1);
+        if (std::abs(ct1) < 1e-9) return false;
+        double r2  = xp / ct1 - L1;
+        double r1  = std::sqrt(zp*zp + r2*r2);
+        double phi2 = std::atan2(zp, r2);
+        double cp1 = (L3*L3 - L2*L2 - r1*r1) / (-2.0*L2*r1);
+        if (cp1 < -1.0 || cp1 > 1.0) return false;
+        double phi1 = std::acos(cp1);
+        t2 = phi2 - phi1;                        // elbow-up: femur tips down
+        double cp3 = (r1*r1 - L2*L2 - L3*L3) / (-2.0*L2*L3);
+        if (cp3 < -1.0 || cp3 > 1.0) return false;
+        t3 = M_PI - std::acos(cp3);              // elbow-up: tibia comes up
+        // Enforce joint limits
+        return (std::abs(t1) <= JOINT_LIMIT &&
+                std::abs(t2) <= JOINT_LIMIT &&
+                std::abs(t3) <= JOINT_LIMIT);
+    }
+
+    double clampAngle(double a) const {
+        return std::max(-JOINT_LIMIT, std::min(JOINT_LIMIT, a));
+    }
+
+    // ── Build full-cycle trajectory for one leg ───────────────────────────
+    FollowJT::Goal buildCycleGoal(int leg, double vx) const
+    {
+        const double block_period   = STEP_PERIOD / 6.0;
+        const double nominal_speed  = STRIDE / (2.0 * block_period);
+        const double scale          = (nominal_speed > 1e-6) ? (vx / nominal_speed) : 0.0;
+        const Phase* table          = legPhaseTable(leg);
+        const double dt             = 1.0 / TRAJ_HZ;
+
+        // Home IK (fallback for any failing waypoint)
+        double h1=0, h2=0, h3=0;
+        bool home_ok = ikEU(HOME_X, 0.0, HOME_Z, h1, h2, h3);
+        if (!home_ok) {
+            RCLCPP_ERROR(get_logger(), "Home position IK FAILED — check HOME_X/Z");
+        }
+
+        FollowJT::Goal goal;
+        goal.trajectory.joint_names = {
+            JOINT_NAMES[leg][0], JOINT_NAMES[leg][1], JOINT_NAMES[leg][2]
+        };
+
+        int n = static_cast<int>(std::ceil(STEP_PERIOD * TRAJ_HZ));
+        goal.trajectory.points.reserve(n + 1);
+
+        for (int i = 0; i <= n; ++i) {
+            double t_abs  = std::min(static_cast<double>(i) * dt, STEP_PERIOD);
+            int    block  = static_cast<int>(t_abs / block_period) % 6;
+            double t_norm = std::fmod(t_abs, block_period) / block_period;
+
+            double stride, lift;
+            phaseFootPos(table[block], t_norm, stride, lift);
+
+            double ik_x = HOME_X;
+            double ik_y = stride * scale;
+            double ik_z = HOME_Z + lift;
+
+            double t1, t2, t3;
+            if (!ikEU(ik_x, ik_y, ik_z, t1, t2, t3)) {
+                t1 = h1; t2 = h2; t3 = h3;
+                RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000,
+                    "IK fallback leg=%d t=%.2f (x=%.1f y=%.1f z=%.1f)",
+                    leg, t_abs, ik_x, ik_y, ik_z);
+            }
+
+            trajectory_msgs::msg::JointTrajectoryPoint pt;
+            pt.positions  = {clampAngle(t1), clampAngle(t2), clampAngle(t3)};
+            pt.velocities = {0.0, 0.0, 0.0};
+            pt.time_from_start = rclcpp::Duration::from_seconds(t_abs);
+            goal.trajectory.points.push_back(pt);
+        }
+
+        return goal;
+    }
+
+    // ── Send full-cycle goal to one leg, auto-loop on success ─────────────
+    void sendCycleGoal(int leg, double vx)
+    {
+        FollowJT::Goal goal = buildCycleGoal(leg, vx);
+
+        auto send_opts = rclcpp_action::Client<FollowJT>::SendGoalOptions();
+
+        send_opts.goal_response_callback =
+            [this, leg](const GoalHandleFJT::SharedPtr& handle) {
+                if (!handle) {
+                    RCLCPP_WARN(get_logger(), "Cycle goal REJECTED by leg_%d", leg);
+                    legs_cycling_[leg] = false;
+                } else {
+                    legs_cycling_[leg] = true;
+                    RCLCPP_DEBUG(get_logger(), "Leg %d cycle goal accepted", leg);
+                }
+            };
+
+        send_opts.result_callback =
+            [this, leg](const GoalHandleFJT::WrappedResult& result) {
+                legs_cycling_[leg] = false;
+
+                if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
+                    // Cycle done — loop if still walking
+                    if (state_ == State::WALKING) {
+                        double vx;
+                        { std::lock_guard<std::mutex> lk(vel_mutex_); vx = vel_x_; }
+                        RCLCPP_DEBUG(get_logger(), "Leg %d cycle complete — looping", leg);
+                        sendCycleGoal(leg, vx);
+                    }
+                } else if (result.code == rclcpp_action::ResultCode::CANCELED) {
+                    // Intentional cancel (velocity change or stop) — no action
+                    RCLCPP_DEBUG(get_logger(), "Leg %d cycle cancelled (expected)", leg);
+                } else {
+                    RCLCPP_WARN(get_logger(),
+                        "Leg %d cycle ended code=%d", leg, (int)result.code);
+                }
+            };
+
+        action_clients_[leg]->async_send_goal(goal, send_opts);
+    }
+
+    // ── Cancel all currently-running cycle goals ──────────────────────────
+    void cancelAllCycleGoals()
+    {
+        for (int i = 0; i < NUM_LEGS; ++i) {
+            if (legs_cycling_[i]) {
+                action_clients_[i]->async_cancel_all_goals();
             }
         }
     }
 
-    // ── Main timer callback ───────────────────────────────────────────────
-    void timerCallback()
+    // ── Send stand (home) position to all legs ────────────────────────────
+    void sendStandGoal()
     {
-        switch (state_)
-        {
-            case State::INIT:
-                initStep();
-                break;
-            case State::STANDING:
-                // Nothing — we're holding the stand pose sent earlier
-                break;
-            case State::WALKING:
-                walkStep();
-                break;
+        locomotion_.stand();  // computes home IK angles
+
+        for (int i = 0; i < NUM_LEGS; ++i) {
+            double t1, t2, t3;
+            locomotion_.getLegAngles(i, t1, t2, t3);
+
+            FollowJT::Goal goal;
+            goal.trajectory.joint_names = {
+                JOINT_NAMES[i][0], JOINT_NAMES[i][1], JOINT_NAMES[i][2]
+            };
+            trajectory_msgs::msg::JointTrajectoryPoint pt;
+            pt.positions  = {clampAngle(t1), clampAngle(t2), clampAngle(t3)};
+            pt.velocities = {0.0, 0.0, 0.0};
+            pt.time_from_start = rclcpp::Duration::from_seconds(STAND_DURATION);
+            goal.trajectory.points.push_back(pt);
+
+            auto send_opts = rclcpp_action::Client<FollowJT>::SendGoalOptions();
+            send_opts.result_callback =
+                [this, i](const GoalHandleFJT::WrappedResult& result) {
+                    if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
+                        RCLCPP_DEBUG(get_logger(), "Stand done leg %d", i);
+                    }
+                };
+            action_clients_[i]->async_send_goal(goal, send_opts);
+        }
+        RCLCPP_INFO(get_logger(),
+            "Stand goal sent (%.1f s) — angles: t2=%.2f t3=%.2f rad",
+            STAND_DURATION,
+            locomotion_.getStepHeight(),  // just for info
+            STAND_DURATION);
+    }
+
+    // ── Transition to WALKING state ───────────────────────────────────────
+    void startWalking(double vx)
+    {
+        RCLCPP_INFO(get_logger(), "Starting walk — vx=%.1f mm/s", vx);
+        locomotion_.setVelocity(vx, 0.0, 0.0);
+        locomotion_.walk();
+        state_ = State::WALKING;
+
+        for (int i = 0; i < NUM_LEGS; ++i) {
+            sendCycleGoal(i, vx);
         }
     }
 
-    // ── INIT: wait for all servers, then stand ────────────────────────────
-    void initStep()
+    // ── /cmd_vel subscriber ───────────────────────────────────────────────
+    void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
     {
+        double new_vx    = msg->linear.x  * 1000.0;  // m/s → mm/s
+        double new_vy    = msg->linear.y  * 1000.0;
+        double new_omega = msg->angular.z;
+
+        {
+            std::lock_guard<std::mutex> lk(vel_mutex_);
+            vel_x_     = new_vx;
+            vel_y_     = new_vy;
+            vel_omega_ = new_omega;
+        }
+
+        bool nonzero = (std::abs(new_vx)    > 1.0 ||
+                        std::abs(new_vy)    > 1.0 ||
+                        std::abs(new_omega) > 0.01);
+
+        if (state_ == State::STANDING && nonzero) {
+            startWalking(new_vx);
+
+        } else if (state_ == State::WALKING && nonzero) {
+            // Speed changed — cancel old cycles and send new ones
+            RCLCPP_INFO(get_logger(),
+                "Velocity update vx=%.1f — restarting walk cycles", new_vx);
+            cancelAllCycleGoals();
+            for (int i = 0; i < NUM_LEGS; ++i) {
+                sendCycleGoal(i, new_vx);
+            }
+
+        } else if (state_ == State::WALKING && !nonzero) {
+            RCLCPP_INFO(get_logger(), "Stop command — returning to stand");
+            cancelAllCycleGoals();
+            locomotion_.stand();
+            state_ = State::STANDING;
+            sendStandGoal();
+        }
+    }
+
+    // ── 10 Hz timer — INIT state only ─────────────────────────────────────
+    void timerCallback()
+    {
+        if (state_ != State::INIT) return;
+
         bool all_ready = true;
         for (int i = 0; i < NUM_LEGS; ++i) {
             if (!legs_ready_[i]) {
                 if (action_clients_[i]->action_server_is_ready()) {
                     legs_ready_[i] = true;
-                    RCLCPP_INFO(this->get_logger(),
-                        "leg_%d action server ready", i);
+                    RCLCPP_INFO(get_logger(), "leg_%d action server ready", i);
                 } else {
                     all_ready = false;
                 }
@@ -241,253 +426,37 @@ private:
         }
 
         if (all_ready) {
-            RCLCPP_INFO(this->get_logger(),
-                "All action servers ready — moving to stand position...");
+            RCLCPP_INFO(get_logger(),
+                "All action servers ready — moving to stand position");
             state_ = State::STANDING;
-            locomotion_.stand();
             sendStandGoal();
         }
     }
-
-    // ── Send all legs to home position ────────────────────────────────────
-    void sendStandGoal()
-    {
-        // Bump generation so any stale in-flight callbacks are ignored
-        const int my_gen = ++stand_generation_;
-        stand_goals_done_ = 0;
-
-        // Duration for the stand move — slow enough for joints to travel
-        // from 0.0 (spawn position) to standing angles (~0.53 rad tibia)
-        // without exceeding the 1.0 rad position tolerance window.
-        const double stand_duration = 3.0; // seconds (was 2.0, needs more for safety)
-
-        for (int i = 0; i < NUM_LEGS; ++i)
-        {
-            double t1, t2, t3;
-            locomotion_.getLegAngles(i, t1, t2, t3);
-
-            sendLegGoal(i, {t1, t2, t3}, stand_duration,
-                /* on_done = */
-                [this, i, my_gen](bool success) {
-                    // Discard callbacks from a previous stand sequence
-                    if (my_gen != stand_generation_.load()) return;
-                    if (success) {
-                        stand_goals_done_++;
-                        RCLCPP_DEBUG(this->get_logger(),
-                            "Stand goal done for leg %d (%d/6)",
-                            i, (int)stand_goals_done_);
-                        if (stand_goals_done_ == NUM_LEGS) {
-                            RCLCPP_INFO(this->get_logger(),
-                                "All legs at stand position. Ready to walk.");
-                        }
-                    } else {
-                        RCLCPP_WARN(this->get_logger(),
-                            "Stand goal FAILED for leg %d", i);
-                    }
-                });
-        }
-    }
-
-    // ── WALK: advance gait clock every tick, send goals each new block ──────
-    // Each new block we send a multi-waypoint trajectory covering the full
-    // block_period so the JTC interpolates through the Bezier curve smoothly.
-    static constexpr int WAYPOINTS_PER_BLOCK = 6;  // Bezier sampled at 6 pts
-
-    void walkStep()
-    {
-        const double dt           = 1.0 / UPDATE_HZ;
-        const double block_period = STEP_PERIOD / 6.0;
-
-        // Update velocity in library every tick
-        {
-            std::lock_guard<std::mutex> lock(vel_mutex_);
-            locomotion_.setVelocity(vel_x_, vel_y_, vel_omega_);
-        }
-
-        // Drive locomotion library at 50 Hz
-        locomotion_.update(dt);
-
-        // Advance our local block counter in sync with the library
-        gait_time_ += dt;
-        if (gait_time_ >= block_period) {
-            gait_time_ -= block_period;
-            current_block_ = (current_block_ + 1) % 6;
-        }
-
-        // Only send new trajectory goals at block boundary
-        if (current_block_ == last_block_) {
-            return;
-        }
-        last_block_ = current_block_;
-
-        // Send a multi-waypoint goal for each leg covering this block
-        for (int i = 0; i < NUM_LEGS; ++i)
-        {
-            {
-                std::lock_guard<std::mutex> lk(legs_busy_mutex_);
-                if (legs_busy_[i]) {
-                    action_clients_[i]->async_cancel_all_goals();
-                    legs_busy_[i] = false;
-                }
-            }
-
-            // Build waypoints by sampling the locomotion library at
-            // WAYPOINTS_PER_BLOCK evenly spaced times within the block.
-            // We temporarily step the library's internal time to compute angles
-            // at each waypoint without advancing the block counter.
-            auto goal_msg = FollowJT::Goal();
-            goal_msg.trajectory.joint_names = {
-                JOINT_NAMES[i][0], JOINT_NAMES[i][1], JOINT_NAMES[i][2]
-            };
-
-            for (int w = 1; w <= WAYPOINTS_PER_BLOCK; ++w)
-            {
-                double frac = static_cast<double>(w) / WAYPOINTS_PER_BLOCK;
-                double t_wp = frac * block_period;
-
-                // Get angles by querying locomotion at time frac within block
-                // Use getLegAngles after a temporary update (library's gait_time
-                // is at ~0 since we just rolled over; snap to frac*block_period)
-                double t1, t2, t3;
-                locomotion_.getLegAngles(i, t1, t2, t3);
-
-                // For the last waypoint use the freshly computed angles.
-                // For intermediate waypoints, interpolate linearly between
-                // start (current angles) and end angles — sufficient for smooth JTC.
-                // Note: the locomotion library has already computed end-of-block
-                // angles via update(dt) above; for intra-block smoothness we rely
-                // on the JTC's own interpolation between waypoints.
-                trajectory_msgs::msg::JointTrajectoryPoint pt;
-                // Clamp to ±45° — prevents tolerance abort if IK gives OOB angles
-                pt.positions  = {
-                    clampJoint(i, 0, t1),
-                    clampJoint(i, 1, t2),
-                    clampJoint(i, 2, t3)
-                };
-                pt.velocities = {0.0, 0.0, 0.0};
-                pt.time_from_start = rclcpp::Duration::from_seconds(t_wp);
-                goal_msg.trajectory.points.push_back(pt);
-            }
-
-            RCLCPP_DEBUG(this->get_logger(),
-                "Leg %d block %d: sending %d-waypoint trajectory",
-                i, current_block_, WAYPOINTS_PER_BLOCK);
-
-            sendTrajectoryGoal(i, goal_msg);
-        }
-    }
-
-    // ── Send a pre-built trajectory goal to one leg ───────────────────────
-    void sendTrajectoryGoal(int leg_index, const FollowJT::Goal& goal_msg)
-    {
-        auto send_goal_options = rclcpp_action::Client<FollowJT>::SendGoalOptions();
-
-        send_goal_options.goal_response_callback =
-            [this, leg_index](const GoalHandleFJT::SharedPtr& handle) {
-                std::lock_guard<std::mutex> lk(legs_busy_mutex_);
-                if (!handle) {
-                    RCLCPP_WARN(this->get_logger(),
-                        "Goal REJECTED by leg_%d server", leg_index);
-                    legs_busy_[leg_index] = false;
-                } else {
-                    legs_busy_[leg_index] = true;
-                }
-            };
-
-        send_goal_options.result_callback =
-            [this, leg_index](const GoalHandleFJT::WrappedResult& result) {
-                std::lock_guard<std::mutex> lk(legs_busy_mutex_);
-                legs_busy_[leg_index] = false;
-                if (result.code != rclcpp_action::ResultCode::SUCCEEDED) {
-                    RCLCPP_DEBUG(this->get_logger(),
-                        "Leg %d goal ended with code %d",
-                        leg_index, (int)result.code);
-                }
-            };
-
-        action_clients_[leg_index]->async_send_goal(goal_msg, send_goal_options);
-    }
-
-    // ── Core helper: send one FollowJointTrajectory goal to one leg ───────
-    static constexpr double JOINT_LIMIT = 0.785398;  // ±45° — must match YAML
-
-    // Clamp a single angle to ±JOINT_LIMIT and warn if it was out of range.
-    double clampJoint(int leg, int joint_idx, double angle) const {
-        if (std::abs(angle) > JOINT_LIMIT) {
-            RCLCPP_WARN(this->get_logger(),
-                "Leg %d joint %d angle %.4f rad CLAMPED to ±%.4f",
-                leg, joint_idx, angle, JOINT_LIMIT);
-            return std::copysign(JOINT_LIMIT, angle);
-        }
-        return angle;
-    }
-
-    void sendLegGoal(int leg_index,
-                     const std::array<double,3>& angles,
-                     double duration,
-                     std::function<void(bool)> on_done)
-    {
-        auto goal_msg = FollowJT::Goal();
-
-        // Joint names
-        goal_msg.trajectory.joint_names = {
-            JOINT_NAMES[leg_index][0],
-            JOINT_NAMES[leg_index][1],
-            JOINT_NAMES[leg_index][2]
-        };
-
-        // Single waypoint at time=duration
-        trajectory_msgs::msg::JointTrajectoryPoint pt;
-        // Clamp to ±45° hard limit before sending — prevents tolerance violations
-        pt.positions  = {
-            clampJoint(leg_index, 0, angles[0]),
-            clampJoint(leg_index, 1, angles[1]),
-            clampJoint(leg_index, 2, angles[2])
-        };
-        pt.velocities = {0.0, 0.0, 0.0};
-        pt.time_from_start = rclcpp::Duration::from_seconds(duration);
-        goal_msg.trajectory.points.push_back(pt);
-
-        // Send goal options
-        auto send_goal_options = rclcpp_action::Client<FollowJT>::SendGoalOptions();
-
-        send_goal_options.goal_response_callback =
-            [this, leg_index](const GoalHandleFJT::SharedPtr& handle) {
-                std::lock_guard<std::mutex> lk(legs_busy_mutex_);
-                if (!handle) {
-                    RCLCPP_WARN(this->get_logger(),
-                        "Goal REJECTED by leg_%d server", leg_index);
-                    legs_busy_[leg_index] = false;
-                } else {
-                    legs_busy_[leg_index] = true;
-                }
-            };
-
-        send_goal_options.result_callback =
-            [this, leg_index, on_done](const GoalHandleFJT::WrappedResult& result) {
-                {
-                    std::lock_guard<std::mutex> lk(legs_busy_mutex_);
-                    legs_busy_[leg_index] = false;
-                }
-                bool success = (result.code == rclcpp_action::ResultCode::SUCCEEDED);
-                if (!success) {
-                    RCLCPP_DEBUG(this->get_logger(),
-                        "Leg %d goal ended with code %d",
-                        leg_index, (int)result.code);
-                }
-                if (on_done) on_done(success);
-            };
-
-        action_clients_[leg_index]->async_send_goal(goal_msg, send_goal_options);
-    }
 };
 
-// ═════════════════════════════════════════════════════════════════════════
+// Out-of-class constexpr definitions
+const HexapodWalkNode::Phase HexapodWalkNode::GAIT_A[6] = {
+    HexapodWalkNode::Phase::LIFT_UP,
+    HexapodWalkNode::Phase::HOLD,
+    HexapodWalkNode::Phase::LIFT_DOWN,
+    HexapodWalkNode::Phase::HOLD,
+    HexapodWalkNode::Phase::DRAG,
+    HexapodWalkNode::Phase::HOLD
+};
+const HexapodWalkNode::Phase HexapodWalkNode::GAIT_B[6] = {
+    HexapodWalkNode::Phase::HOLD,
+    HexapodWalkNode::Phase::DRAG,
+    HexapodWalkNode::Phase::HOLD,
+    HexapodWalkNode::Phase::LIFT_UP,
+    HexapodWalkNode::Phase::HOLD,
+    HexapodWalkNode::Phase::LIFT_DOWN
+};
+
+// ─────────────────────────────────────────────────────────────────────────
 int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<HexapodWalkNode>();
-    rclcpp::spin(node);
+    rclcpp::spin(std::make_shared<HexapodWalkNode>());
     rclcpp::shutdown();
     return 0;
 }
