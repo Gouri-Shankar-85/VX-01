@@ -10,11 +10,11 @@ namespace vx01_hexapod_locomotion {
           body_radius_(body_radius), beta_angle_(beta_angle),
           state_(LocomotionState::STOPPED),
           velocity_x_(0.0), velocity_y_(0.0), velocity_omega_(0.0),
-          gait_time_(0.0), step_period_(3.0),
-          step_length_(110.0),
-          step_height_(22.78),
+          gait_time_(0.0), step_period_(4.0),   // FIXED: was 3.0
+          step_length_(80.0),                    // FIXED: was 110.0
+          step_height_(20.0),                    // FIXED: was 22.78
           track_width_(108.67),
-          home_x_(230.0), home_y_(0.0), home_z_(-60.0)  // within ±45° joint limits
+          home_x_(230.0), home_y_(0.0), home_z_(-60.0)  // FIXED: was -40 in node
     {
         leg_angles_ = {
              0.0,
@@ -25,7 +25,6 @@ namespace vx01_hexapod_locomotion {
             -beta_angle_
         };
 
-        // GaitPattern(S, T, A) where S=track_width_(reach), T=step_length_, A=step_height_
         gait_pattern_ = std::make_shared<gait::GaitPattern>(
             track_width_, step_length_, step_height_);
 
@@ -33,7 +32,8 @@ namespace vx01_hexapod_locomotion {
         current_joint_angles_.resize(18, 0.0);
 
         std::cout << "[HexapodLocomotion] Initialized L1=" << L1_
-                  << " L2=" << L2_ << " L3=" << L3_ << "\n";
+                  << " L2=" << L2_ << " L3=" << L3_
+                  << " home_z=" << home_z_ << "\n";
     }
 
     HexapodLocomotion::~HexapodLocomotion() { stop(); }
@@ -45,6 +45,11 @@ namespace vx01_hexapod_locomotion {
             leg_controllers_.push_back(std::make_shared<control::LegController>(
                 i, leg_angles_[i], body_radius_, L1_, L2_, L3_));
         }
+    }
+
+    void HexapodLocomotion::rebuildGaitPattern() {
+        gait_pattern_ = std::make_shared<gait::GaitPattern>(
+            track_width_, step_length_, step_height_);
     }
 
     void HexapodLocomotion::applyIK(int leg_index,
@@ -95,7 +100,6 @@ namespace vx01_hexapod_locomotion {
         vx = velocity_x_; vy = velocity_y_; omega = velocity_omega_;
     }
 
-    // update: step_period_ = full cycle (6 blocks). block_period = step_period_/6.
     void HexapodLocomotion::update(double dt) {
         if (state_ == LocomotionState::STOPPED ||
             state_ == LocomotionState::STANDING) return;
@@ -109,54 +113,28 @@ namespace vx01_hexapod_locomotion {
         for (int i = 0; i < 6; ++i) updateLeg(i);
     }
 
-    // updateLeg: map gait pattern output → leg-local IK frame → IK
-    //
-    // GaitPattern::getFootPosition returns in gait O-frame:
-    //   o_x = reach (= S = track_width_, constant at 108.67mm) — abstract gait unit
-    //   o_y = stride offset along leg axis (±T/2 = ±55mm)
-    //   o_z = vertical lift above ground (0 = ground, +A = peak of swing)
-    //
-    // IMPORTANT: o_x = S is the gait-frame "reach depth", which is NOT the
-    // same as the leg-local IK x (home_x_ = 230mm from coxa pivot).
-    // S is an abstract parameter defining the Bezier arc shape.
-    // The actual foot reach in IK space is always home_x_.
-    //
-    // Leg-local IK frame mapping:
-    //   ik_x = home_x_              (constant reach along coxa axis)
-    //   ik_y = o_y * velocity_scale (stride → coxa swing via theta1 = atan2(ik_y, ik_x))
-    //   ik_z = home_z_ + o_z        (standing height + lift from Bezier)
     void HexapodLocomotion::updateLeg(int leg_index) {
         double block_period = step_period_ / 6.0;
         double t = (block_period > 1e-9) ? (gait_time_ / block_period) : 0.0;
         t = std::max(0.0, std::min(1.0, t));
 
-        // Step 1: gait pattern foot position
-        // o_x = S (constant reach, not used directly as IK x)
-        // o_y = stride offset ±T/2
-        // o_z = vertical lift 0..A
         double o_x, o_y, o_z;
         gait_pattern_->getFootPosition(leg_index, t, o_x, o_y, o_z);
 
-        // Step 2: scale stride by forward velocity
         double nominal_speed = step_length_ / (2.0 * block_period);
         double scale = (nominal_speed > 1e-6) ? (velocity_x_ / nominal_speed) : 0.0;
 
-        // Step 3: map to leg-local IK frame
-        double ik_x = home_x_;               // reach = home reach (NOT S from gait)
-        double ik_y = o_y * scale;            // stride → coxa rotation via theta1
-        double ik_z = home_z_ + o_z;         // standing height + Bezier lift
+        double ik_x = home_x_;
+        double ik_y = o_y * scale;
+        double ik_z = home_z_ + o_z;
 
-        // Step 4: IK
         applyIK(leg_index, ik_x, ik_y, ik_z);
     }
 
-    // calculateFootTarget: satisfies hpp declaration, delegates to gait_pattern_
     void HexapodLocomotion::calculateFootTarget(int leg_index, double phase,
                                                 double& x, double& y, double& z)
     {
-        double block_period = step_period_ / 6.0;
         int saved_block = gait_pattern_->getCurrentBlock();
-
         int block_index   = static_cast<int>(phase * 6.0) % 6;
         double t_in_block = std::fmod(phase * 6.0, 1.0);
 
@@ -164,14 +142,10 @@ namespace vx01_hexapod_locomotion {
         for (int b = 0; b < block_index; ++b) gait_pattern_->nextBlock();
         gait_pattern_->getFootPosition(leg_index, t_in_block, x, y, z);
 
-        // restore
         gait_pattern_->reset();
         for (int b = 0; b < saved_block; ++b) gait_pattern_->nextBlock();
-
-        (void)block_period;
     }
 
-    // transformVelocity: satisfies hpp declaration
     void HexapodLocomotion::transformVelocity(int leg_index,
                                               double vx, double vy,
                                               double& local_vx, double& local_vy)
@@ -186,7 +160,6 @@ namespace vx01_hexapod_locomotion {
         local_vy +=  velocity_omega_ * base_x;
     }
 
-    // getLegBasePosition: satisfies hpp declaration
     void HexapodLocomotion::getLegBasePosition(int leg_index,
                                                double& base_x, double& base_y)
     {
@@ -209,14 +182,12 @@ namespace vx01_hexapod_locomotion {
 
     void HexapodLocomotion::setStepLength(double length) {
         step_length_ = length;
-        gait_pattern_ = std::make_shared<gait::GaitPattern>(
-            track_width_, step_length_, step_height_);
+        rebuildGaitPattern();
     }
 
     void HexapodLocomotion::setStepHeight(double height) {
         step_height_ = height;
-        gait_pattern_ = std::make_shared<gait::GaitPattern>(
-            track_width_, step_length_, step_height_);
+        rebuildGaitPattern();
     }
 
     void HexapodLocomotion::setStepPeriod(double period) { step_period_ = period; }
