@@ -39,12 +39,12 @@ namespace vx01_hexapod_locomotion {
 
                 // Gait timing
                 double gait_time_;    // Elapsed time in current gait block (s)
-                double block_period_; // Duration of one gait block (s)
+                double step_period_;  // Full gait cycle duration (s); block = step_period_/6
 
                 // Step geometry
                 double step_length_;  // Stride length T  (mm)
                 double step_height_;  // Step height  A  (mm)
-                double reach_depth_;  // Leg reach    S  (mm)
+                double track_width_;  // Leg reach / track width S  (mm)
 
                 // Home foot position in leg-local frame (mm)
                 double home_x_;
@@ -82,10 +82,12 @@ namespace vx01_hexapod_locomotion {
                 void   setStepLength(double length);
                 void   setStepHeight(double height);
                 void   setBlockPeriod(double period);
+                void   setStepPeriod(double period);
 
                 double getStepLength() const;
                 double getStepHeight() const;
                 double getBlockPeriod() const;
+                double getStepPeriod() const;
 
                 // Home position (leg-local frame, mm)
                 void setHomePosition(double x, double y, double z);
@@ -102,6 +104,17 @@ namespace vx01_hexapod_locomotion {
 
                 // Rebuild the gait pattern object (called when parameters change)
                 void rebuildGaitPattern();
+
+                // Compute foot target at arbitrary gait phase [0,1)
+                void calculateFootTarget(int leg_index, double phase,
+                                         double& x, double& y, double& z);
+
+                // Transform body-frame velocity into leg-local frame
+                void transformVelocity(int leg_index, double vx, double vy,
+                                       double& local_vx, double& local_vy);
+
+                // Get coxa-pivot position in body frame (mm)
+                void getLegBasePosition(int leg_index, double& base_x, double& base_y);
         };
 
 } // namespace vx01_hexapod_locomotion

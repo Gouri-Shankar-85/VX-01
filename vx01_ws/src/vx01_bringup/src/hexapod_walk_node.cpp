@@ -106,8 +106,8 @@ public:
     };
 
     // ── Constructor ───────────────────────────────────────────────────────
-    explicit HexapodWalkNode()
-    : Node("hexapod_walk_node"),
+    explicit HexapodWalkNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
+    : Node("hexapod_walk_node", options),
       locomotion_(L1, L2, L3, BODY_RADIUS, BETA_DEG * M_PI / 180.0),
       state_(State::INIT),
       stand_goals_done_(0),
@@ -150,13 +150,15 @@ private:
 
     std::array<rclcpp_action::Client<FollowJT>::SharedPtr, NUM_LEGS> action_clients_;
     std::array<bool, NUM_LEGS> legs_ready_;
-    std::array<std::atomic<bool>, NUM_LEGS> legs_busy_;
+    std::array<bool, NUM_LEGS> legs_busy_;   // guarded by legs_busy_mutex_
+    std::mutex legs_busy_mutex_;
 
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
     rclcpp::TimerBase::SharedPtr timer_;
 
     State state_;
     std::atomic<int>  stand_goals_done_;
+    std::atomic<int>  stand_generation_{0};  // incremented each sendStandGoal() call
     std::mutex        vel_mutex_;
     double            vel_x_{0.0}, vel_y_{0.0}, vel_omega_{0.0};
 
@@ -198,7 +200,7 @@ private:
                 std::abs(vel_omega_) < 0.01)
             {
                 RCLCPP_INFO(this->get_logger(), "cmd_vel zero — returning to stand");
-                locomotion_.stop();
+                locomotion_.stand();   // recomputes home IK angles and zeroes velocity
                 state_ = State::STANDING;
                 sendStandGoal(); // Re-send stand to get all legs home
             }
@@ -250,6 +252,8 @@ private:
     // ── Send all legs to home position ────────────────────────────────────
     void sendStandGoal()
     {
+        // Bump generation so any stale in-flight callbacks are ignored
+        const int my_gen = ++stand_generation_;
         stand_goals_done_ = 0;
 
         // Duration for the stand move (nice slow movement to home)
@@ -262,7 +266,9 @@ private:
 
             sendLegGoal(i, {t1, t2, t3}, stand_duration,
                 /* on_done = */
-                [this, i](bool success) {
+                [this, i, my_gen](bool success) {
+                    // Discard callbacks from a previous stand sequence
+                    if (my_gen != stand_generation_.load()) return;
                     if (success) {
                         stand_goals_done_++;
                         RCLCPP_DEBUG(this->get_logger(),
@@ -280,42 +286,45 @@ private:
         }
     }
 
-    // ── WALK: advance gait clock, send goals each new block ───────────────
+    // ── WALK: advance gait clock every tick, send goals each new block ───────────────
     void walkStep()
     {
         const double dt           = 1.0 / UPDATE_HZ;
         const double block_period = STEP_PERIOD / 6.0;
 
-        // Advance gait time
+        // Update velocity in library every tick
+        {
+            std::lock_guard<std::mutex> lock(vel_mutex_);
+            locomotion_.setVelocity(vel_x_, vel_y_, vel_omega_);
+        }
+
+        // Drive locomotion library at 50 Hz — this advances gait_time_ internally
+        // and calls nextBlock() + updateLeg() when the block rolls over.
+        locomotion_.update(dt);
+
+        // Advance our local block counter in sync with the library
         gait_time_ += dt;
         if (gait_time_ >= block_period) {
             gait_time_ -= block_period;
             current_block_ = (current_block_ + 1) % 6;
         }
 
-        // Only send new goals when block changes
+        // Only send new trajectory goals when the block changes
         if (current_block_ == last_block_) {
             return;
         }
         last_block_ = current_block_;
 
-        // Advance the locomotion library to the new block
-        // (we manage the clock externally so we can sync with action timing)
-        // Update the library once per block
-        {
-            std::lock_guard<std::mutex> lock(vel_mutex_);
-            locomotion_.setVelocity(vel_x_, vel_y_, vel_omega_);
-        }
-
-        // Run ONE full block update in the library to compute all 18 angles
-        locomotion_.update(block_period);
-
         // Send a goal for each leg for this block
         for (int i = 0; i < NUM_LEGS; ++i)
         {
-            if (legs_busy_[i]) {
-                // Previous goal still running — cancel and resend
-                // (For smooth motion we just let the new goal overwrite)
+            {
+                std::lock_guard<std::mutex> lk(legs_busy_mutex_);
+                if (legs_busy_[i]) {
+                    // Cancel any in-flight goal before sending new one to avoid rejection
+                    action_clients_[i]->async_cancel_all_goals();
+                    legs_busy_[i] = false;
+                }
             }
 
             double t1, t2, t3;
@@ -362,6 +371,7 @@ private:
 
         send_goal_options.goal_response_callback =
             [this, leg_index](const GoalHandleFJT::SharedPtr& handle) {
+                std::lock_guard<std::mutex> lk(legs_busy_mutex_);
                 if (!handle) {
                     RCLCPP_WARN(this->get_logger(),
                         "Goal REJECTED by leg_%d server", leg_index);
@@ -373,7 +383,10 @@ private:
 
         send_goal_options.result_callback =
             [this, leg_index, on_done](const GoalHandleFJT::WrappedResult& result) {
-                legs_busy_[leg_index] = false;
+                {
+                    std::lock_guard<std::mutex> lk(legs_busy_mutex_);
+                    legs_busy_[leg_index] = false;
+                }
                 bool success = (result.code == rclcpp_action::ResultCode::SUCCEEDED);
                 if (!success) {
                     RCLCPP_DEBUG(this->get_logger(),
