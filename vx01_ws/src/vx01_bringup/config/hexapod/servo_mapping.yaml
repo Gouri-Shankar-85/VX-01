@@ -1,0 +1,252 @@
+# ============================================================
+# Pololu Mini Maestro 18-Channel Servo Mapping
+# ============================================================
+#
+# Channel numbering on the board (0–17):
+#   Each leg has 3 servos: coxa (hip swing), femur (hip lift), tibia (knee)
+#   You physically wire each DS3240 servo connector to a channel on the Maestro.
+#   The channel numbers below ARE your physical wire positions on the board.
+#
+# DS3240 specs:
+#   Operating voltage:  6.0–8.4V (DO NOT power from Maestro 5V — use external BEC)
+#   PWM signal range:   500–2500 µs
+#   Neutral position:   1500 µs = 0 rad
+#   Full range:         ±90° = ±π/2 rad (but we limit to ±45° = ±0.785 rad)
+#
+# How to verify a channel number:
+#   1. Open Maestro Control Center on your PC
+#   2. Move one servo slider — watch which servo moves on the robot
+#   3. That slider number = that servo's channel
+#
+# ASSIGNMENT TABLE (fill in your actual wiring):
+# ┌──────────────────────┬─────────┬─────────┬──────────────┐
+# │ Joint                │ Channel │ Offset  │ Reversed     │
+# ├──────────────────────┼─────────┼─────────┼──────────────┤
+# │ coxa_leg0_joint      │    0    │  0.0    │ false        │
+# │ femur_leg0_joint     │    1    │  0.0    │ false        │
+# │ tibia_leg0_joint     │    2    │  0.0    │ false        │
+# │ coxa_leg1_joint      │    3    │  0.0    │ false        │
+# │ femur_leg1_joint     │    4    │  0.0    │ false        │
+# │ tibia_leg1_joint     │    5    │  0.0    │ false        │
+# │ coxa_leg2_joint      │    6    │  0.0    │ false        │
+# │ femur_leg2_joint     │    7    │  0.0    │ false        │
+# │ tibia_leg2_joint     │    8    │  0.0    │ false        │
+# │ coxa_leg3_joint      │    9    │  0.0    │ false        │
+# │ femur_leg3_joint     │   10    │  0.0    │ false        │
+# │ tibia_leg3_joint     │   11    │  0.0    │ false        │
+# │ coxa_leg4_joint      │   12    │  0.0    │ false        │
+# │ femur_leg4_joint     │   13    │  0.0    │ false        │
+# │ tibia_leg4_joint     │   14    │  0.0    │ false        │
+# │ coxa_leg5_joint      │   15    │  0.0    │ false        │
+# │ femur_leg5_joint     │   16    │  0.0    │ false        │
+# │ tibia_leg5_joint     │   17    │  0.0    │ false        │
+# └──────────────────────┴─────────┴─────────┴──────────────┘
+#
+# reversed: set true if the servo moves in the WRONG direction.
+#           For legs on the right side of the body (legs 3,4,5),
+#           coxa servos often need reversed=true to walk in the same direction.
+#           Test each one individually before walking.
+#
+# offset:   fine-tune if servo is not perfectly centred at 1500µs.
+#           Units = radians. Measure with Maestro Control Center.
+#           Example: if 0 rad command produces 5° tilt, set offset=0.087
+
+servo_mapping:
+
+  coxa_leg0_joint:
+    channel: 0
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708     # -90 deg (hardware limit, software limited to ±45°)
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0           # 0 = unlimited (Maestro units)
+    max_acceleration: 0    # 0 = unlimited
+
+  femur_leg0_joint:
+    channel: 1
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0
+    max_acceleration: 0
+
+  tibia_leg0_joint:
+    channel: 2
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0
+    max_acceleration: 0
+
+  coxa_leg1_joint:
+    channel: 3
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0
+    max_acceleration: 0
+
+  femur_leg1_joint:
+    channel: 4
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0
+    max_acceleration: 0
+
+  tibia_leg1_joint:
+    channel: 5
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0
+    max_acceleration: 0
+
+  coxa_leg2_joint:
+    channel: 6
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0
+    max_acceleration: 0
+
+  femur_leg2_joint:
+    channel: 7
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0
+    max_acceleration: 0
+
+  tibia_leg2_joint:
+    channel: 8
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0
+    max_acceleration: 0
+
+  coxa_leg3_joint:
+    channel: 9
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false         # LIKELY needs true — test first
+    max_speed: 0
+    max_acceleration: 0
+
+  femur_leg3_joint:
+    channel: 10
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0
+    max_acceleration: 0
+
+  tibia_leg3_joint:
+    channel: 11
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0
+    max_acceleration: 0
+
+  coxa_leg4_joint:
+    channel: 12
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false         # LIKELY needs true — test first
+    max_speed: 0
+    max_acceleration: 0
+
+  femur_leg4_joint:
+    channel: 13
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0
+    max_acceleration: 0
+
+  tibia_leg4_joint:
+    channel: 14
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0
+    max_acceleration: 0
+
+  coxa_leg5_joint:
+    channel: 15
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false         # LIKELY needs true — test first
+    max_speed: 0
+    max_acceleration: 0
+
+  femur_leg5_joint:
+    channel: 16
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0
+    max_acceleration: 0
+
+  tibia_leg5_joint:
+    channel: 17
+    min_pulse: 500.0
+    max_pulse: 2500.0
+    min_angle: -1.5708
+    max_angle:  1.5708
+    offset:  0.0
+    reversed: false
+    max_speed: 0
+    max_acceleration: 0

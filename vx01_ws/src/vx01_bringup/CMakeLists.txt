@@ -49,6 +49,7 @@ install(
     config
     scripts
     src
+    launch
   DESTINATION share/${PROJECT_NAME}/
 )
 
