@@ -1,42 +1,44 @@
 # Initial joint positions for hexapod VX01
 #
-# All joints start at the STANDING pose so the robot spawns already on its feet.
+# Robot spawns directly in the standing pose — no startup jerk.
 #
 # Geometry at these angles (L1=60.55, L2=73.84, L3=112.16 mm):
-#   tibia = -0.7500 rad = -43 deg  (FIXED — damaged servos)
-#   femur = +0.0873 rad = +5  deg  → foot_z = -62.6 mm  (body 62mm above ground)
-#   coxa  =  0.0000 rad = 0   deg  (legs pointing straight out)
+#   tibia = -0.6981 rad = -40 deg  → tibia tucked under femur (natural look)
+#   femur = +0.1222 rad = +7  deg  → foot_z = -52mm (body raised ~52mm)
+#   coxa  =  0.0000 rad = 0   deg  → legs pointing straight out
 #
-# foot_x = L1 + L2*cos(femur) + L3*cos(femur+tibia) = 222.5 mm  (reach)
-# foot_z =      L2*sin(femur) + L3*sin(femur+tibia) = -62.6 mm  (height)
+#   foot_x = L1 + L2*cos(femur) + L3*cos(femur+tibia) = 227.9 mm
+#   foot_z =      L2*sin(femur) + L3*sin(femur+tibia) = -52.1 mm
+#
+# All joints well within hardware limit ±0.785398 rad (±45 deg).
 
 initial_positions:
   # LEG 0
   coxa_leg0_joint:   0.0000
-  femur_leg0_joint:  0.0873
-  tibia_leg0_joint: -0.7500
+  femur_leg0_joint:  0.1222
+  tibia_leg0_joint: -0.6981
 
   # LEG 1
   coxa_leg1_joint:   0.0000
-  femur_leg1_joint:  0.0873
-  tibia_leg1_joint: -0.7500
+  femur_leg1_joint:  0.1222
+  tibia_leg1_joint: -0.6981
 
   # LEG 2
   coxa_leg2_joint:   0.0000
-  femur_leg2_joint:  0.0873
-  tibia_leg2_joint: -0.7500
+  femur_leg2_joint:  0.1222
+  tibia_leg2_joint: -0.6981
 
   # LEG 3
   coxa_leg3_joint:   0.0000
-  femur_leg3_joint:  0.0873
-  tibia_leg3_joint: -0.7500
+  femur_leg3_joint:  0.1222
+  tibia_leg3_joint: -0.6981
 
   # LEG 4
   coxa_leg4_joint:   0.0000
-  femur_leg4_joint:  0.0873
-  tibia_leg4_joint: -0.7500
+  femur_leg4_joint:  0.1222
+  tibia_leg4_joint: -0.6981
 
   # LEG 5
   coxa_leg5_joint:   0.0000
-  femur_leg5_joint:  0.0873
-  tibia_leg5_joint: -0.7500
+  femur_leg5_joint:  0.1222
+  tibia_leg5_joint: -0.6981
