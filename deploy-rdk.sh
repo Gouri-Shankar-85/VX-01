@@ -65,6 +65,7 @@ services:
       - /dev/ttyTFMINI:/dev/ttyTFMINI
       - /dev/ttyIMU:/dev/ttyIMU
       - /dev/video0:/dev/video0
+      - /dev/video1:/dev/video1
     command: ros2 launch vx01_hardware hardware.launch.py
 
   vx01-mavros:

@@ -98,6 +98,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgflags-dev libgoogle-glog-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# ─── YDLIDAR HP60C Camera SDK libraries (arch-aware) ─────────────────────────
+RUN mkdir -p /usr/local/lib/vx01_camera
+COPY vx01_ws/src/vx01_camera/libs/lib/ /tmp/camera_libs/
+RUN ARCH=$(uname -m) && \
+    cp -r /tmp/camera_libs/${ARCH}-linux-gnu/. /usr/local/lib/vx01_camera/ && \
+    rm -rf /tmp/camera_libs && \
+    echo "/usr/local/lib/vx01_camera" >> /etc/ld.so.conf.d/vx01_camera.conf && \
+    ldconfig
+
 # ─── TFmini-S LiDAR (UART) ───────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-serial picocom \
