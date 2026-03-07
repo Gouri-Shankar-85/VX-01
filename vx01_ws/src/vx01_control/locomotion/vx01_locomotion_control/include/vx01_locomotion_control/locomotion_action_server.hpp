@@ -1,22 +1,13 @@
 #ifndef VX01_LOCOMOTION_CONTROL_ACTION_SERVER_HPP
 #define VX01_LOCOMOTION_CONTROL_ACTION_SERVER_HPP
 
-// ── ROS 2 ──────────────────────────────────────────────────────────────────
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
-
-// ── ROS 2 message types ────────────────────────────────────────────────────
 #include <trajectory_msgs/msg/joint_trajectory.hpp>
 #include <trajectory_msgs/msg/joint_trajectory_point.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
-
-// ── Generated Walk action ──────────────────────────────────────────────────
 #include <vx01_locomotion_control/action/walk.hpp>
-
-// ── Hexapod locomotion library ─────────────────────────────────────────────
 #include "vx01_hexapod_locomotion/hexapod_locomotion.hpp"
-
-// ── STL ────────────────────────────────────────────────────────────────────
 #include <array>
 #include <string>
 #include <vector>
@@ -31,34 +22,44 @@ namespace vx01_locomotion_control {
 
 static constexpr int NUM_LEGS       = 6;
 static constexpr int JOINTS_PER_LEG = 3;
-static constexpr int TOTAL_JOINTS   = NUM_LEGS * JOINTS_PER_LEG;   // 18
+static constexpr int TOTAL_JOINTS   = NUM_LEGS * JOINTS_PER_LEG;
 
-// ── Link lengths (mm) from leg.JPG CAD drawing ───────────────────────────
-static constexpr double L1_MM = 60.55;    // COXA
-static constexpr double L2_MM = 73.84;    // FEMUR
-static constexpr double L3_MM = 112.16;   // TIBIA
+// ── Link lengths (mm) from leg.JPG CAD ───────────────────────────────────
+static constexpr double L1_MM = 60.55;
+static constexpr double L2_MM = 73.84;
+static constexpr double L3_MM = 112.16;
 
-// ── Gait defaults (from bezier_curve.JPG: T=110, A=22.78, S=108.67) ──────
-static constexpr double DEFAULT_STEP_LENGTH = 110.0;   // T – stride length (mm)
-static constexpr double DEFAULT_STEP_HEIGHT =  22.78;  // A – foot lift (mm)
-static constexpr double DEFAULT_STEP_PERIOD =   2.0;   // s – full 6-block cycle
+// ── Gait defaults from bezier_curve.JPG drawing ───────────────────────────
+static constexpr double DEFAULT_STEP_LENGTH = 110.0;   // T (mm)
+static constexpr double DEFAULT_STEP_HEIGHT =  22.78;  // A (mm)
+static constexpr double DEFAULT_STEP_PERIOD =   2.0;   // s
 
-// ── Home foot position (leg-local frame, mm) ─────────────────────────────
-// FK verified: theta1=0, theta2=39.6 deg, theta3=-118.29 deg
-// gives approximately x=170, z=-100 for the default tutorial robot.
-// For THIS robot (L1=60.55, L2=73.84, L3=112.16) we use a safe standing pose.
-static constexpr double HOME_X = 170.0;   // forward reach along coxa axis (mm)
-static constexpr double HOME_Y =   0.0;
-static constexpr double HOME_Z = -80.0;   // foot below coxa pivot (mm)
+// ── Home foot position (leg-local frame, mm) ──────────────────────────────
+// Computed by FK from desired URDF stand angles:
+//   coxa=0.0 rad, femur=-0.785 rad (-45 deg), tibia=+0.600 rad (+34 deg)
+// FK result: x=223.03 mm, y=0 mm, z=-72.82 mm
+// Round-trip IK:  DH theta2=-0.0577, theta3=-0.600
+//   URDF femur = theta2 + FEMUR_URDF_OFFSET = -0.0577 + (-0.7273) = -0.785  OK
+//   URDF tibia = -theta3 = +0.600                                            OK
+static constexpr double HOME_X =  223.03;
+static constexpr double HOME_Y =    0.0;
+static constexpr double HOME_Z =  -72.82;
 
-// ── Body geometry from hexapod.JPG CAD drawing ───────────────────────────
-// beta = 62.91 deg = 1.09792 rad (angle between adjacent leg mounts)
+// ── DH-to-URDF angle conversion ───────────────────────────────────────────
+// The URDF joint zero positions differ from the DH frame zeros.
+// Conversion applied inside publish_leg_trajectory():
+//
+//   coxa_urdf  = -dh_theta1
+//   femur_urdf =  dh_theta2 + FEMUR_URDF_OFFSET
+//   tibia_urdf = -dh_theta3
+//
+// FEMUR_URDF_OFFSET verified: IK at (223.03, 0, -72.82) gives theta2=-0.0577
+//   -0.0577 + (-0.7273) = -0.7850 ≈ -0.785 (desired URDF femur)
+static constexpr double FEMUR_URDF_OFFSET = -0.7273;   // rad
+
+// ── Body geometry from hexapod.JPG CAD ───────────────────────────────────
 static constexpr double BETA_ANGLE_RAD = 1.09792;   // 62.91 deg
-
-// ── Body radius = distance from centre to coxa pivot (mm) ────────────────
-// From hexapod.JPG: half the 100 mm inner span = 50 mm centre-to-mount
-// (adjust to match your URDF's base_link → coxa_pivot TF translation)
-static constexpr double BODY_RADIUS_MM = 50.0;
+static constexpr double BODY_RADIUS_MM = 50.0;       // centre to coxa pivot (mm)
 
 // ── Joint names – must match controller_manager YAML exactly ─────────────
 static const std::array<std::array<std::string, JOINTS_PER_LEG>, NUM_LEGS>
@@ -88,7 +89,6 @@ public:
     ~VX01LocomotionServer() override = default;
 
 private:
-    // ── Walk action-server callbacks ─────────────────────────────────────
     rclcpp_action::GoalResponse handle_goal(
         const rclcpp_action::GoalUUID& uuid,
         std::shared_ptr<const Walk::Goal> goal);
@@ -99,10 +99,8 @@ private:
     void handle_accepted(
         const std::shared_ptr<WalkGoalHandle> goal_handle);
 
-    // ── Core walking loop (runs in detached thread) ───────────────────────
     void execute_walk(const std::shared_ptr<WalkGoalHandle> goal_handle);
 
-    // ── Locomotion helpers ────────────────────────────────────────────────
     void standup_sequence();
     void move_to_stand();
     void send_all_legs(double traj_dt);
@@ -112,24 +110,20 @@ private:
         const std::array<double, JOINTS_PER_LEG>& dh_angles,
         double traj_dt);
 
-    // ── Parameter helpers ─────────────────────────────────────────────────
     void declare_parameters();
     void load_parameters();
     void init_hexapod();
 
-    // ── Members ──────────────────────────────────────────────────────────
     rclcpp_action::Server<Walk>::SharedPtr walk_server_;
-
     std::array<JointTrajPub::SharedPtr, NUM_LEGS> traj_pubs_;
-
     std::unique_ptr<vx01_hexapod_locomotion::HexapodLocomotion> hexapod_;
     std::atomic<bool> cancel_requested_{false};
 
-    // ── Runtime parameters ────────────────────────────────────────────────
     double p_L1_, p_L2_, p_L3_;
+    double p_body_radius_;
     double p_step_length_, p_step_height_, p_step_period_;
     double p_home_x_, p_home_y_, p_home_z_;
-    double p_body_radius_;
+    double p_femur_urdf_offset_;
     double p_update_rate_hz_;
     double p_traj_dt_;
     double p_stand_traj_dt_;
@@ -138,4 +132,4 @@ private:
 
 }  // namespace vx01_locomotion_control
 
-#endif  // VX01_LOCOMOTION_CONTROL_ACTION_SERVER_HPP
+#endif
