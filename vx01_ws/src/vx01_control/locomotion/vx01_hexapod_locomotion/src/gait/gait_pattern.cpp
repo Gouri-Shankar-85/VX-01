@@ -49,22 +49,27 @@ namespace vx01_hexapod_locomotion {
         }
 
         void GaitPattern::getFootPosition(int leg_id, double t,
-                                          double& x, double& y, double& z) const {
+                                  double& x, double& y, double& z) const {
 
             double tc = t < 0.0 ? 0.0 : (t > 1.0 ? 1.0 : t);
             LegPhase phase = getLegPhase(leg_id);
 
             int sub_block;
             if (current_block_ <= 2) {
-                sub_block = current_block_;      
-                sub_block = current_block_ - 3;  
+                sub_block = current_block_;
+            } else {
+                sub_block = current_block_ - 3;
             }
 
             double global_t = (static_cast<double>(sub_block) + tc) / 3.0;
 
             if (phase == LegPhase::SWING) {
                 swing_curve_.getPoint(global_t, x, y, z);
-                x = S_;  
+                x = S_;                         
+            } else {
+                x = S_;
+                y = T_ / 2.0 - global_t * T_;
+                z = 0.0;
             }
         }
 
