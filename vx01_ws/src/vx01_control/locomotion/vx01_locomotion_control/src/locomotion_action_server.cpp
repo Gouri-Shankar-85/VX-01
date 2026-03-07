@@ -22,14 +22,14 @@ VX01LocomotionServer::VX01LocomotionServer(const rclcpp::NodeOptions& options)
     init_hexapod();
 
     // ── Create one JointTrajectory publisher per leg ─────────────────────────
-    // We publish directly to /leg_N_controller/joint_trajectory instead of
-    // using the FJT action interface. This avoids action preemption errors
-    // (ResultCode=5, GOAL_TOLERANCE_VIOLATED) that occur when a new goal is
-    // sent before the controller finishes the previous one. The topic-based
-    // approach is the correct pattern for real-time streaming at 50 Hz.
+    // Publishing directly to /leg_N_controller/joint_trajectory avoids the
+    // FJT action preemption problem (ResultCode=5, GOAL_TOLERANCE_VIOLATED)
+    // that occurs when a new action goal is sent every 20ms while the previous
+    // 20ms trajectory is still executing. The topic approach lets the controller
+    // replace its current trajectory every cycle without action overhead.
     for (int i = 0; i < NUM_LEGS; ++i) {
-        std::string topic = "leg_" + std::to_string(i) +
-                            "_controller/joint_trajectory";
+        const std::string topic =
+            "leg_" + std::to_string(i) + "_controller/joint_trajectory";
         traj_pubs_[i] = create_publisher<JointTraj>(topic, 1);
     }
 
@@ -271,8 +271,6 @@ void VX01LocomotionServer::execute_walk(
         send_all_legs(p_traj_dt_);
 
         // ── Publish feedback ───────────────────────────────────────────────
-        // gait_block: the library doesn't expose getCurrentBlock() publicly,
-        // so we track it ourselves by counting block transitions.
         feedback->gait_block   = static_cast<int32_t>(
             std::fmod(elapsed / (p_step_period_ / 6.0), 6.0));
         feedback->elapsed_time = elapsed;
@@ -310,38 +308,41 @@ void VX01LocomotionServer::move_to_stand()
 // ─────────────────────────────────────────────────────────────────────────────
 void VX01LocomotionServer::send_all_legs(double traj_dt)
 {
-    const auto angles = hexapod_->getJointAngles();  // 18-element vector
+    const auto dh_angles = hexapod_->getJointAngles();  // 18-element vector
 
-    if (static_cast<int>(angles.size()) < TOTAL_JOINTS) {
+    if (static_cast<int>(dh_angles.size()) < TOTAL_JOINTS) {
         RCLCPP_ERROR_ONCE(get_logger(),
             "getJointAngles() returned %zu values (expected %d)",
-            angles.size(), TOTAL_JOINTS);
+            dh_angles.size(), TOTAL_JOINTS);
         return;
     }
 
     for (int leg = 0; leg < NUM_LEGS; ++leg) {
         std::array<double, JOINTS_PER_LEG> leg_angles;
         for (int j = 0; j < JOINTS_PER_LEG; ++j) {
-            leg_angles[j] = angles[leg * JOINTS_PER_LEG + j];
+            leg_angles[j] = dh_angles[leg * JOINTS_PER_LEG + j];
         }
         publish_leg_trajectory(leg, leg_angles, traj_dt);
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  publish_leg_trajectory – publish a JointTrajectory to one leg's topic
+//  publish_leg_trajectory
 //
-//  WHY topic instead of FJT action:
-//    The FJT action returns ResultCode=5 (GOAL_TOLERANCE_VIOLATED) when a new
-//    goal preempts an in-progress one. At 50 Hz we send a new goal every 20 ms
-//    while traj_dt is also 20 ms – the controller never finishes before the
-//    next goal arrives.  Publishing directly to the /joint_trajectory topic
-//    side-steps the action machinery: the controller replaces its current
-//    trajectory with the new one every cycle, giving smooth streaming motion.
+//  WHY topic, not FJT action:
+//    Sending a new FJT goal every 20ms while the previous 20ms trajectory is
+//    still executing causes ResultCode=5 (GOAL_TOLERANCE_VIOLATED). The topic
+//    interface simply replaces the controller's current trajectory each cycle.
+//
+//  WHY negate joint angles:
+//    All URDF joints have axis xyz="0 0 -1" (negative Z rotation).
+//    The DH-based IK computes angles for positive Z rotation (standard DH).
+//    Commanded URDF angle = -DH_computed_angle.
+//    Without this negation the legs fold the WRONG way and violate joint limits.
 // ─────────────────────────────────────────────────────────────────────────────
 void VX01LocomotionServer::publish_leg_trajectory(
     int  leg_index,
-    const std::array<double, JOINTS_PER_LEG>& angles,
+    const std::array<double, JOINTS_PER_LEG>& dh_angles,
     double traj_dt)
 {
     JointTraj msg;
@@ -352,7 +353,15 @@ void VX01LocomotionServer::publish_leg_trajectory(
     }
 
     trajectory_msgs::msg::JointTrajectoryPoint pt;
-    pt.positions.assign(angles.begin(), angles.end());
+
+    // ── SIGN CONVENTION FIX ──────────────────────────────────────────────────
+    // All URDF joint axes are xyz="0 0 -1", meaning positive position command
+    // rotates the joint around NEGATIVE Z. The DH IK convention uses positive Z.
+    // Therefore: URDF_commanded = -DH_computed  for ALL three joints.
+    for (int j = 0; j < JOINTS_PER_LEG; ++j) {
+        pt.positions.push_back(-dh_angles[j]);
+    }
+
     pt.velocities.assign(JOINTS_PER_LEG, 0.0);
     pt.time_from_start = rclcpp::Duration::from_seconds(traj_dt);
     msg.points.push_back(pt);

@@ -112,16 +112,6 @@ JOINT_NAMES = {{
     {{"coxa_leg5_joint", "femur_leg5_joint", "tibia_leg5_joint"}}
 }};
 
-// ── FollowJointTrajectory action server names (one per leg controller) ────
-static const std::array<std::string, NUM_LEGS> FJT_SERVER_NAMES = {{
-    "leg_0_controller/follow_joint_trajectory",
-    "leg_1_controller/follow_joint_trajectory",
-    "leg_2_controller/follow_joint_trajectory",
-    "leg_3_controller/follow_joint_trajectory",
-    "leg_4_controller/follow_joint_trajectory",
-    "leg_5_controller/follow_joint_trajectory"
-}};
-
 // ─────────────────────────────────────────────────────────────────────────────
 //  VX01LocomotionServer – ROS 2 action server node
 //
@@ -137,10 +127,10 @@ static const std::array<std::string, NUM_LEGS> FJT_SERVER_NAMES = {{
 class VX01LocomotionServer : public rclcpp::Node
 {
 public:
-    using Walk            = vx01_locomotion_control::action::Walk;
-    using WalkGoalHandle  = rclcpp_action::ServerGoalHandle<Walk>;
-    using JointTraj       = trajectory_msgs::msg::JointTrajectory;
-    using JointTrajPub    = rclcpp::Publisher<JointTraj>;
+    using Walk           = vx01_locomotion_control::action::Walk;
+    using WalkGoalHandle = rclcpp_action::ServerGoalHandle<Walk>;
+    using JointTraj      = trajectory_msgs::msg::JointTrajectory;
+    using JointTrajPub   = rclcpp::Publisher<JointTraj>;
 
     explicit VX01LocomotionServer(
         const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
@@ -170,10 +160,13 @@ private:
     //  traj_dt : time_from_start for the single trajectory waypoint.
     void send_all_legs(double traj_dt);
 
-    //  Publish a JointTrajectory message to one leg's topic.
+    //  Publish one JointTrajectory message to a single leg's topic.
+    //  NOTE: joint angles are negated here because all URDF joint axes
+    //  are defined as xyz="0 0 -1" (negative Z), while the DH-based IK
+    //  computes angles for positive Z rotation convention.
     void publish_leg_trajectory(
         int  leg_index,
-        const std::array<double, JOINTS_PER_LEG>& angles,
+        const std::array<double, JOINTS_PER_LEG>& dh_angles,
         double traj_dt);
 
     // ── Parameter helpers ─────────────────────────────────────────────────
@@ -187,11 +180,11 @@ private:
     void init_hexapod();
 
     // ── Members ───────────────────────────────────────────────────────────
-    rclcpp_action::Server<Walk>::SharedPtr              walk_server_;
+    rclcpp_action::Server<Walk>::SharedPtr           walk_server_;
+
     // One publisher per leg → /leg_N_controller/joint_trajectory
-    // Publishing directly to the topic avoids FJT action preemption (code=5)
-    // and is the correct pattern for real-time streaming joint commands.
-    std::array<JointTrajPub::SharedPtr, NUM_LEGS>       traj_pubs_;
+    // Topic-based streaming avoids FJT action preemption (code=5).
+    std::array<JointTrajPub::SharedPtr, NUM_LEGS>    traj_pubs_;
 
     // Top-level locomotion engine from the hexapod library
     std::unique_ptr<vx01_hexapod_locomotion::HexapodLocomotion> hexapod_;
