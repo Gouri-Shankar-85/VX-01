@@ -26,37 +26,39 @@
 namespace vx01_locomotion_control {
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Robot constants – sourced from engineering drawings & URDF
+//  Robot constants
 // ─────────────────────────────────────────────────────────────────────────────
 
 static constexpr int NUM_LEGS       = 6;
 static constexpr int JOINTS_PER_LEG = 3;
-static constexpr int TOTAL_JOINTS   = NUM_LEGS * JOINTS_PER_LEG;  // 18
+static constexpr int TOTAL_JOINTS   = NUM_LEGS * JOINTS_PER_LEG;   // 18
 
-// ── Link lengths (mm) ─────────────────────────────────────────────────────
-static constexpr double L1_MM = 60.55;
-static constexpr double L2_MM = 73.84;
-static constexpr double L3_MM = 112.16;
+// ── Link lengths (mm) from leg.JPG CAD drawing ───────────────────────────
+static constexpr double L1_MM = 60.55;    // COXA
+static constexpr double L2_MM = 73.84;    // FEMUR
+static constexpr double L3_MM = 112.16;   // TIBIA
 
-// ── Gait defaults ─────────────────────────────────────────────────────────
-// NOTE: step_length and step_height are deliberately small.
-// The home position (223 mm reach) is near the kinematic extension limit.
-// Larger strides would push the limb outside the reachable workspace.
-static constexpr double DEFAULT_STEP_LENGTH =  20.0;   // T – safe stride (mm)
-static constexpr double DEFAULT_STEP_HEIGHT =  15.0;   // A – safe lift (mm)
-static constexpr double DEFAULT_STEP_PERIOD =   2.0;   // s – full cycle
+// ── Gait defaults (from bezier_curve.JPG: T=110, A=22.78, S=108.67) ──────
+static constexpr double DEFAULT_STEP_LENGTH = 110.0;   // T – stride length (mm)
+static constexpr double DEFAULT_STEP_HEIGHT =  22.78;  // A – foot lift (mm)
+static constexpr double DEFAULT_STEP_PERIOD =   2.0;   // s – full 6-block cycle
 
 // ── Home foot position (leg-local frame, mm) ─────────────────────────────
-// These values are derived analytically from the desired standing posture:
-//   femur URDF = -0.785 rad (-45°), tibia URDF = +0.600 rad (+34°)
-// With elbow-DOWN IK and DH=URDF (no sign flip), the FK of those angles gives:
-//   home_x = 223.03 mm,  home_z = -72.82 mm  (foot is 72.8 mm below coxa)
-static constexpr double HOME_X = 223.03;
+// FK verified: theta1=0, theta2=39.6 deg, theta3=-118.29 deg
+// gives approximately x=170, z=-100 for the default tutorial robot.
+// For THIS robot (L1=60.55, L2=73.84, L3=112.16) we use a safe standing pose.
+static constexpr double HOME_X = 170.0;   // forward reach along coxa axis (mm)
 static constexpr double HOME_Y =   0.0;
-static constexpr double HOME_Z = -72.82;
+static constexpr double HOME_Z = -80.0;   // foot below coxa pivot (mm)
 
-// ── Body geometry ─────────────────────────────────────────────────────────
-static constexpr double BETA_ANGLE_RAD = 1.09792;   // 62.91°
+// ── Body geometry from hexapod.JPG CAD drawing ───────────────────────────
+// beta = 62.91 deg = 1.09792 rad (angle between adjacent leg mounts)
+static constexpr double BETA_ANGLE_RAD = 1.09792;   // 62.91 deg
+
+// ── Body radius = distance from centre to coxa pivot (mm) ────────────────
+// From hexapod.JPG: half the 100 mm inner span = 50 mm centre-to-mount
+// (adjust to match your URDF's base_link → coxa_pivot TF translation)
+static constexpr double BODY_RADIUS_MM = 50.0;
 
 // ── Joint names – must match controller_manager YAML exactly ─────────────
 static const std::array<std::array<std::string, JOINTS_PER_LEG>, NUM_LEGS>
@@ -101,13 +103,10 @@ private:
     void execute_walk(const std::shared_ptr<WalkGoalHandle> goal_handle);
 
     // ── Locomotion helpers ────────────────────────────────────────────────
-    void standup_sequence();      // smooth interpolation from zeros to home
-    void move_to_stand();         // single-shot stand at slow traj speed
+    void standup_sequence();
+    void move_to_stand();
     void send_all_legs(double traj_dt);
 
-    // Publish one JointTrajectory to a single leg's topic.
-    // DH angles are sent directly without sign negation (elbow-DOWN IK maps
-    // naturally to URDF-commanded angles for the VX-01 joint convention).
     void publish_leg_trajectory(
         int leg_index,
         const std::array<double, JOINTS_PER_LEG>& dh_angles,
@@ -121,7 +120,6 @@ private:
     // ── Members ──────────────────────────────────────────────────────────
     rclcpp_action::Server<Walk>::SharedPtr walk_server_;
 
-    // One publisher per leg → /leg_N_controller/joint_trajectory
     std::array<JointTrajPub::SharedPtr, NUM_LEGS> traj_pubs_;
 
     std::unique_ptr<vx01_hexapod_locomotion::HexapodLocomotion> hexapod_;
@@ -131,6 +129,7 @@ private:
     double p_L1_, p_L2_, p_L3_;
     double p_step_length_, p_step_height_, p_step_period_;
     double p_home_x_, p_home_y_, p_home_z_;
+    double p_body_radius_;
     double p_update_rate_hz_;
     double p_traj_dt_;
     double p_stand_traj_dt_;

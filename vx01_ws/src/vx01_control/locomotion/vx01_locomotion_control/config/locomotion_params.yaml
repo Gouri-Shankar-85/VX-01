@@ -2,24 +2,47 @@ locomotion_node:
   ros__parameters:
     use_sim_time: true
 
-    # ── Kinematic link lengths (mm) ──────────────────────────────────────────
-    L1: 60.55    # COXA
-    L2: 73.84    # FEMUR
-    L3: 112.16   # TIBIA
+    # ── Kinematic link lengths (mm) — from leg.JPG CAD drawing ──────────────
+    L1: 60.55    # COXA  length (mm)
+    L2: 73.84    # FEMUR length (mm)
+    L3: 112.16   # TIBIA length (mm)
 
-    step_length:  20.0    # T – stride length (mm)  ← tuned for this home pos
-    step_height:  15.0    # A – foot lift (mm)       ← conservative lift
-    step_period:   2.0    # s – full 6-block cycle
+    # ── Body geometry — from hexapod.JPG CAD drawing ─────────────────────────
+    # body_radius = distance from body centre to the coxa pivot (mm).
+    # Measure this from your URDF: the XY distance from base_link origin
+    # to the coxa_legN_joint origin for leg 0 (which lies along +X).
+    body_radius: 50.0
 
-    # ── Home foot position (leg-local frame, mm) ─────────────────────────────
-    home_x: 223.03
+    # ── Gait parameters — from bezier_curve.JPG engineering drawing ──────────
+    # T  = stride length (mm):  from drawing T = 110.0
+    # A  = foot lift height (mm): from drawing A = 22.78
+    # S  = reach depth (mm):   matches home_x below
+    step_length: 110.0   # T (mm)
+    step_height:  22.78  # A (mm)
+    step_period:   2.0   # full 6-block tripod cycle (s)
+
+    # ── Home foot position in the leg-local frame (mm) ───────────────────────
+    # home_x = forward reach from coxa pivot.
+    # home_z = foot height below coxa pivot (negative = below).
+    # These are passed to IK every time stand() is called.
+    # Tune home_z so the robot body sits at the desired height above ground.
+    home_x: 170.0
     home_y:   0.0
-    home_z: -72.82
+    home_z: -80.0
 
     # ── Control loop ─────────────────────────────────────────────────────────
-    update_rate_hz:  50.0   # Hz
-    traj_dt:          0.02  # s – time_from_start per gait waypoint
-    stand_traj_dt:    0.08  # s – per-step duration during stand-up interpolation
+    # update_rate_hz should be >= 2 * (6 / step_period) to get smooth motion.
+    # At step_period=2.0 s, 1 block = 0.333 s → 50 Hz = ~16 samples/block.
+    update_rate_hz: 50.0   # Hz
 
-    # ── Stand-up sequence ─────────────────────────────────────────────────────
+    # traj_dt: the time_from_start sent in each JointTrajectory waypoint.
+    # Keep this equal to 1/update_rate_hz so the controller executes in lock-step.
+    traj_dt: 0.02   # s  (= 1/50)
+
+    # stand_traj_dt: per-waypoint duration used during stand-up interpolation.
+    # Slower than traj_dt to allow safe, smooth motion to home.
+    stand_traj_dt: 0.08   # s  (= 4 x traj_dt)
+
+    # standup_steps: number of interpolation steps from zero to home position.
+    # Total stand-up time = standup_steps * stand_traj_dt = 40 * 0.08 = 3.2 s
     standup_steps: 40
