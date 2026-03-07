@@ -54,7 +54,7 @@
         <axis
             xyz="0 0 -1" />
         <limit
-            lower="-0.78"
+            lower="-1.5708"
             upper="0.78"
             effort="1.5"
             velocity="3.14" />
@@ -113,8 +113,8 @@
         <axis
             xyz="0 0 -1" />
         <limit
-            lower="-0.78"
-            upper="0.10"
+            lower="-1.5708"
+            upper="1.5708"
             effort="1.5"
             velocity="3.14" />
     </joint>
@@ -172,8 +172,8 @@
         <axis
             xyz="0 0 1" />
         <limit
-            lower="-0.78"
-            upper="0.10"
+            lower="-1.5708"
+            upper="1.5708"
             effort="1.5"
             velocity="3.14" />
     </joint>
