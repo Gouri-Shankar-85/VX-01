@@ -62,7 +62,12 @@ install(TARGETS locomotion_node
 install(DIRECTORY include/
     DESTINATION include)
 
-install(DIRECTORY launch config
+install(DIRECTORY launch config scripts
     DESTINATION share/${PROJECT_NAME})
+
+install(PROGRAMS
+    scripts/send_walk_goal.py
+    DESTINATION lib/${PROJECT_NAME}
+)
 
 ament_package()
