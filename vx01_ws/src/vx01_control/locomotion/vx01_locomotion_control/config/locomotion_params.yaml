@@ -1,0 +1,48 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  vx01_locomotion_control – locomotion_params.yaml
+#
+#  All values sourced directly from engineering drawings (10-02-2026):
+#    vx01_leg.JPG           → L1, L2, L3
+#    vx01_bezier_curve.JPG  → S (home_x), T (step_length), A (step_height)
+#    vx01_hexapod.JPG       → body geometry
+#
+#  Lengths : millimetres
+#  Angles  : radians
+#  Times   : seconds
+# ─────────────────────────────────────────────────────────────────────────────
+
+locomotion_node:
+  ros__parameters:
+    use_sim_time: true
+
+    # ── Kinematic link lengths (mm) ──────────────────────────────────────────
+    # Source: vx01_leg.JPG dimension table
+    L1: 60.55    # COXA  – coxa servo output shaft → femur joint
+    L2: 73.84    # FEMUR – femur joint → tibia joint
+    L3: 112.16   # TIBIA – tibia joint → foot tip contact point
+
+    # ── Default gait parameters ──────────────────────────────────────────────
+    # Source: vx01_bezier_curve.JPG
+    step_length: 110.00   # T – stride length (mm)
+    step_height:  22.78   # A – foot lift height (mm)
+    step_period:   2.0    # s – full 6-block gait cycle duration
+
+    # ── Home foot position in leg-local frame (mm) ───────────────────────────
+    # Source: vx01_bezier_curve.JPG  (S = 108.67 mm)
+    home_x: 108.67   # reach along coxa axis (= S from drawing)
+    home_y:   0.0    # lateral offset at rest
+    home_z: -80.0    # height below coxa joint (negative = downward)
+    #
+    # home_z tuning guide:
+    #   • More negative → lower body (longer stance leg extension)
+    #   • Less negative → raised body (shorter stance)
+    #   • A good starting value is -(L2 + L3 * cos(stand_angle))
+    #   • With L2=73.84, L3=112.16 and a ~45° tibia angle: ≈ -153 mm max reach
+    #     –80 mm gives a comfortable mid-range standing posture.
+
+    # ── Control loop ─────────────────────────────────────────────────────────
+    update_rate_hz: 50.0   # Hz – hexapod_->update(dt) call rate
+    traj_dt: 0.02          # s  – time_from_start on each gait trajectory point
+                           #      keep equal to 1/update_rate_hz
+    stand_traj_dt: 0.5     # s  – slower trajectory duration for stand moves
+                           #      gives the robot time to move smoothly to home

@@ -1,0 +1,29 @@
+# ── Goal ──────────────────────────────────────────────────────────────────────
+#
+# Velocity command in the body frame.
+# Translational units : m/s  (converted to mm/s inside the node)
+# Rotational units    : rad/s
+#
+float64 velocity_x       # Forward (+x) / backward (-x)
+float64 velocity_y       # Left (+y) / right (-y)
+float64 velocity_omega   # Yaw rate (CCW positive)
+
+# Walk for this many seconds.  0.0 = walk indefinitely until cancelled.
+float64 duration
+
+# Optional gait overrides – 0.0 means "use node parameter defaults"
+float64 step_length   # mm  stride length  (default: 110.0)
+float64 step_height   # mm  foot lift      (default:  22.78)
+float64 step_period   # s   full 6-block cycle period (default: 2.0)
+
+---
+# ── Result ────────────────────────────────────────────────────────────────────
+bool    success
+string  message
+float64 elapsed_time   # total seconds actually spent walking
+
+---
+# ── Feedback ──────────────────────────────────────────────────────────────────
+int32   gait_block     # current gait block index [0-5]
+float64 elapsed_time   # seconds since walking started
+float64[] joint_angles # 18 values: [leg0_coxa, leg0_femur, leg0_tibia, leg1_coxa ...]
