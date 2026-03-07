@@ -38,7 +38,7 @@ namespace vx01_hexapod_locomotion {
             if (cp1 < -1.0 || cp1 > 1.0) return false;
             double phi1 = std::acos(cp1);
 
-            theta2 = phi2 + phi1;
+            theta2 = phi2 - phi1;
 
             double cp3 = (r1*r1 - L2_*L2_ - L3_*L3_) / (-2.0*L2_*L3_);
             if (cp3 < -1.0 || cp3 > 1.0) return false;

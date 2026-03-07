@@ -17,25 +17,13 @@ namespace vx01_hexapod_locomotion {
           home_x_(108.67), home_y_(0.0), home_z_(-80.0)
 
     {
-        // FIX: leg_angles_ MUST match the URDF coxa_legN_joint rpy-z values.
-        // These angles drive the velocity-projection formula in updateLeg():
-        //   vy_leg = -sin(rot)*vx + cos(rot)*vy + omega*radius
-        // Wrong angles here mean forward motion has zero (or wrong) effect on legs.
-        //
-        // Source: vx01_description/urdf/hexapod/leg_N.xacro coxa joint rpy-z:
-        //   leg0: -1.5708 (right-side,   -90°)
-        //   leg1: -0.7854 (front-right,  -45°)
-        //   leg2: +0.7854 (front-left,   +45°)
-        //   leg3: +1.5708 (left-side,    +90°)
-        //   leg4: +2.3920 (rear-left,   +137°)
-        //   leg5: -2.3562 (rear-right,  -135°)
         leg_angles_ = {
-            -M_PI / 2.0,   // leg 0: right-side   (-90°)
-            -M_PI / 4.0,   // leg 1: front-right  (-45°)
-             M_PI / 4.0,   // leg 2: front-left   (+45°)
-             M_PI / 2.0,   // leg 3: left-side    (+90°)
-             2.392,        // leg 4: rear-left    (+137°)
-            -2.3562        // leg 5: rear-right   (-135°)
+            -M_PI / 2.0,   // leg0: right-side   (-90°)
+            -M_PI / 4.0,   // leg1: front-right  (-45°)
+             M_PI / 4.0,   // leg2: front-left   (+45°)
+             M_PI / 2.0,   // leg3: left-side    (+90°)
+             2.392,        // leg4: rear-left   (+137°)
+            -2.3562        // leg5: rear-right  (-135°)
         };
 
         gait_pattern_ = std::make_shared<gait::GaitPattern>(

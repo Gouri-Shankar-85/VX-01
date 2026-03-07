@@ -3,23 +3,23 @@ locomotion_node:
     use_sim_time: true
 
     # ── Kinematic link lengths (mm) ──────────────────────────────────────────
-    L1: 60.55    # COXA  – coxa servo output shaft → femur joint
-    L2: 73.84    # FEMUR – femur joint → tibia joint
-    L3: 112.16   # TIBIA – tibia joint → foot tip contact point
+    L1: 60.55    # COXA
+    L2: 73.84    # FEMUR
+    L3: 112.16   # TIBIA
 
-    # ── Default gait parameters ──────────────────────────────────────────────
-    step_length: 110.00   # T – stride length (mm)
-    step_height:  22.78   # A – foot lift height (mm)
-    step_period:   2.0    # s – full 6-block gait cycle duration
+    step_length:  20.0    # T – stride length (mm)  ← tuned for this home pos
+    step_height:  15.0    # A – foot lift (mm)       ← conservative lift
+    step_period:   2.0    # s – full 6-block cycle
 
-    # ── Home foot position in leg-local frame (mm) ───────────────────────────
-    home_x: 108.67  
-    home_y:   0.0    
-
-    home_z: -155.0
+    # ── Home foot position (leg-local frame, mm) ─────────────────────────────
+    home_x: 223.03
+    home_y:   0.0
+    home_z: -72.82
 
     # ── Control loop ─────────────────────────────────────────────────────────
-    update_rate_hz: 50.0   
-    traj_dt: 0.02                                   
-    stand_traj_dt: 0.5     
-                           
+    update_rate_hz:  50.0   # Hz
+    traj_dt:          0.02  # s – time_from_start per gait waypoint
+    stand_traj_dt:    0.08  # s – per-step duration during stand-up interpolation
+
+    # ── Stand-up sequence ─────────────────────────────────────────────────────
+    standup_steps: 40
