@@ -21,10 +21,16 @@ VX01LocomotionServer::VX01LocomotionServer(const rclcpp::NodeOptions& options)
     // ── Build the locomotion engine ─────────────────────────────────────────
     init_hexapod();
 
-    // ── Create one FJT action client per leg ────────────────────────────────
+    // ── Create one JointTrajectory publisher per leg ─────────────────────────
+    // We publish directly to /leg_N_controller/joint_trajectory instead of
+    // using the FJT action interface. This avoids action preemption errors
+    // (ResultCode=5, GOAL_TOLERANCE_VIOLATED) that occur when a new goal is
+    // sent before the controller finishes the previous one. The topic-based
+    // approach is the correct pattern for real-time streaming at 50 Hz.
     for (int i = 0; i < NUM_LEGS; ++i) {
-        fjt_clients_[i] = rclcpp_action::create_client<FJT>(
-            this, FJT_SERVER_NAMES[i]);
+        std::string topic = "leg_" + std::to_string(i) +
+                            "_controller/joint_trajectory";
+        traj_pubs_[i] = create_publisher<JointTraj>(topic, 1);
     }
 
     // ── Advertise the Walk action server ────────────────────────────────────
@@ -192,20 +198,6 @@ void VX01LocomotionServer::execute_walk(
 {
     const auto goal = goal_handle->get_goal();
 
-    // ── Wait for all 6 FJT servers (max 15 s each) ──────────────────────────
-    for (int i = 0; i < NUM_LEGS; ++i) {
-        if (!fjt_clients_[i]->wait_for_action_server(15s)) {
-            RCLCPP_ERROR(get_logger(),
-                "Timed out waiting for FJT server: %s",
-                FJT_SERVER_NAMES[i].c_str());
-            auto result      = std::make_shared<Walk::Result>();
-            result->success  = false;
-            result->message  = "FJT server unavailable: " + FJT_SERVER_NAMES[i];
-            goal_handle->abort(result);
-            return;
-        }
-    }
-
     // ── Apply per-goal gait overrides ────────────────────────────────────────
     const double step_length =
         (goal->step_length > 1e-6) ? goal->step_length : p_step_length_;
@@ -279,8 +271,10 @@ void VX01LocomotionServer::execute_walk(
         send_all_legs(p_traj_dt_);
 
         // ── Publish feedback ───────────────────────────────────────────────
-        feedback->gait_block   = hexapod_->getState() ==
-            vx01_hexapod_locomotion::LocomotionState::WALKING ? 1 : 0;
+        // gait_block: the library doesn't expose getCurrentBlock() publicly,
+        // so we track it ourselves by counting block transitions.
+        feedback->gait_block   = static_cast<int32_t>(
+            std::fmod(elapsed / (p_step_period_ / 6.0), 6.0));
         feedback->elapsed_time = elapsed;
         feedback->joint_angles = hexapod_->getJointAngles();
         goal_handle->publish_feedback(feedback);
@@ -312,7 +306,7 @@ void VX01LocomotionServer::move_to_stand()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  send_all_legs – dispatch current joint angles to all 6 FJT servers
+//  send_all_legs – publish current joint angles to all 6 leg topics
 // ─────────────────────────────────────────────────────────────────────────────
 void VX01LocomotionServer::send_all_legs(double traj_dt)
 {
@@ -330,58 +324,40 @@ void VX01LocomotionServer::send_all_legs(double traj_dt)
         for (int j = 0; j < JOINTS_PER_LEG; ++j) {
             leg_angles[j] = angles[leg * JOINTS_PER_LEG + j];
         }
-        send_leg_trajectory(leg, leg_angles, traj_dt);
+        publish_leg_trajectory(leg, leg_angles, traj_dt);
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  send_leg_trajectory – async fire-and-go to one FJT server
+//  publish_leg_trajectory – publish a JointTrajectory to one leg's topic
 //
-//  We send a single-point trajectory each control cycle.
-//  The JointTrajectoryController interpolates between successive points,
-//  giving smooth motion at the hardware update rate (1000 Hz in YAML).
-//
-//  We do NOT block on the result: waiting would serialise the 6-leg dispatch
-//  and add latency equal to 6 × traj_dt.  Instead we log warnings for
-//  non-SUCCEEDED results via the result callback.
+//  WHY topic instead of FJT action:
+//    The FJT action returns ResultCode=5 (GOAL_TOLERANCE_VIOLATED) when a new
+//    goal preempts an in-progress one. At 50 Hz we send a new goal every 20 ms
+//    while traj_dt is also 20 ms – the controller never finishes before the
+//    next goal arrives.  Publishing directly to the /joint_trajectory topic
+//    side-steps the action machinery: the controller replaces its current
+//    trajectory with the new one every cycle, giving smooth streaming motion.
 // ─────────────────────────────────────────────────────────────────────────────
-void VX01LocomotionServer::send_leg_trajectory(
+void VX01LocomotionServer::publish_leg_trajectory(
     int  leg_index,
     const std::array<double, JOINTS_PER_LEG>& angles,
     double traj_dt)
 {
-    auto goal_msg = FJT::Goal();
-    goal_msg.trajectory.header.stamp = now();
+    JointTraj msg;
+    msg.header.stamp = now();
 
-    // Joint names
     for (int j = 0; j < JOINTS_PER_LEG; ++j) {
-        goal_msg.trajectory.joint_names.push_back(JOINT_NAMES[leg_index][j]);
+        msg.joint_names.push_back(JOINT_NAMES[leg_index][j]);
     }
 
-    // Single waypoint
     trajectory_msgs::msg::JointTrajectoryPoint pt;
     pt.positions.assign(angles.begin(), angles.end());
-    // Provide zero velocities so the controller does not extrapolate
     pt.velocities.assign(JOINTS_PER_LEG, 0.0);
     pt.time_from_start = rclcpp::Duration::from_seconds(traj_dt);
-    goal_msg.trajectory.points.push_back(pt);
+    msg.points.push_back(pt);
 
-    // Goal tolerance: use controller YAML defaults (no override here)
-
-    auto send_opts = rclcpp_action::Client<FJT>::SendGoalOptions();
-    send_opts.result_callback =
-        [this, leg_index](
-            const rclcpp_action::ClientGoalHandle<FJT>::WrappedResult& wr)
-        {
-            if (wr.code != rclcpp_action::ResultCode::SUCCEEDED) {
-                RCLCPP_WARN_THROTTLE(
-                    get_logger(), *get_clock(), 2000 /*ms*/,
-                    "FJT result for leg_%d: code=%d",
-                    leg_index, static_cast<int>(wr.code));
-            }
-        };
-
-    fjt_clients_[leg_index]->async_send_goal(goal_msg, send_opts);
+    traj_pubs_[leg_index]->publish(msg);
 }
 
 }  // namespace vx01_locomotion_control

@@ -8,7 +8,6 @@
 // ── ROS 2 message types ────────────────────────────────────────────────────
 #include <trajectory_msgs/msg/joint_trajectory.hpp>
 #include <trajectory_msgs/msg/joint_trajectory_point.hpp>
-#include <control_msgs/action/follow_joint_trajectory.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 
 // ── Generated Walk action ──────────────────────────────────────────────────
@@ -16,7 +15,6 @@
 
 // ── Hexapod locomotion library ─────────────────────────────────────────────
 #include "vx01_hexapod_locomotion/hexapod_locomotion.hpp"
-#include "vx01_hexapod_locomotion/control/leg_controller.hpp"
 
 // ── STL ────────────────────────────────────────────────────────────────────
 #include <array>
@@ -141,8 +139,8 @@ class VX01LocomotionServer : public rclcpp::Node
 public:
     using Walk            = vx01_locomotion_control::action::Walk;
     using WalkGoalHandle  = rclcpp_action::ServerGoalHandle<Walk>;
-    using FJT             = control_msgs::action::FollowJointTrajectory;
-    using FJTClient       = rclcpp_action::Client<FJT>;
+    using JointTraj       = trajectory_msgs::msg::JointTrajectory;
+    using JointTrajPub    = rclcpp::Publisher<JointTraj>;
 
     explicit VX01LocomotionServer(
         const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
@@ -172,8 +170,8 @@ private:
     //  traj_dt : time_from_start for the single trajectory waypoint.
     void send_all_legs(double traj_dt);
 
-    //  Send one trajectory point to a single leg's FJT server (fire-and-go).
-    void send_leg_trajectory(
+    //  Publish a JointTrajectory message to one leg's topic.
+    void publish_leg_trajectory(
         int  leg_index,
         const std::array<double, JOINTS_PER_LEG>& angles,
         double traj_dt);
@@ -189,8 +187,11 @@ private:
     void init_hexapod();
 
     // ── Members ───────────────────────────────────────────────────────────
-    rclcpp_action::Server<Walk>::SharedPtr         walk_server_;
-    std::array<FJTClient::SharedPtr, NUM_LEGS>     fjt_clients_;
+    rclcpp_action::Server<Walk>::SharedPtr              walk_server_;
+    // One publisher per leg → /leg_N_controller/joint_trajectory
+    // Publishing directly to the topic avoids FJT action preemption (code=5)
+    // and is the correct pattern for real-time streaming joint commands.
+    std::array<JointTrajPub::SharedPtr, NUM_LEGS>       traj_pubs_;
 
     // Top-level locomotion engine from the hexapod library
     std::unique_ptr<vx01_hexapod_locomotion::HexapodLocomotion> hexapod_;
