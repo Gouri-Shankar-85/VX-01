@@ -132,7 +132,7 @@ void HexapodLocomotionNode::sendLegTrajectory(int leg_index,
     point.time_from_start = rclcpp::Duration::from_seconds(duration_sec);
 
     goal.trajectory.points.push_back(point);
-    goal.trajectory.header.stamp = now();
+    goal.trajectory.header.stamp = rclcpp::Time(0);
 
     action_clients_[leg_index]->async_send_goal(goal);
 }

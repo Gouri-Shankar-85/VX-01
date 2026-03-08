@@ -18,7 +18,7 @@ hexapod_locomotion_node:
     # Gait parameters
     step_length: 110.0
     step_height: 15.0
-    step_period: 3.0
+    step_period: 12.0
 
     # Standby joint angles (rad) — applied before walking starts
     standby_coxa:  0.0
@@ -43,7 +43,8 @@ hexapod_locomotion_node:
       leg_5: [coxa_leg5_joint, femur_leg5_joint, tibia_leg5_joint]
 
     # Duration (s) to move to standby pose before walking
-    standby_duration: 6.0
+    standby_duration: 2.0
 
+    # How long each gait block takes (s)
     # step_period / 6 = one block
     update_rate: 50.0
