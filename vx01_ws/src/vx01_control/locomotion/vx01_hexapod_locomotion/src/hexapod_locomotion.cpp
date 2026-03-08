@@ -135,16 +135,13 @@ namespace vx01_hexapod_locomotion {
         double gait_x, gait_y, gait_z;
         gait_pattern_->getFootPosition(leg_index, t, gait_x, gait_y, gait_z);
 
-        double delta_x, delta_y, delta_z;
-        leg_controllers_[leg_index]->bodyToLegFrame(
-            0.0,     
-            gait_y,  
-            0.0,   
-            delta_x, delta_y, delta_z);
+        const double angle = leg_angles_[leg_index];
+        const double leg_dx =  std::sin(angle) * gait_y;
+        const double leg_dy =  std::cos(angle) * gait_y;
 
         applyIK(leg_index,
-                home_x_ + delta_x,
-                home_y_ + delta_y,
+                home_x_ + leg_dx,
+                home_y_ + leg_dy,
                 home_z_ + gait_z);
     }
 
