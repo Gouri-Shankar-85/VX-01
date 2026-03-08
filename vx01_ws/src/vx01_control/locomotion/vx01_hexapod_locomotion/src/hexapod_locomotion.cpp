@@ -17,16 +17,18 @@ namespace vx01_hexapod_locomotion {
       step_height_(step_height),
       track_width_(home_x),
       home_x_(home_x), home_y_(home_y), home_z_(home_z)
+
     {
+
         const double b = beta_angle;
 
         leg_angles_ = {
-             0.0,       // leg 0: right side
-             b,         // leg 1: front-right
-             2.0 * b,   // leg 2: front-left
-             M_PI,      // leg 3: left side
-            -2.0 * b,   // leg 4: rear-left
-            -b          // leg 5: rear-right
+             0.0,       // leg 0: right side          
+             b,         // leg 1: front-right         
+             2.0 * b,   // leg 2: front-left          
+             M_PI,      // leg 3: left side           
+            -2.0 * b,   // leg 4: rear-left          
+            -b          // leg 5: rear-right          
         };
 
         gait_pattern_ = std::make_shared<gait::GaitPattern>(
@@ -34,9 +36,6 @@ namespace vx01_hexapod_locomotion {
 
         initializeLegControllers();
         current_joint_angles_.resize(18, 0.0);
-
-        // Initialize body pose to zero (standing, no rotation)
-        body_translation_.setPose(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     }
 
     HexapodLocomotion::~HexapodLocomotion() { stop(); }
@@ -78,15 +77,8 @@ namespace vx01_hexapod_locomotion {
         velocity_x_ = velocity_y_ = velocity_omega_ = 0.0;
         gait_time_  = 0.0;
         gait_pattern_->reset();
-
         for (int i = 0; i < 6; ++i) {
-            double ox, oy, oz;
-            body_translation_.computeFootInOFrame(home_x_, home_y_, home_z_,
-                                                   ox, oy, oz);
-            // Transform O-frame foot to leg-local frame
-            double lx, ly, lz;
-            leg_controllers_[i]->bodyToLegFrame(ox, oy, oz, lx, ly, lz);
-            applyIK(i, lx, ly, lz);
+            applyIK(i, home_x_, home_y_, home_z_);
         }
     }
 
@@ -135,9 +127,14 @@ namespace vx01_hexapod_locomotion {
         double gait_x, gait_y, gait_z;
         gait_pattern_->getFootPosition(leg_index, t, gait_x, gait_y, gait_z);
 
-        const double angle = leg_angles_[leg_index];
-        const double leg_dx =  std::sin(angle) * gait_y;
-        const double leg_dy =  std::cos(angle) * gait_y;
+        // gait_y is the stride displacement in body-frame forward direction (+Y = forward).
+        // Rotate it into each leg's local frame using the leg mounting angle.
+        // bodyToLegFrame() adds x_start_ (body_radius) internally, so we rotate manually:
+        //   delta_x =  sin(leg_angle) * gait_y
+        //   delta_y =  cos(leg_angle) * gait_y
+        const double angle  = leg_angles_[leg_index];
+        const double leg_dx = std::sin(angle) * gait_y;
+        const double leg_dy = std::cos(angle) * gait_y;
 
         applyIK(leg_index,
                 home_x_ + leg_dx,
@@ -168,24 +165,11 @@ namespace vx01_hexapod_locomotion {
 
     void HexapodLocomotion::setHomePosition(double x, double y, double z) {
         home_x_ = x; home_y_ = y; home_z_ = z;
-        rebuildGaitPattern();
+        rebuildGaitPattern();  
     }
 
     void HexapodLocomotion::getHomePosition(double& x, double& y, double& z) const {
         x = home_x_; y = home_y_; z = home_z_;
-    }
-
-    void HexapodLocomotion::setBodyRPY(double roll, double pitch, double yaw) {
-        body_translation_.setRPY(roll, pitch, yaw);
-    }
-
-    void HexapodLocomotion::setBodyTranslation(double tx, double ty, double tz) {
-        body_translation_.setTranslation(tx, ty, tz);
-    }
-
-    void HexapodLocomotion::setBodyPose(double tx, double ty, double tz,
-                                         double roll, double pitch, double yaw) {
-        body_translation_.setPose(tx, ty, tz, roll, pitch, yaw);
     }
 
 }
