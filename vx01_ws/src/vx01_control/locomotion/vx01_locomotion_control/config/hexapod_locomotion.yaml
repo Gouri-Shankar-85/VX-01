@@ -9,10 +9,9 @@ hexapod_locomotion_node:
     body_radius: 100.0
     beta_angle: 1.0977
 
-    # Home foot position
     home_x: 222.8
     home_y: 0.0
-    home_z: -72.9
+    home_z: -130.0
 
     # Gait parameters
     step_length: 110.0
@@ -22,11 +21,10 @@ hexapod_locomotion_node:
     step_period: 6.0
 
     standby_coxa:  0.0
-    standby_femur: -0.0545
-    standby_tibia:  0.6067
+    standby_femur: -0.6755
+    standby_tibia:  0.0
 
     standby_duration: 5.0
-
     update_rate: 50.0
 
     leg_controllers:
