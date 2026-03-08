@@ -18,7 +18,7 @@ hexapod_locomotion_node:
     # Gait parameters
     step_length: 110.0
     step_height: 22.78
-    step_period: 2.0
+    step_period: 3.0
 
     # Standby joint angles (rad) — applied before walking starts
     standby_coxa:  0.0

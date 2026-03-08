@@ -78,9 +78,9 @@ HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
 
     startWalking();
 
-    auto period_ms = static_cast<int>(1000.0 / update_rate_);
+    double block_period_ms = (step_period_ / 6.0) * 1000.0;
     gait_timer_ = create_wall_timer(
-        std::chrono::milliseconds(period_ms),
+        std::chrono::milliseconds(static_cast<int>(block_period_ms)),
         std::bind(&HexapodLocomotionNode::gaitUpdate, this));
 }
 
@@ -103,11 +103,11 @@ void HexapodLocomotionNode::gaitUpdate()
 {
     if (!standby_done_) return;
 
-    const double dt = 1.0 / update_rate_;
+    const double dt = step_period_ / 6.0;
     locomotion_->update(dt);
 
-    const double traj_duration = dt * 1.5;
-
+    const double traj_duration = dt;
+    
     for (int i = 0; i < 6; ++i) {
         double t1, t2, t3;
         locomotion_->getLegAngles(i, t1, t2, t3);
