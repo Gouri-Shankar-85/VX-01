@@ -129,10 +129,15 @@ namespace vx01_hexapod_locomotion {
 
         double leg_x, leg_y, leg_z;
         leg_controllers_[leg_index]->bodyToLegFrame(
-            gait_y, 0.0, 0.0,   
+            gait_y,   
+            0.0,
+            0.0,
             leg_x, leg_y, leg_z);
 
-        applyIK(leg_index, home_x_ + leg_x, home_y_ + leg_y, home_z_ + gait_z);
+        applyIK(leg_index,
+                home_x_ + (leg_x - body_radius_),   
+                home_y_ + leg_y,                      
+                home_z_ + gait_z);                  
     }
 
     std::vector<double> HexapodLocomotion::getJointAngles() const {
