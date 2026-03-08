@@ -1,16 +1,4 @@
 # Initial joint positions for hexapod VX01
-#
-# Robot spawns directly in the standing pose — no startup jerk.
-#
-# Geometry at these angles (L1=60.55, L2=73.84, L3=112.16 mm):
-#   tibia = -0.6981 rad = -40 deg  → tibia tucked under femur (natural look)
-#   femur = +0.1222 rad = +7  deg  → foot_z = -52mm (body raised ~52mm)
-#   coxa  =  0.0000 rad = 0   deg  → legs pointing straight out
-#
-#   foot_x = L1 + L2*cos(femur) + L3*cos(femur+tibia) = 227.9 mm
-#   foot_z =      L2*sin(femur) + L3*sin(femur+tibia) = -52.1 mm
-#
-# All joints well within hardware limit ±0.785398 rad (±45 deg).
 
 initial_positions:
   # LEG 0
