@@ -127,9 +127,13 @@ namespace vx01_hexapod_locomotion {
         double gait_x, gait_y, gait_z;
         gait_pattern_->getFootPosition(leg_index, t, gait_x, gait_y, gait_z);
 
-        applyIK(leg_index, home_x_, gait_y, home_z_ + gait_z);
+        double leg_angle = leg_angles_[leg_index];
+        
+        const double ik_x = gait_x;
+        const double ik_y = std::cos(leg_angle) * gait_y;
+        const double ik_z = home_z_ + gait_z;
 
-        current_joint_angles_[leg_index*3+0] += leg_angles_[leg_index];
+        applyIK(leg_index, ik_x, ik_y, ik_z);
     }
 
     std::vector<double> HexapodLocomotion::getJointAngles() const {
