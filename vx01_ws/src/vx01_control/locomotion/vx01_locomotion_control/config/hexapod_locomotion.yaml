@@ -8,7 +8,7 @@ hexapod_locomotion_node:
 
     # Body geometry 
     body_radius: 100.0
-    beta_angle: 1.0977     # 62.91 deg in radians
+    beta_angle: 1.0977     
 
     # Home foot position in leg-local frame (mm)
     home_x: 222.8
@@ -43,7 +43,7 @@ hexapod_locomotion_node:
       leg_5: [coxa_leg5_joint, femur_leg5_joint, tibia_leg5_joint]
 
     # Duration (s) to move to standby pose before walking
-    standby_duration: 2.0
+    standby_duration: 5.0
 
     # How long each gait block takes (s)
     # step_period / 6 = one block

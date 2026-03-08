@@ -97,6 +97,9 @@ void HexapodLocomotionNode::startWalking()
     RCLCPP_INFO(get_logger(), "Starting tripod gait walk...");
     locomotion_->walk();
     locomotion_->setVelocity(1.0, 0.0, 0.0);
+
+    locomotion_->update(step_period_ / 6.0);
+    
     standby_done_ = true;
 }
 
