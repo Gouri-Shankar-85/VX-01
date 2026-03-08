@@ -4,37 +4,31 @@
 
 namespace vx01_hexapod_locomotion {
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Constructor
-    //
-    //  FIX #1: home position updated for actual robot link lengths.
-    //  FIX #3: leg_angles_ now derived from beta=62.91 deg (hexapod.JPG CAD).
-    //          leg 0 at 0 deg, CCW spacing of beta between adjacent legs.
-    // ─────────────────────────────────────────────────────────────────────────
     HexapodLocomotion::HexapodLocomotion(double L1, double L2, double L3,
-                                         double body_radius, double beta_angle)
-        : L1_(L1), L2_(L2), L3_(L3),
-          body_radius_(body_radius), beta_angle_(beta_angle),
-          state_(LocomotionState::STOPPED),
-          velocity_x_(0.0), velocity_y_(0.0), velocity_omega_(0.0),
-          gait_time_(0.0), step_period_(2.0),
-          step_length_(110.0),
-          step_height_(22.78),
-          track_width_(170.0),
-          home_x_(170.0), home_y_(0.0), home_z_(-80.0)
+                                     double body_radius, double beta_angle,
+                                     double home_x, double home_y, double home_z,
+                                     double step_length, double step_height, double step_period)
+    : L1_(L1), L2_(L2), L3_(L3),
+      body_radius_(body_radius), beta_angle_(beta_angle),
+      state_(LocomotionState::STOPPED),
+      velocity_x_(0.0), velocity_y_(0.0), velocity_omega_(0.0),
+      gait_time_(0.0), step_period_(step_period),
+      step_length_(step_length),
+      step_height_(step_height),
+      track_width_(home_x),
+      home_x_(home_x), home_y_(home_y), home_z_(home_z)
+
     {
-        // Leg mounting angles from hexapod.JPG CAD drawing.
-        // beta = 62.91 deg = 1.09792 rad
-        // Legs numbered 0..5 CCW starting from right side (+X axis).
+
         const double b = beta_angle;
 
         leg_angles_ = {
-             0.0,       // leg 0: right side          (  0 deg)
-             b,         // leg 1: front-right         (+62.91 deg)
-             2.0 * b,   // leg 2: front-left          (+125.82 deg)
-             M_PI,      // leg 3: left side            (+180 deg)
-            -2.0 * b,   // leg 4: rear-left           (-125.82 deg)
-            -b          // leg 5: rear-right           (-62.91 deg)
+             0.0,       // leg 0: right side          
+             b,         // leg 1: front-right         
+             2.0 * b,   // leg 2: front-left          
+             M_PI,      // leg 3: left side           
+            -2.0 * b,   // leg 4: rear-left          
+            -b          // leg 5: rear-right          
         };
 
         gait_pattern_ = std::make_shared<gait::GaitPattern>(
@@ -110,12 +104,6 @@ namespace vx01_hexapod_locomotion {
         vx = velocity_x_; vy = velocity_y_; omega = velocity_omega_;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  update
-    //
-    //  Advances the gait clock by dt. When a full block period has elapsed,
-    //  nextBlock() is called so the gait table advances.
-    // ─────────────────────────────────────────────────────────────────────────
     void HexapodLocomotion::update(double dt)
     {
         if (state_ == LocomotionState::STOPPED ||
@@ -130,25 +118,6 @@ namespace vx01_hexapod_locomotion {
         for (int i = 0; i < 6; ++i) updateLeg(i);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  updateLeg
-    //
-    //  Computes the desired foot position for this leg in leg-local frame
-    //  and sends it to IK.
-    //
-    //  The gait pattern gives (gait_x, gait_y, gait_z) in leg-local frame:
-    //    gait_x = S (reach depth, constant)
-    //    gait_y = stride offset in [-T/2, +T/2]   (swing arc or drag line)
-    //    gait_z = lift height [0, A]               (0 during drag)
-    //
-    //  Velocity scaling:
-    //    The body-frame velocity (velocity_x_, velocity_y_) is projected onto
-    //    the leg's Y axis (the stride direction) to get the leg-local stride
-    //    speed. This scales gait_y so faster commands produce longer steps.
-    //
-    //  FIX: ik_z = home_z_ + gait_z (not home_z_ alone) so the foot actually
-    //  lifts during swing. Previously gait_z was not added to home_z_.
-    // ─────────────────────────────────────────────────────────────────────────
     void HexapodLocomotion::updateLeg(int leg_index)
     {
         const double block_period = step_period_ / 6.0;
@@ -158,20 +127,9 @@ namespace vx01_hexapod_locomotion {
         double gait_x, gait_y, gait_z;
         gait_pattern_->getFootPosition(leg_index, t, gait_x, gait_y, gait_z);
 
-        // Project body velocity onto this leg's stride axis (leg-local Y)
-        const double leg_rot = leg_controllers_[leg_index]->getRotationAngle();
-        const double vy_leg  =
-            -std::sin(leg_rot) * velocity_x_
-            + std::cos(leg_rot) * velocity_y_
-            + velocity_omega_ * body_radius_;
-
-        // Scale gait_y by the ratio of actual vs nominal stride speed
-        const double nominal_speed = step_length_ / (step_period_ * 0.5);
-        const double scale = (nominal_speed > 1e-6) ? (vy_leg / nominal_speed) : 1.0;
-
         const double ik_x = home_x_;
-        const double ik_y = gait_y * scale;
-        const double ik_z = home_z_ + gait_z;   // FIX: add gait_z for foot lift
+        const double ik_y = gait_y;
+        const double ik_z = home_z_ + gait_z;
 
         applyIK(leg_index, ik_x, ik_y, ik_z);
     }
@@ -199,11 +157,11 @@ namespace vx01_hexapod_locomotion {
 
     void HexapodLocomotion::setHomePosition(double x, double y, double z) {
         home_x_ = x; home_y_ = y; home_z_ = z;
-        rebuildGaitPattern();   // rebuild so S = new home_x
+        rebuildGaitPattern();  
     }
 
     void HexapodLocomotion::getHomePosition(double& x, double& y, double& z) const {
         x = home_x_; y = home_y_; z = home_z_;
     }
 
-}  // namespace vx01_hexapod_locomotion
+}  

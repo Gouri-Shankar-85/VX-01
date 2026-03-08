@@ -35,24 +35,11 @@ namespace vx01_hexapod_locomotion {
             z = a*P1z_ + b*P2z_ + c*P3z_;
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        //  createSwingTrajectory
-        //
-        //  FIX: S was cast to (void) and discarded — ALL control-point X
-        //  values were 0.0, meaning the foot teleported to X=0 during every
-        //  swing phase, making IK fail silently.
-        //
-        //  CORRECT: X = S (constant reach distance) for all three points.
-        //  The foot traces a parabolic arc in the Y-Z plane at fixed X=S:
-        //    P1 = (S, -T/2,  0)  start: foot at rear, on ground
-        //    P2 = (S,   0,   A)  peak:  foot centred, lifted to height A
-        //    P3 = (S, +T/2,  0)  end:   foot at front, back on ground
-        // ─────────────────────────────────────────────────────────────────
         void BezierCurve::createSwingTrajectory(double T, double S, double A) {
             P1x_ = S;   P1y_ = -T / 2.0;   P1z_ = 0.0;
             P2x_ = S;   P2y_ =  0.0;        P2z_ = A;
             P3x_ = S;   P3y_ =  T / 2.0;   P3z_ = 0.0;
         }
 
-    }  // namespace gait
-}  // namespace vx01_hexapod_locomotion
+    }  
+}  

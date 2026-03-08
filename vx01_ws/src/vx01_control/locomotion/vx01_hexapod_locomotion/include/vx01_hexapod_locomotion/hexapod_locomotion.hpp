@@ -47,7 +47,9 @@ namespace vx01_hexapod_locomotion {
 
     public:
         HexapodLocomotion(double L1, double L2, double L3,
-                          double body_radius, double beta_angle);
+                  double body_radius, double beta_angle,
+                  double home_x, double home_y, double home_z,
+                  double step_length, double step_height, double step_period);
         ~HexapodLocomotion();
 
         void stand();
