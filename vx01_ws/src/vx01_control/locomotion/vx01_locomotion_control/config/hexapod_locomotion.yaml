@@ -10,12 +10,12 @@ hexapod_locomotion_node:
     beta_angle: 1.0977
 
     # Home foot position
-    home_x: 222.8
+    home_x: 190.0
     home_y: 0.0
     home_z: -72.9
 
     # Gait parameters
-    step_length: 50.0
+    step_length: 80.0
 
     step_height: 45.0
 
