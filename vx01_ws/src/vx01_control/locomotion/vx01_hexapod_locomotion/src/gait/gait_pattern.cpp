@@ -64,7 +64,6 @@ namespace vx01_hexapod_locomotion {
 
                 swing_curve_.getPoint(global_t, x, y, z);
                 x = S_;
-                y = (leg_id == 0 || leg_id == 2 || leg_id == 4) ? -y : y;
 
             } else {
 
@@ -87,8 +86,7 @@ namespace vx01_hexapod_locomotion {
                 double global_t = (static_cast<double>(drag_sub) + tc) / 4.0;
 
                 x = S_;
-                double stride_y = T_ / 2.0 - global_t * T_;
-                y = (leg_id == 0 || leg_id == 2 || leg_id == 4) ? -stride_y : stride_y;
+                y = T_ / 2.0 - global_t * T_;   
                 z = 0.0;
             }
         }

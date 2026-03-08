@@ -3,6 +3,8 @@
 
 #include "vx01_hexapod_locomotion/control/leg_controller.hpp"
 #include "vx01_hexapod_locomotion/gait/gait_pattern.hpp"
+#include "vx01_hexapod_locomotion/body/body_kinematics.hpp"
+#include "vx01_hexapod_locomotion/body/body_translation.hpp"
 #include <vector>
 #include <memory>
 
@@ -18,6 +20,9 @@ namespace vx01_hexapod_locomotion {
     private:
         std::vector<std::shared_ptr<control::LegController>> leg_controllers_;
         std::shared_ptr<gait::GaitPattern>                   gait_pattern_;
+
+        // Body pose module (orientation + translation)
+        body::BodyTranslation body_translation_;
 
         double L1_, L2_, L3_;
         double body_radius_;
@@ -38,7 +43,7 @@ namespace vx01_hexapod_locomotion {
         double step_height_;
         double track_width_;
 
-        // Home foot position in leg-local frame (mm)
+        // Home foot position in O-frame (mm)
         double home_x_;
         double home_y_;
         double home_z_;
@@ -67,19 +72,27 @@ namespace vx01_hexapod_locomotion {
         void getLegAngles(int leg_index,
                           double& theta1, double& theta2, double& theta3) const;
 
+        // Gait parameters
         void   setStepLength(double length);
         void   setStepHeight(double height);
         void   setStepPeriod(double period);
-
-        double getBlockPeriod() const   { return step_period_ / 6.0; }
-        void   setBlockPeriod(double bp) { step_period_ = bp * 6.0; }
-
         double getStepLength() const;
         double getStepHeight() const;
         double getStepPeriod() const;
 
+        double getBlockPeriod() const   { return step_period_ / 6.0; }
+        void   setBlockPeriod(double bp) { step_period_ = bp * 6.0; }
+
         void setHomePosition(double x, double y, double z);
         void getHomePosition(double& x, double& y, double& z) const;
+
+        void setBodyRPY(double roll, double pitch, double yaw);
+
+        void setBodyTranslation(double tx, double ty, double tz);
+
+        // Combined pose
+        void setBodyPose(double tx, double ty, double tz,
+                         double roll, double pitch, double yaw);
 
     private:
         void initializeLegControllers();
