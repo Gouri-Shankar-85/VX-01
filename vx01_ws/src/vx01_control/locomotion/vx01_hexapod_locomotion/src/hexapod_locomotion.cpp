@@ -127,7 +127,7 @@ namespace vx01_hexapod_locomotion {
         double gait_x, gait_y, gait_z;
         gait_pattern_->getFootPosition(leg_index, t, gait_x, gait_y, gait_z);
 
-        const double ik_x = home_x_;
+        const double ik_x = gait_x;
         const double ik_y = gait_y;
         const double ik_z = home_z_ + gait_z;
 

@@ -124,9 +124,6 @@ def generate_launch_description():
     leg_5_spawner  = make_spawner('leg_5_controller')
     drone_arm_spawner = make_spawner('drone_arm_controller')
 
-    # ── Sequential loading chain ──────────────────────────────────────────────
-    # t+8s → JSB → leg_0 → leg_1 → leg_2 → leg_3 → leg_4 → leg_5 → drone_arm
-
     load_jsb = TimerAction(
         period=8.0,
         actions=[joint_state_broadcaster_spawner]
