@@ -1,31 +1,34 @@
 hexapod_locomotion_node:
   ros__parameters:
+    use_sim_time: True
 
-    # Link lengths (mm)
+    # Robot geometry (mm / rad)
     L1: 60.55
     L2: 73.84
     L3: 112.16
-
-    # Body geometry 
     body_radius: 100.0
-    beta_angle: 1.0977     
+    beta_angle: 1.0977
 
-    # Home foot position in leg-local frame (mm)
+    # Home foot position
     home_x: 222.8
     home_y: 0.0
     home_z: -72.9
 
     # Gait parameters
     step_length: 110.0
-    step_height: 22.78
-    step_period: 12.0
 
-    # Standby joint angles (rad) — applied before walking starts
+    step_height: 45.0
+
+    step_period: 6.0
+
     standby_coxa:  0.0
-    standby_femur: -0.785
-    standby_tibia:  0.6
+    standby_femur: -0.0545
+    standby_tibia:  0.6067
 
-    # Controller action server names
+    standby_duration: 5.0
+
+    update_rate: 50.0
+
     leg_controllers:
       - leg_0_controller
       - leg_1_controller
@@ -33,18 +36,3 @@ hexapod_locomotion_node:
       - leg_3_controller
       - leg_4_controller
       - leg_5_controller
-
-    joint_names:
-      leg_0: [coxa_leg0_joint, femur_leg0_joint, tibia_leg0_joint]
-      leg_1: [coxa_leg1_joint, femur_leg1_joint, tibia_leg1_joint]
-      leg_2: [coxa_leg2_joint, femur_leg2_joint, tibia_leg2_joint]
-      leg_3: [coxa_leg3_joint, femur_leg3_joint, tibia_leg3_joint]
-      leg_4: [coxa_leg4_joint, femur_leg4_joint, tibia_leg4_joint]
-      leg_5: [coxa_leg5_joint, femur_leg5_joint, tibia_leg5_joint]
-
-    # Duration (s) to move to standby pose before walking
-    standby_duration: 5.0
-
-    # How long each gait block takes (s)
-    # step_period / 6 = one block
-    update_rate: 50.0

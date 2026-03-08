@@ -14,16 +14,16 @@ HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
     declare_parameter("L3", 112.16);
     declare_parameter("body_radius", 100.0);
     declare_parameter("beta_angle", 1.0977);
-    declare_parameter("home_x", 108.67);
+    declare_parameter("home_x", 222.8);
     declare_parameter("home_y", 0.0);
-    declare_parameter("home_z", -80.0);
+    declare_parameter("home_z", -72.9);
     declare_parameter("step_length", 110.0);
-    declare_parameter("step_height", 22.78);
-    declare_parameter("step_period", 2.0);
-    declare_parameter("standby_coxa", 0.0);
-    declare_parameter("standby_femur", -0.785);
-    declare_parameter("standby_tibia", 0.6);
-    declare_parameter("standby_duration", 2.0);
+    declare_parameter("step_height", 45.0);
+    declare_parameter("step_period", 6.0);
+    declare_parameter("standby_coxa",  0.0);
+    declare_parameter("standby_femur", -0.0545);
+    declare_parameter("standby_tibia",  0.6067);
+    declare_parameter("standby_duration", 5.0);
     declare_parameter("update_rate", 50.0);
     declare_parameter("leg_controllers", std::vector<std::string>{
         "leg_0_controller","leg_1_controller","leg_2_controller",
@@ -99,7 +99,7 @@ void HexapodLocomotionNode::startWalking()
     locomotion_->setVelocity(1.0, 0.0, 0.0);
 
     locomotion_->update(step_period_ / 6.0);
-    
+
     standby_done_ = true;
 }
 
@@ -149,7 +149,7 @@ bool HexapodLocomotionNode::allClientsReady()
     return true;
 }
 
-}  // namespace vx01_locomotion_control
+}  
 
 int main(int argc, char* argv[])
 {
