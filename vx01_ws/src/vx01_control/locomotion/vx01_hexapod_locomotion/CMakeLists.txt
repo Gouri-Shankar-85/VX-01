@@ -26,6 +26,10 @@ add_library(${PROJECT_NAME} SHARED
   
   # Control
   src/control/leg_controller.cpp
+
+  # Body
+  src/body/body_kinematics.cpp
+  src/body/body_translation.cpp
   
   # Main
   src/hexapod_locomotion.cpp
