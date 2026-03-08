@@ -20,17 +20,16 @@ namespace vx01_hexapod_locomotion {
 
     {
 
-        const double b = beta_angle;
+        const double b = beta_angle;  
 
         leg_angles_ = {
-             0.0,       // leg 0: right side          
-             b,         // leg 1: front-right         
-             2.0 * b,   // leg 2: front-left          
-             M_PI,      // leg 3: left side           
-            -2.0 * b,   // leg 4: rear-left          
-            -b          // leg 5: rear-right          
+            -M_PI_2,          // leg 0: right side      
+            b - M_PI_2,      // leg 1: front-right   
+            2.0*b - M_PI_2,  // leg 2: front-left     
+            M_PI - M_PI_2,   // leg 3: left side     
+            -2.0*b - M_PI_2,  // leg 4: rear-left       
+            -b - M_PI_2       // leg 5: rear-right     
         };
-
         gait_pattern_ = std::make_shared<gait::GaitPattern>(
             home_x_, step_length_, step_height_);
 
