@@ -20,16 +20,17 @@ namespace vx01_hexapod_locomotion {
 
     {
 
-        const double b = beta_angle;  
+        const double b = beta_angle;
 
         leg_angles_ = {
-            -M_PI_2,          // leg 0: right side      
-            b - M_PI_2,      // leg 1: front-right   
-            2.0*b - M_PI_2,  // leg 2: front-left     
-            M_PI - M_PI_2,   // leg 3: left side     
-            -2.0*b - M_PI_2,  // leg 4: rear-left       
-            -b - M_PI_2       // leg 5: rear-right     
+             0.0,       // leg 0: right side          
+             b,         // leg 1: front-right         
+             2.0 * b,   // leg 2: front-left          
+             M_PI,      // leg 3: left side           
+            -2.0 * b,   // leg 4: rear-left          
+            -b          // leg 5: rear-right          
         };
+
         gait_pattern_ = std::make_shared<gait::GaitPattern>(
             home_x_, step_length_, step_height_);
 
@@ -126,11 +127,10 @@ namespace vx01_hexapod_locomotion {
         double gait_x, gait_y, gait_z;
         gait_pattern_->getFootPosition(leg_index, t, gait_x, gait_y, gait_z);
 
-        const double ik_x = gait_x;
-        const double ik_y = gait_y;
-        const double ik_z = home_z_ + gait_z;
+        double leg_angle = leg_angles_[leg_index];
+        double local_y = -std::sin(leg_angle) * gait_y; 
 
-        applyIK(leg_index, ik_x, ik_y, ik_z);
+        applyIK(leg_index, home_x_, local_y, home_z_ + gait_z);
     }
 
     std::vector<double> HexapodLocomotion::getJointAngles() const {
