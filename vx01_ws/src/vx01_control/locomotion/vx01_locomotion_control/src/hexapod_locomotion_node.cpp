@@ -111,6 +111,9 @@ void HexapodLocomotionNode::gaitUpdate()
     for (int i = 0; i < 6; ++i) {
         double t1, t2, t3;
         locomotion_->getLegAngles(i, t1, t2, t3);
+
+        RCLCPP_INFO(get_logger(), "Leg %d: t1=%.3f t2=%.3f t3=%.3f", i, t1, t2, t3);
+
         sendLegTrajectory(i, t1, t2, t3, traj_duration);
     }
 }
