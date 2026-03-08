@@ -11,9 +11,9 @@ hexapod_locomotion_node:
     beta_angle: 1.0977     # 62.91 deg in radians
 
     # Home foot position in leg-local frame (mm)
-    home_x: 108.67
+    home_x: 222.8
     home_y: 0.0
-    home_z: -40.0
+    home_z: -72.9
 
     # Gait parameters
     step_length: 110.0
