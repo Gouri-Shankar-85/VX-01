@@ -13,11 +13,11 @@ hexapod_locomotion_node:
     # Home foot position in leg-local frame (mm)
     home_x: 108.67
     home_y: 0.0
-    home_z: -73.0
+    home_z: -40.0
 
     # Gait parameters
     step_length: 110.0
-    step_height: 22.78
+    step_height: 15.0
     step_period: 3.0
 
     # Standby joint angles (rad) — applied before walking starts
