@@ -106,7 +106,7 @@ void HexapodLocomotionNode::gaitUpdate()
     const double dt = step_period_ / 6.0;
     locomotion_->update(dt);
 
-    const double traj_duration = dt;
+    const double traj_duration = dt * 0.9;
     
     for (int i = 0; i < 6; ++i) {
         double t1, t2, t3;
