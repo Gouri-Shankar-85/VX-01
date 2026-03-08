@@ -127,11 +127,8 @@ namespace vx01_hexapod_locomotion {
         double gait_x, gait_y, gait_z;
         gait_pattern_->getFootPosition(leg_index, t, gait_x, gait_y, gait_z);
 
-        const double alpha  = leg_angles_[leg_index];
-        const double stride = gait_y;
-
-        const double ik_x = home_x_ + std::cos(alpha) * stride;
-        const double ik_y =         - std::sin(alpha) * stride;
+        const double ik_x = home_x_ * gait_y;
+        const double ik_y = gait_y;
         const double ik_z = home_z_ + gait_z;
 
         applyIK(leg_index, ik_x, ik_y, ik_z);
