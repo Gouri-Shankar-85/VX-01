@@ -79,8 +79,6 @@ namespace vx01_hexapod_locomotion {
         gait_time_  = 0.0;
         gait_pattern_->reset();
 
-        // Stand using body translation module:
-        // With zero RPY and zero translation, foot target in O-frame = home position
         for (int i = 0; i < 6; ++i) {
             double ox, oy, oz;
             body_translation_.computeFootInOFrame(home_x_, home_y_, home_z_,
@@ -134,34 +132,20 @@ namespace vx01_hexapod_locomotion {
         double t = (block_period > 1e-9) ? (gait_time_ / block_period) : 0.0;
         t = std::max(0.0, std::min(1.0, t));
 
-        // Step 1: Get foot position from gait pattern in gait-local frame
-        // gait_x = reach (S), gait_y = stride offset [-T/2, T/2], gait_z = height [0, A]
         double gait_x, gait_y, gait_z;
         gait_pattern_->getFootPosition(leg_index, t, gait_x, gait_y, gait_z);
 
-        // Step 2: Apply body orientation (RPY) and translation to home position
-        // per reference: Orientation Term = RPY * [x_start, y_start, z_start]
-        // Translation Term = -[Pc]
-        // Combined O-frame target before leg rotation:
-        //   O_foot = RPY * [home_x, home_y + gait_y, home_z + gait_z] - [Pc]
-        //
-        // gait_y is stride displacement in O-frame Y (forward direction)
-        // gait_z is foot height displacement in O-frame Z
-        double ox, oy, oz;
-        body_translation_.computeFootInOFrame(
-            home_x_,              // x_start in O-frame
-            home_y_ + gait_y,     // stride offset added in O-frame Y
-            home_z_ + gait_z,     // height offset added in O-frame Z
-            ox, oy, oz);
+        double leg_x, leg_y, leg_z;
+        leg_controllers_[leg_index]->bodyToLegFrame(
+            0.0,      
+            gait_y,   
+            gait_z,   
+            leg_x, leg_y, leg_z);
 
-        // Step 3: Transform from O-frame to leg-local frame
-        // XYZ_leg = ROT(leg_offset) * [ox, oy, oz] + [x_start_offset, 0, 0]
-        // bodyToLegFrame implements this per reference slide (image 8 from first set)
-        double lx, ly, lz;
-        leg_controllers_[leg_index]->bodyToLegFrame(ox, oy, oz, lx, ly, lz);
-
-        // Step 4: IK in leg-local frame
-        applyIK(leg_index, lx, ly, lz);
+        applyIK(leg_index,
+                leg_x + (home_x_ - body_radius_),
+                leg_y,
+                home_z_ + leg_z);
     }
 
     std::vector<double> HexapodLocomotion::getJointAngles() const {
