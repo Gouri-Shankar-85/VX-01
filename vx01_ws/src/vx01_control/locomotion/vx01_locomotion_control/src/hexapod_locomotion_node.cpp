@@ -78,9 +78,9 @@ HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
 
     startWalking();
 
-    double block_period_ms = (step_period_ / 6.0) * 1000.0;
+    double update_period_ms = 1000.0 / update_rate_;
     gait_timer_ = create_wall_timer(
-        std::chrono::milliseconds(static_cast<int>(block_period_ms)),
+        std::chrono::milliseconds(static_cast<int>(update_period_ms)),
         std::bind(&HexapodLocomotionNode::gaitUpdate, this));
 }
 
@@ -95,11 +95,10 @@ void HexapodLocomotionNode::sendStandbyPose()
 void HexapodLocomotionNode::startWalking()
 {
     RCLCPP_INFO(get_logger(), "Starting tripod gait walk...");
+
     locomotion_->walk();
     locomotion_->setVelocity(1.0, 0.0, 0.0);
-
-    locomotion_->update(step_period_ / 6.0);
-
+    
     standby_done_ = true;
 }
 
@@ -107,7 +106,7 @@ void HexapodLocomotionNode::gaitUpdate()
 {
     if (!standby_done_) return;
 
-    const double dt = step_period_ / 6.0;
+    const double dt = 1.0 / update_rate_;
     locomotion_->update(dt);
 
     const double traj_duration = dt * 0.9;
