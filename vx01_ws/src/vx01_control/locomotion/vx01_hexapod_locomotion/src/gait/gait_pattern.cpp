@@ -65,27 +65,26 @@ namespace vx01_hexapod_locomotion {
                 x = S_;
 
             } else {
-
+                
                 int drag_sub = 0;
 
                 if (leg_id == 0 || leg_id == 2 || leg_id == 4) {
-                    // Group A: drag order is blocks 5,0,1,2 → subs 0,1,2,3
+                    // Group A swings 0-1, drags 2,3,4,5 → subs 0,1,2,3
+                    drag_sub = current_block_ - 2;
+                    if (drag_sub < 0) drag_sub = 0;
+                } else {
+                    // Group B swings 3-4, drags 5,0,1,2 → subs 0,1,2,3
                     switch (current_block_) {
                         case 5: drag_sub = 0; break;
                         case 0: drag_sub = 1; break;
                         case 1: drag_sub = 2; break;
                         default: drag_sub = 3; break;  // block 2
                     }
-                } else {
-                    // Group B: drag order is blocks 2,3,4,5 → subs 0,1,2,3
-                    drag_sub = current_block_ - 2;
-                    if (drag_sub < 0) drag_sub = 0; 
                 }
 
                 double global_t = (static_cast<double>(drag_sub) + tc) / 4.0;
-
                 x = S_;
-                y = T_ / 2.0 - global_t * T_;   
+                y = T_ / 2.0 - global_t * T_;
                 z = 0.0;
             }
         }
