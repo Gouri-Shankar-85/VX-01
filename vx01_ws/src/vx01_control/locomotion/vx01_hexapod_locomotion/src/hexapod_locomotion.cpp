@@ -127,17 +127,13 @@ namespace vx01_hexapod_locomotion {
         double gait_x, gait_y, gait_z;
         gait_pattern_->getFootPosition(leg_index, t, gait_x, gait_y, gait_z);
 
-        // gait_y is the stride displacement in body-frame forward direction (+Y = forward).
-        // Rotate it into each leg's local frame using the leg mounting angle.
-        // bodyToLegFrame() adds x_start_ (body_radius) internally, so we rotate manually:
-        //   delta_x =  sin(leg_angle) * gait_y
-        //   delta_y =  cos(leg_angle) * gait_y
         const double angle  = leg_angles_[leg_index];
         const double leg_dx = std::sin(angle) * gait_y;
         const double leg_dy = std::cos(angle) * gait_y;
 
         applyIK(leg_index,
-                home_x_ + leg_dx,
+                // home_x_ + leg_dx,
+                leg_dx,
                 home_y_ + leg_dy,
                 home_z_ + gait_z);
     }
