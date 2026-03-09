@@ -10,7 +10,7 @@ hexapod_locomotion_node:
     beta_angle: 1.0977
 
     # Home foot position
-    home_x: 150.0  
+    home_x: 220.0  
     home_y: 0.0
     home_z: -80.0   
 
