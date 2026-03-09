@@ -14,23 +14,18 @@ namespace vx01_hexapod_locomotion {
 
         void GaitPattern::initializeGaitTable()
         {
-
+            // Tripod A: legs 0, 2, 4 — swing blocks 0-1, drag blocks 2-5
             for (int leg : {0, 2, 4}) {
-                gait_table_[leg][0] = LegPhase::DRAG;
-                gait_table_[leg][1] = LegPhase::DRAG;
-                gait_table_[leg][2] = LegPhase::DRAG;
-                gait_table_[leg][3] = LegPhase::SWING;  // 1st half of arc
-                gait_table_[leg][4] = LegPhase::SWING;  // 2nd half of arc
-                gait_table_[leg][5] = LegPhase::DRAG;
+                gait_table_[leg] = {LegPhase::SWING, LegPhase::SWING,
+                                    LegPhase::DRAG,  LegPhase::DRAG,
+                                    LegPhase::DRAG,  LegPhase::DRAG};
             }
 
+            // Tripod B: legs 1, 3, 5 — drag blocks 0-2, swing blocks 3-4, drag block 5
             for (int leg : {1, 3, 5}) {
-                gait_table_[leg][0] = LegPhase::SWING;  // 1st half of arc
-                gait_table_[leg][1] = LegPhase::SWING;  // 2nd half of arc
-                gait_table_[leg][2] = LegPhase::DRAG;
-                gait_table_[leg][3] = LegPhase::DRAG;
-                gait_table_[leg][4] = LegPhase::DRAG;
-                gait_table_[leg][5] = LegPhase::DRAG;
+                gait_table_[leg] = {LegPhase::DRAG,  LegPhase::DRAG,
+                                    LegPhase::DRAG,  LegPhase::SWING,
+                                    LegPhase::SWING, LegPhase::DRAG};
             }
         }
 
@@ -55,13 +50,17 @@ namespace vx01_hexapod_locomotion {
             LegPhase phase = getLegPhase(leg_id);
 
             if (phase == LegPhase::SWING) {
+                int swing_start = -1;
 
-                int swing_sub = (leg_id == 0 || leg_id == 2 || leg_id == 4)
-                                ? (current_block_ - 3)
-                                :  current_block_;
-
+                for (int b = 0; b < 6; ++b) {
+                    if (gait_table_[leg_id][b] == LegPhase::SWING) {
+                        swing_start = b;
+                        break;
+                    }
+                }
+                
+                int swing_sub = current_block_ - swing_start;  // 0 or 1
                 double global_t = (static_cast<double>(swing_sub) + tc) / 2.0;
-
                 swing_curve_.getPoint(global_t, x, y, z);
                 x = S_;
 
