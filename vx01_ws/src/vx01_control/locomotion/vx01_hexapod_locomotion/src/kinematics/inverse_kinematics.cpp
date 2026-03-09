@@ -43,7 +43,7 @@ namespace vx01_hexapod_locomotion {
             if (cp3 < -1.0 || cp3 > 1.0) return false;
             double phi3 = std::acos(cp3);
 
-            theta3 = M_PI - phi3;
+            theta3 = -(M_PI - phi3);
 
             return true;
         }
