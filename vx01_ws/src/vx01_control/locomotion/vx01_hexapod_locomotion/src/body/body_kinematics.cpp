@@ -37,24 +37,6 @@ namespace vx01_hexapod_locomotion {
 
         void BodyKinematics::computeRPYMatrix()
         {
-            // Reference slide: Pure Body Rotation
-            // R(-gamma,-psi,-alpha) = R(-alpha) * R(-psi) * R(-gamma)
-            //
-            // R(-alpha) Yaw:
-            //   [cos(-a)  -sin(-a)  0]
-            //   [sin(-a)   cos(-a)  0]
-            //   [0         0        1]
-            //
-            // R(-psi) Pitch:
-            //   [cos(-p)   0   sin(-p)]
-            //   [0         1   0      ]
-            //   [-sin(-p)  0   cos(-p)]
-            //
-            // R(-gamma) Roll:
-            //   [1   0         0       ]
-            //   [0   cos(-g)  -sin(-g) ]
-            //   [0   sin(-g)   cos(-g) ]
-
             double ca = std::cos(-yaw_);
             double sa = std::sin(-yaw_);
             double cp = std::cos(-pitch_);
@@ -62,7 +44,6 @@ namespace vx01_hexapod_locomotion {
             double cg = std::cos(-roll_);
             double sg = std::sin(-roll_);
 
-            // Combined matrix R(-gamma,-psi,-alpha) per reference slide:
             // Row 0
             rpy_matrix_[0][0] =  ca * cp;
             rpy_matrix_[0][1] =  ca * sp * sg - sa * cg;
@@ -79,5 +60,5 @@ namespace vx01_hexapod_locomotion {
             rpy_matrix_[2][2] =  cp * cg;
         }
 
-    }  // namespace body
-}  // namespace vx01_hexapod_locomotion
+    }  
+}  
