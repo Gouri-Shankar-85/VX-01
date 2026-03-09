@@ -132,8 +132,7 @@ namespace vx01_hexapod_locomotion {
         const double leg_dy = std::cos(angle) * gait_y;
 
         applyIK(leg_index,
-                // home_x_ + leg_dx,
-                leg_dx,
+                home_x_ + leg_dx,
                 home_y_ + leg_dy,
                 home_z_ + gait_z);
     }
