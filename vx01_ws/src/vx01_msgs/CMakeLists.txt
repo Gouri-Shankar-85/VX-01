@@ -19,6 +19,14 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HybridMode.msg"
   "msg/MotorThrust.msg"
   "msg/UnderwaterState.msg"
+  "msg/Victim.msg"          
+  "msg/MissionState.msg"    
+  "msg/Terrain.msg"         
+  "msg/Walkability.msg"      
+  "msg/RobotMode.msg"       
+  "msg/FlightStatus.msg"     
+  "msg/HexapodStatus.msg"   
+  "msg/Exploration.msg"      
 
   # Services
   "srv/SwitchMode.srv"

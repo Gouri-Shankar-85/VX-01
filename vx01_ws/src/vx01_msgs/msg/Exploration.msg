@@ -1,0 +1,3 @@
+bool exploring
+float32 area_covered
+float32 map_completion
