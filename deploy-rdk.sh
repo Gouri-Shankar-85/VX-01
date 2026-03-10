@@ -42,8 +42,8 @@ sudo usermod -aG dialout,plugdev,video "${USER}" 2>/dev/null || true
 echo "udev rules installed"
 
 # Create docker-compose.rdk.yml on the RDK
-mkdir -p /home/root/vx01
-cat > /home/root/vx01/docker-compose.rdk.yml << EOF
+mkdir -p /home/sunrise/vx01
+cat > /home/sunrise/vx01/docker-compose.rdk.yml << EOF
 name: vx01-rdk
 services:
   vx01-robot:
@@ -90,10 +90,10 @@ echo "Pulling image..."
 docker pull ${REGISTRY}/vx01-base:humble-arm64
 
 echo "Starting containers..."
-docker compose -f /home/root/vx01/docker-compose.rdk.yml up -d
+docker compose -f /home/sunrise/vx01/docker-compose.rdk.yml up -d
 
 echo ""
 echo "Done. Robot is running."
 echo "  Logs:  docker logs -f vx01-robot"
 echo "  Shell: docker exec -it vx01-robot bash"
-echo "  Stop:  docker compose -f /home/root/vx01/docker-compose.rdk.yml down"
+echo "  Stop:  docker compose -f /home/sunrise/vx01/docker-compose.rdk.yml down"
