@@ -14,29 +14,6 @@ find_package(trajectory_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(vx01_hexapod_locomotion REQUIRED)   # your locomotion library
 
-# ── Walk node executable ──────────────────────────────────────────
-add_executable(hexapod_walk_node
-    src/hexapod_walk_node.cpp
-)
-
-target_include_directories(hexapod_walk_node PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
-)
-
-ament_target_dependencies(hexapod_walk_node
-    rclcpp
-    rclcpp_action
-    control_msgs
-    trajectory_msgs
-    geometry_msgs
-    vx01_hexapod_locomotion
-)
-
-install(TARGETS hexapod_walk_node
-    DESTINATION lib/${PROJECT_NAME}
-)
-
 # ── Teleop script ─────────────────────────────────────────────────
 install(PROGRAMS
     scripts/hexapod_teleop_key.py
