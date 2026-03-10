@@ -31,7 +31,7 @@ services:
       - /dev/video0:/dev/video0
       - /dev/video1:/dev/video1
       - /dev/bus/usb:/dev/bus/usb
-    command: ros2 launch vx01_hardware hardware.launch.py
+    command: tail -f /dev/null
 
   vx01-mavros:
     image: ${DOCKER_REGISTRY}/vx01-base:humble-arm64
@@ -44,10 +44,7 @@ services:
       - ROS_DOMAIN_ID=0
     devices:
       - /dev/ttyPIXHAWK:/dev/ttyPIXHAWK
-    command: >
-      ros2 launch mavros apm.launch
-      fcu_url:=serial:///dev/ttyPIXHAWK:921600
-      gcs_url:=udp://:14550@0.0.0.0:14555
+    command: tail -f /dev/null
 
 volumes:
   vx01_logs:
