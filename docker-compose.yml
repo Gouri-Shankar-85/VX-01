@@ -68,6 +68,7 @@ services:
       - /dev/ttyIMU:/dev/ttyIMU             # IM10A IMU
       - /dev/video0:/dev/video0             # HP60C depth camera
       - /dev/video1:/dev/video1             # HP60C depth camera (second node)
+      - /dev/bus/usb:/dev/bus/usb
     command: ros2 launch vx01_hardware hardware.launch.py
 
   # ─── Dev shell (everything, interactive) ─────────────────────────────────
