@@ -1,19 +1,52 @@
-# vx01_camera
+# VX-01 Camera
 
 ROS2 driver package for the YDLidar HP60C RGBD depth camera.
 
-**Platform:** RDK X5 · Ubuntu 22.04 · ROS2 Humble  
-**Part of:** VX-01 Hybrid Search and Rescue Robot
-
 ---
 
-## Package Location
+## Package Structure
 
 ```
-VX-01/
-└── vx01_ws/
-    └── src/
-        └── vx01_camera/
+vx01_camera/
+├── CMakeLists.txt
+├── configurationfiles
+│   ├── hp60cn_v2_00_20230704_configEncrypt.json
+│   ├── hp60c_v2_00_20230704_configEncrypt.json
+│   └── readme.md
+├── include
+│   ├── ascamera_node.h
+│   ├── Camera.h
+│   ├── CameraPublisher.h
+│   ├── CameraSrv.h
+│   ├── LogRedirectBuffer.h
+│   └── TfTreeFrameIdInfo.h
+├── launch
+│   ├── ascamera.launch.py
+│   ├── hp60cn.launch.py
+│   └── vx01_camera.launch.py
+├── libs
+│   ├── include
+│   │   ├── as_camera_sdk_api.h
+│   │   ├── as_camera_sdk_def.h
+│   │   ├── common.h
+│   │   └── Logger.h
+│   └── lib
+│       ├── aarch64-linux-gnu
+│       ├── arm-linux-gnueabihf
+│       └── x86_64-linux-gnu
+├── package.xml
+├── README.md
+├── scripts
+│   ├── angstrong-camera.rules
+│   ├── create_udev_rules.sh
+│   └── gettarget.sh
+└── src
+    ├── ascamera_node.cpp
+    ├── Camera.cpp
+    ├── CameraPublisher.cpp
+    ├── CameraSrv.cpp
+    └── TfTreeFrameIdInfo.cpp
+
 ```
 
 ---
@@ -23,6 +56,7 @@ VX-01/
 From the VX-01 workspace root:
 
 ```bash
+cd ~/vx01_ws
 colcon build --packages-select vx01_camera
 source install/setup.bash
 ```

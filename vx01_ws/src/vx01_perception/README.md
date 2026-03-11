@@ -151,7 +151,7 @@ Decides the robot's locomotion mode based on terrain walkability and mission sta
 ## Building
 
 ```bash
-cd ~/your_ws
+cd ~/vx01_ws
 colcon build --packages-select vx01_perception
 source install/setup.bash
 ```
