@@ -37,10 +37,7 @@ def generate_launch_description():
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[controller_yaml, {'use_sim_time': False}],
-        remappings=[
-            ("~/robot_description", "/robot_description"),
-        ],
+        parameters=[controller_yaml, {'robot_description': robot_description, 'use_sim_time': False}],
         output="both",
     )
     
