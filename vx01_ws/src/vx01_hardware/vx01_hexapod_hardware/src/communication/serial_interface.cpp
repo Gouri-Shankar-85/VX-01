@@ -27,7 +27,7 @@ namespace vx01_hexapod_hardware {
                 return true;
             }
 
-            serial_fd_ = ::open(port_name_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
+            serial_fd_ = ::open(port_name_.c_str(), O_RDWR | O_NOCTTY);
 
             if (serial_fd_ < 0) {
                 std::cerr << "Failed to open USB serial port: " << port_name_ << std::endl;

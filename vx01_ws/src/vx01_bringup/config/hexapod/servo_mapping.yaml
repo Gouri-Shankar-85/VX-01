@@ -192,7 +192,8 @@ servo_mapping:
     min_angle: -1.5708
     max_angle:  1.5708
     offset:  0.0
-    reversed: false         
+    reversed: false
+    max_speed: 0         
     max_acceleration: 0
 
   femur_leg4_joint:

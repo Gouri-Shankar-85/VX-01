@@ -34,6 +34,10 @@ leg_0_controller:
     state_interfaces:   
       - position
 
+    action_monitor_rate: 20.0          
+    allow_partial_joints_goal: false   
+    open_loop_control: true 
+
 leg_1_controller:
   ros__parameters:
 
@@ -48,6 +52,10 @@ leg_1_controller:
       - position
     state_interfaces:   
       - position
+
+    action_monitor_rate: 20.0          
+    allow_partial_joints_goal: false   
+    open_loop_control: true 
 
 leg_2_controller:
   ros__parameters:
@@ -64,6 +72,10 @@ leg_2_controller:
     state_interfaces:   
       - position
 
+    action_monitor_rate: 20.0          
+    allow_partial_joints_goal: false   
+    open_loop_control: true 
+
 leg_3_controller:
   ros__parameters:
 
@@ -78,6 +90,10 @@ leg_3_controller:
       - position
     state_interfaces:   
       - position
+
+    action_monitor_rate: 20.0          
+    allow_partial_joints_goal: false   
+    open_loop_control: true 
 
 leg_4_controller:
   ros__parameters:
@@ -94,6 +110,10 @@ leg_4_controller:
     state_interfaces:   
       - position
 
+    action_monitor_rate: 20.0          
+    allow_partial_joints_goal: false   
+    open_loop_control: true 
+
 leg_5_controller:
   ros__parameters:
 
@@ -108,3 +128,7 @@ leg_5_controller:
       - position
     state_interfaces:   
       - position
+
+    action_monitor_rate: 20.0          
+    allow_partial_joints_goal: false   
+    open_loop_control: true 
