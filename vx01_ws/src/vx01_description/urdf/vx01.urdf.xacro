@@ -4,6 +4,12 @@
     <xacro:arg name="use_sim" default="false"/>
     <xacro:property name="use_sim" value="$(arg use_sim)"/>
 
+    <xacro:arg name="serial_port" default="/dev/ttyMAESTRO"/>
+    <xacro:property name="serial_port" value="$(arg serial_port)"/>
+
+    <xacro:arg name="baud_rate" default="115200"/>
+    <xacro:property name="baud_rate" value="$(arg baud_rate)"/>
+
     <!-- ── Base body ── -->
     <xacro:include filename="$(find vx01_description)/urdf/base/base.xacro"/>
 
@@ -34,8 +40,8 @@
 
     <xacro:vx01_ros2_control
         use_sim="${use_sim}"
-        serial_port="/dev/ttyACM0"
-        baud_rate="115200"
+        serial_port="${serial_port}"
+        baud_rate="${baud_rate}"
         pwm_frequency="50"
         gpio_chip="gpiochip0"/>
 
