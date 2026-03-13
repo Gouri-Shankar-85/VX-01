@@ -60,7 +60,7 @@ servo_mapping:
     min_angle: -1.5708     # -90 deg (hardware limit, software limited to ±45°)
     max_angle:  1.5708
     offset:  0.0
-    reversed: false
+    reversed: true
     max_speed: 0           # 0 = unlimited (Maestro units)
     max_acceleration: 0    # 0 = unlimited
 
@@ -93,7 +93,7 @@ servo_mapping:
     min_angle: -1.5708
     max_angle:  1.5708
     offset:  0.0
-    reversed: false
+    reversed: true
     max_speed: 0
     max_acceleration: 0
 
@@ -126,7 +126,7 @@ servo_mapping:
     min_angle: -1.5708
     max_angle:  1.5708
     offset:  0.0
-    reversed: false
+    reversed: true
     max_speed: 0
     max_acceleration: 0
 
@@ -159,7 +159,7 @@ servo_mapping:
     min_angle: -1.5708
     max_angle:  1.5708
     offset:  0.0
-    reversed: false         
+    reversed: true       
     max_speed: 0
     max_acceleration: 0
 
@@ -192,7 +192,7 @@ servo_mapping:
     min_angle: -1.5708
     max_angle:  1.5708
     offset:  0.0
-    reversed: false
+    reversed: true
     max_speed: 0         
     max_acceleration: 0
 
@@ -225,7 +225,7 @@ servo_mapping:
     min_angle: -1.5708
     max_angle:  1.5708
     offset:  0.0
-    reversed: false        
+    reversed: true      
     max_speed: 0
     max_acceleration: 0
 
