@@ -11,3 +11,5 @@ __pycache__/
 
 # IDE
 .vscode/
+vx01_ws/core.*
+vx01_ws/vx01_camera/
