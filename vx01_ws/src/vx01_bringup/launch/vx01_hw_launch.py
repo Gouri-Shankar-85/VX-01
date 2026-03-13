@@ -4,7 +4,6 @@ import os
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
-    TimerAction,
     RegisterEventHandler,
 )
 from launch.event_handlers import OnProcessExit
@@ -13,11 +12,10 @@ from ament_index_python.packages import get_package_share_directory
 from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.actions import Node
 
-
 def generate_launch_description():
 
     vx01_description_pkg = get_package_share_directory('vx01_description')
-    vx01_bringup_pkg     = get_package_share_directory('vx01_bringup')
+    vx01_bringup_pkg = get_package_share_directory('vx01_bringup')
 
     controller_yaml = os.path.join(vx01_bringup_pkg, 'config', 'hexapod', 'hexapod_controller_manager_hw.yaml')
 
@@ -36,76 +34,117 @@ def generate_launch_description():
         value_type=str
     )
 
-    robot_state_publisher = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
-        parameters=[{
-            'use_sim_time': False,
-            'robot_description': robot_description,
-        }],
-        output='screen',
-    )
-
-    # ros2_control controller manager — talks directly to HexapodHardwareInterface
-    controller_manager = Node(
-        package='controller_manager',
-        executable='ros2_control_node',
-        name='controller_manager',
-        parameters=[
-            {'robot_description': robot_description},
-            controller_yaml,
-            {'use_sim_time': False},
+    control_node = Node(
+        package="controller_manager",
+        executable="ros2_control_node",
+        parameters=[controller_yaml, {'use_sim_time': False}],
+        remappings=[
+            ("~/robot_description", "/robot_description"),
         ],
-        output='screen',
+        output="both",
+    )
+    
+    robot_state_publisher_node = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        output="both",
+        parameters=[robot_description],
+    )
+    
+    joint_state_broadcaster_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
+    )
+    
+    leg0_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["leg_0_controller", "-c", "/controller_manager"],
+    )
+    
+    leg1_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["leg_1_controller", "-c", "/controller_manager"],
+    )
+    
+    leg2_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["leg_2_controller", "-c", "/controller_manager"],
+    )
+    
+    leg3_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["leg_3_controller", "-c", "/controller_manager"],
+    )
+    
+    leg4_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["leg_4_controller", "-c", "/controller_manager"],
+    )
+    
+    leg5_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["leg_5_controller", "-c", "/controller_manager"],
+    )
+    
+    delay_leg0_controller_spawner_after_joint_state_broadcaster_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[leg0_controller_spawner],
+        )
+    )
+    
+    delay_leg1_controller_spawner_after_joint_state_broadcaster_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[leg1_controller_spawner],
+        )
+    )
+    
+    delay_leg2_controller_spawner_after_joint_state_broadcaster_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[leg2_controller_spawner],
+        )
+    )
+    
+    delay_leg3_controller_spawner_after_joint_state_broadcaster_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[leg3_controller_spawner],
+        )
+    )
+    
+    delay_leg4_controller_spawner_after_joint_state_broadcaster_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[leg4_controller_spawner],
+        )
+    )
+    
+    delay_leg5_controller_spawner_after_joint_state_broadcaster_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[leg5_controller_spawner],
+        )
     )
 
-    def make_spawner(name):
-        return Node(
-            package='controller_manager',
-            executable='spawner',
-            name=f'{name}_spawner',
-            arguments=[
-                name,
-                '--controller-manager', '/controller_manager',
-                '--controller-manager-timeout', '30',
-            ],
-            output='screen',
-        )
-
-    jsb_spawner   = make_spawner('joint_state_broadcaster')
-    leg_0_spawner = make_spawner('leg_0_controller')
-    leg_1_spawner = make_spawner('leg_1_controller')
-    leg_2_spawner = make_spawner('leg_2_controller')
-    leg_3_spawner = make_spawner('leg_3_controller')
-    leg_4_spawner = make_spawner('leg_4_controller')
-    leg_5_spawner = make_spawner('leg_5_controller')
-
-    # Give controller_manager 3 seconds to start and load the hardware plugin
-    load_jsb = TimerAction(period=3.0, actions=[jsb_spawner])
-
-    load_leg_0 = RegisterEventHandler(OnProcessExit(
-        target_action=jsb_spawner, on_exit=[leg_0_spawner]))
-    load_leg_1 = RegisterEventHandler(OnProcessExit(
-        target_action=leg_0_spawner, on_exit=[leg_1_spawner]))
-    load_leg_2 = RegisterEventHandler(OnProcessExit(
-        target_action=leg_1_spawner, on_exit=[leg_2_spawner]))
-    load_leg_3 = RegisterEventHandler(OnProcessExit(
-        target_action=leg_2_spawner, on_exit=[leg_3_spawner]))
-    load_leg_4 = RegisterEventHandler(OnProcessExit(
-        target_action=leg_3_spawner, on_exit=[leg_4_spawner]))
-    load_leg_5 = RegisterEventHandler(OnProcessExit(
-        target_action=leg_4_spawner, on_exit=[leg_5_spawner]))
-
-    return LaunchDescription([
-        serial_port_arg,
-        robot_state_publisher,
-        controller_manager,
-        load_jsb,
-        load_leg_0,
-        load_leg_1,
-        load_leg_2,
-        load_leg_3,
-        load_leg_4,
-        load_leg_5,
-    ])
+    nodes = [
+        control_node,
+        robot_state_publisher_node,
+        joint_state_broadcaster_spawner,
+        delay_leg0_controller_spawner_after_joint_state_broadcaster_spawner,
+        delay_leg1_controller_spawner_after_joint_state_broadcaster_spawner,
+        delay_leg2_controller_spawner_after_joint_state_broadcaster_spawner,
+        delay_leg3_controller_spawner_after_joint_state_broadcaster_spawner,
+        delay_leg4_controller_spawner_after_joint_state_broadcaster_spawner,
+        delay_leg5_controller_spawner_after_joint_state_broadcaster_spawner
+    ]
+    
+    return LaunchDescription(serial_port_arg + nodes)
