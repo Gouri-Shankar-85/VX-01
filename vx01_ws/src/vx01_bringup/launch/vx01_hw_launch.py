@@ -37,7 +37,7 @@ def generate_launch_description():
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[controller_yaml, {'robot_description': robot_description, 'use_sim_time': False}],
+        parameters=[{'robot_description': robot_description, 'use_sim_time': False}, controller_yaml],
         output="both",
     )
     
@@ -45,7 +45,7 @@ def generate_launch_description():
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="both",
-        parameters=[robot_description],
+        parameters=[{'robot_description': robot_description}],
     )
     
     joint_state_broadcaster_spawner = Node(
@@ -144,4 +144,4 @@ def generate_launch_description():
         delay_leg5_controller_spawner_after_joint_state_broadcaster_spawner
     ]
     
-    return LaunchDescription(serial_port_arg + nodes)
+    return LaunchDescription([serial_port_arg] + nodes)
