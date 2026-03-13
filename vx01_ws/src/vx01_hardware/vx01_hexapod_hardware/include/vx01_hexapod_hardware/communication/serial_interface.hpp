@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <atomic>
 
 namespace vx01_hexapod_hardware {
 
@@ -16,30 +17,36 @@ namespace vx01_hexapod_hardware {
                 int serial_fd_;
                 bool is_open_;
 
-            public: 
+                // Apply termios settings to the open fd
+                bool applyPortSettings();
+
+            public:
                 SerialInterface(const std::string& port_name, int baud_rate);
 
                 ~SerialInterface();
 
-                bool open(); // open serial port
+                bool open();
 
-                void close(); //close serial port
+                void close();
 
-                bool isOpen() const; //check port is open
+                bool isOpen() const;
 
-                bool writeByte(uint8_t byte); //write single byte
+                // Attempt to close and reopen the port (call after EIO)
+                bool reopen();
 
-                bool writeBytes(const std::vector<uint8_t>& bytes); // Write multiple bytes
+                bool writeByte(uint8_t byte);
 
-                bool readByte(uint8_t& byte, int timeout_ms = 100); // Read single byte (blocking with timeout)
+                bool writeBytes(const std::vector<uint8_t>& bytes);
 
-                bool readBytes(std::vector<uint8_t>& bytes, size_t count, int timeout_ms = 100); // Read multiple bytes (blocking with timeout)
+                bool readByte(uint8_t& byte, int timeout_ms = 100);
 
-                void flush(); // Flush input/output buffers
+                bool readBytes(std::vector<uint8_t>& bytes, size_t count, int timeout_ms = 100);
 
-                std::string getPortName() const; // Get port name
+                void flush();
 
-                int getBaudRate() const; //Get baud rate
+                std::string getPortName() const;
+
+                int getBaudRate() const;
         };
     }
 }

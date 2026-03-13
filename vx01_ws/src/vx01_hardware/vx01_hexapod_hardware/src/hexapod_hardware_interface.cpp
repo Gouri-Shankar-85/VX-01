@@ -15,6 +15,9 @@ namespace vx01_hexapod_hardware {
         }
     }
 
+    // ------------------------------------------------------------------ //
+    //  on_init
+    // ------------------------------------------------------------------ //
     hardware_interface::CallbackReturn HexapodHardwareInterface::on_init(
         const hardware_interface::HardwareInfo& info)
     {
@@ -39,10 +42,9 @@ namespace vx01_hexapod_hardware {
             RCLCPP_INFO(logger_, "Joint: %s", joint.name.c_str());
         }
 
-        // Build serial + protocol + controller objects here (no connection yet)
-        serial_   = std::make_shared<communication::SerialInterface>(serial_port_, baud_rate_);
-        maestro_  = std::make_shared<communication::MaestroProtocol>(serial_);
-        servo_controller_ = std::make_shared<servo::ServoController>(maestro_);
+        serial_          = std::make_shared<communication::SerialInterface>(serial_port_, baud_rate_);
+        maestro_         = std::make_shared<communication::MaestroProtocol>(serial_);
+        servo_controller_= std::make_shared<servo::ServoController>(maestro_);
 
         if (!loadServoConfigurations()) {
             RCLCPP_ERROR(logger_, "Failed to load servo configurations");
@@ -53,6 +55,9 @@ namespace vx01_hexapod_hardware {
         return hardware_interface::CallbackReturn::SUCCESS;
     }
 
+    // ------------------------------------------------------------------ //
+    //  on_configure / on_cleanup
+    // ------------------------------------------------------------------ //
     hardware_interface::CallbackReturn HexapodHardwareInterface::on_configure(
         const rclcpp_lifecycle::State&)
     {
@@ -68,10 +73,13 @@ namespace vx01_hexapod_hardware {
         return hardware_interface::CallbackReturn::SUCCESS;
     }
 
+    // ------------------------------------------------------------------ //
+    //  on_activate
+    // ------------------------------------------------------------------ //
     hardware_interface::CallbackReturn HexapodHardwareInterface::on_activate(
         const rclcpp_lifecycle::State&)
     {
-        RCLCPP_INFO(logger_, "on_activate — connecting to Maestro");
+        RCLCPP_INFO(logger_, "on_activate — connecting to Maestro on %s", serial_port_.c_str());
 
         if (!connectToHardware()) {
             RCLCPP_ERROR(logger_, "Failed to connect to Maestro on %s", serial_port_.c_str());
@@ -82,27 +90,42 @@ namespace vx01_hexapod_hardware {
             RCLCPP_WARN(logger_, "Servo initialisation had warnings — continuing anyway");
         }
 
-        // Start all joints at 0 — skip serial readback (too slow for 18 channels)
         for (size_t i = 0; i < joint_names_.size(); ++i) {
             hw_positions_[i] = 0.0;
             hw_commands_[i]  = 0.0;
         }
 
+        consecutive_write_failures_ = 0;
         is_active_ = true;
-        RCLCPP_INFO(logger_, "Hardware activated");
+        RCLCPP_INFO(logger_, "Hardware activated — %zu joints ready", joint_names_.size());
         return hardware_interface::CallbackReturn::SUCCESS;
     }
 
+    // ------------------------------------------------------------------ //
+    //  on_deactivate
+    //  IMPORTANT: set is_active_ = false FIRST so that write() stops
+    //  sending commands, THEN attempt goHome(), THEN close the port.
+    // ------------------------------------------------------------------ //
     hardware_interface::CallbackReturn HexapodHardwareInterface::on_deactivate(
         const rclcpp_lifecycle::State&)
     {
         RCLCPP_INFO(logger_, "on_deactivate");
         is_active_ = false;
-        servo_controller_->goHome();
+
+        // Only try to send servos home if the port is still alive
+        if (serial_ && serial_->isOpen()) {
+            servo_controller_->goHome();
+        } else {
+            RCLCPP_WARN(logger_, "Serial port not open during deactivate — skipping goHome");
+        }
+
         disconnectFromHardware();
         return hardware_interface::CallbackReturn::SUCCESS;
     }
 
+    // ------------------------------------------------------------------ //
+    //  export_state_interfaces / export_command_interfaces
+    // ------------------------------------------------------------------ //
     std::vector<hardware_interface::StateInterface>
     HexapodHardwareInterface::export_state_interfaces()
     {
@@ -125,41 +148,87 @@ namespace vx01_hexapod_hardware {
         return ci;
     }
 
+    // ------------------------------------------------------------------ //
+    //  read()
+    //  Mirror commanded positions as state — polling all 18 Maestro
+    //  channels over 115200 baud is too slow for a 50 Hz control loop.
+    // ------------------------------------------------------------------ //
     hardware_interface::return_type HexapodHardwareInterface::read(
         const rclcpp::Time&, const rclcpp::Duration& period)
     {
-        // Mirror commanded positions as state — Maestro getPosition() round-trips
-        // are too slow for a real-time loop at 115200 baud with 18 channels.
         double dt = period.seconds();
         for (size_t i = 0; i < joint_names_.size(); ++i) {
-            double new_pos = hw_commands_[i];
-            hw_velocities_[i] = (dt > 1e-9) ? (new_pos - hw_positions_[i]) / dt : 0.0;
-            hw_positions_[i]  = new_pos;
-            hw_efforts_[i]    = 0.0;
+            double new_pos        = hw_commands_[i];
+            hw_velocities_[i]     = (dt > 1e-9) ? (new_pos - hw_positions_[i]) / dt : 0.0;
+            hw_positions_[i]      = new_pos;
+            hw_efforts_[i]        = 0.0;
         }
         return hardware_interface::return_type::OK;
     }
 
+    // ------------------------------------------------------------------ //
+    //  write()
+    //  Includes auto-reconnect: if the serial port drops (EIO), the
+    //  SerialInterface marks itself closed and we try to reopen here.
+    //  We give up after MAX_CONSECUTIVE_FAILURES attempts to avoid
+    //  spamming reconnect attempts every cycle.
+    // ------------------------------------------------------------------ //
     hardware_interface::return_type HexapodHardwareInterface::write(
         const rclcpp::Time&, const rclcpp::Duration&)
     {
-        if (!is_active_) return hardware_interface::return_type::OK;
+        if (!is_active_) {
+            return hardware_interface::return_type::OK;
+        }
 
+        // ---- Auto-reconnect if the serial port was lost ---- //
+        if (!serial_->isOpen()) {
+            consecutive_write_failures_++;
+
+            // Throttle reconnect attempts — try every ~2 s at 50 Hz = 100 cycles
+            if (consecutive_write_failures_ % RECONNECT_RETRY_INTERVAL == 1) {
+                RCLCPP_WARN(logger_,
+                    "Serial port lost (failure #%d) — attempting reconnect on %s ...",
+                    consecutive_write_failures_, serial_port_.c_str());
+
+                if (serial_->reopen()) {
+                    RCLCPP_INFO(logger_, "Reconnected to Maestro on %s", serial_port_.c_str());
+                    consecutive_write_failures_ = 0;
+                    // Re-apply speed/accel limits after reconnect
+                    servo_controller_->initialize();
+                } else {
+                    RCLCPP_ERROR_THROTTLE(logger_, *rclcpp::Clock::make_shared(), 5000,
+                        "Reconnect failed — will retry. Check USB cable and Maestro power.");
+                    return hardware_interface::return_type::OK;
+                }
+            } else {
+                // Not time to retry yet — return silently
+                return hardware_interface::return_type::OK;
+            }
+        }
+
+        // ---- Normal write path ---- //
         for (size_t i = 0; i < joint_names_.size(); ++i) {
             servo_controller_->setJointAngleByIndex(i, hw_commands_[i]);
         }
 
         if (!servo_controller_->writeCommands()) {
+            // writeCommands() failing once is not fatal — the serial layer
+            // already printed the error and marked is_open_=false if it was EIO.
             RCLCPP_WARN_THROTTLE(logger_, *rclcpp::Clock::make_shared(), 2000,
                                  "Failed to write servo commands");
+        } else {
+            // Reset failure counter on a clean write
+            consecutive_write_failures_ = 0;
         }
 
         return hardware_interface::return_type::OK;
     }
 
+    // ------------------------------------------------------------------ //
+    //  loadServoConfigurations()
+    // ------------------------------------------------------------------ //
     bool HexapodHardwareInterface::loadServoConfigurations()
     {
-        // Load servo_mapping.yaml from the vx01_bringup package config folder
         std::string pkg_share;
         try {
             pkg_share = ament_index_cpp::get_package_share_directory("vx01_bringup");
@@ -176,7 +245,7 @@ namespace vx01_hexapod_hardware {
 
         RCLCPP_INFO(logger_, "Loading servo map from: %s", yaml_path.c_str());
 
-        YAML::Node root = YAML::LoadFile(yaml_path);
+        YAML::Node root    = YAML::LoadFile(yaml_path);
         YAML::Node mapping = root["servo_mapping"];
 
         if (!mapping) {
@@ -192,15 +261,15 @@ namespace vx01_hexapod_hardware {
 
             YAML::Node cfg = mapping[joint_name];
 
-            int    channel         = cfg["channel"].as<int>();
-            double min_pulse       = cfg["min_pulse"].as<double>();
-            double max_pulse       = cfg["max_pulse"].as<double>();
-            double min_angle       = cfg["min_angle"].as<double>();
-            double max_angle       = cfg["max_angle"].as<double>();
-            double offset          = cfg["offset"].as<double>(0.0);
-            bool   reversed        = cfg["reversed"].as<bool>(false);
-            double max_speed       = cfg["max_speed"].as<double>(0.0);
-            double max_accel       = cfg["max_acceleration"].as<double>(0.0);
+            int    channel   = cfg["channel"].as<int>();
+            double min_pulse = cfg["min_pulse"].as<double>();
+            double max_pulse = cfg["max_pulse"].as<double>();
+            double min_angle = cfg["min_angle"].as<double>();
+            double max_angle = cfg["max_angle"].as<double>();
+            double offset    = cfg["offset"].as<double>(0.0);
+            bool   reversed  = cfg["reversed"].as<bool>(false);
+            double max_speed = cfg["max_speed"].as<double>(0.0);
+            double max_accel = cfg["max_acceleration"].as<double>(0.0);
 
             servo::ServoConfig config(
                 channel, joint_name,
@@ -212,7 +281,7 @@ namespace vx01_hexapod_hardware {
 
             servo_controller_->addServo(config);
 
-            RCLCPP_INFO(logger_, "  %-22s → channel %2d  reversed=%s  offset=%.3f",
+            RCLCPP_INFO(logger_, "  %-22s → ch %2d  reversed=%-5s  offset=%.3f",
                         joint_name.c_str(), channel,
                         reversed ? "true" : "false", offset);
         }
@@ -220,6 +289,9 @@ namespace vx01_hexapod_hardware {
         return true;
     }
 
+    // ------------------------------------------------------------------ //
+    //  connectToHardware() / disconnectFromHardware()
+    // ------------------------------------------------------------------ //
     bool HexapodHardwareInterface::connectToHardware()
     {
         if (!serial_->open()) {
@@ -227,6 +299,7 @@ namespace vx01_hexapod_hardware {
             return false;
         }
 
+        // Read and log any pre-existing Maestro errors
         uint16_t errors = 0;
         if (maestro_->getErrors(errors) && errors != 0) {
             RCLCPP_WARN(logger_, "Maestro startup errors: 0x%04X", errors);
@@ -243,7 +316,7 @@ namespace vx01_hexapod_hardware {
         }
     }
 
-}
+}  // namespace vx01_hexapod_hardware
 
 PLUGINLIB_EXPORT_CLASS(
     vx01_hexapod_hardware::HexapodHardwareInterface,

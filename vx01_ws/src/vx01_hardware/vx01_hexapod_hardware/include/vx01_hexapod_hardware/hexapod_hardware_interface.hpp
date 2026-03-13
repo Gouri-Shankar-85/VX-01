@@ -21,65 +21,71 @@ namespace vx01_hexapod_hardware {
 
     class HexapodHardwareInterface : public hardware_interface::SystemInterface {
 
-        private: 
+    private:
 
-            std::shared_ptr<communication::SerialInterface> serial_;
-            std::shared_ptr<communication::MaestroProtocol> maestro_;
-            std::shared_ptr<servo::ServoController> servo_controller_;
+        // ---- Hardware objects ---- //
+        std::shared_ptr<communication::SerialInterface> serial_;
+        std::shared_ptr<communication::MaestroProtocol> maestro_;
+        std::shared_ptr<servo::ServoController>         servo_controller_;
 
-            std::string serial_port_;
-            int baud_rate_;
+        // ---- Configuration ---- //
+        std::string serial_port_;
+        int         baud_rate_;
 
-            std::vector<double> hw_positions_;            
-            std::vector<double> hw_velocities_;
-            std::vector<double> hw_efforts_;
+        // ---- ros2_control state/command buffers ---- //
+        std::vector<double> hw_positions_;
+        std::vector<double> hw_velocities_;
+        std::vector<double> hw_efforts_;
+        std::vector<double> hw_commands_;
 
-            std::vector<double> hw_commands_;
+        std::vector<std::string> joint_names_;
 
-            std::vector<std::string> joint_names_;
+        rclcpp::Logger logger_;
 
-            rclcpp::Logger logger_;
+        // ---- Runtime flags ---- //
+        bool is_active_ = false;
 
-            bool is_active_ = false;
+        // ---- Reconnect bookkeeping ---- //
+        // How many write() cycles to wait between reconnect attempts (50 Hz → 100 = ~2 s)
+        static constexpr int RECONNECT_RETRY_INTERVAL = 100;
+        int consecutive_write_failures_ = 0;
 
+    public:
 
-        public:
+        HexapodHardwareInterface();
+        ~HexapodHardwareInterface();
 
-            HexapodHardwareInterface();
+        hardware_interface::CallbackReturn on_init(
+            const hardware_interface::HardwareInfo& info) override;
 
-            ~HexapodHardwareInterface();
+        hardware_interface::CallbackReturn on_configure(
+            const rclcpp_lifecycle::State& previous_state) override;
 
-            hardware_interface::CallbackReturn on_init(
-                const hardware_interface::HardwareInfo& info) override;
-                
-            hardware_interface::CallbackReturn on_configure(
-                const rclcpp_lifecycle::State& previous_state) override;
+        hardware_interface::CallbackReturn on_cleanup(
+            const rclcpp_lifecycle::State& previous_state) override;
 
-            hardware_interface::CallbackReturn on_cleanup(
-                const rclcpp_lifecycle::State& previous_state) override;
+        hardware_interface::CallbackReturn on_activate(
+            const rclcpp_lifecycle::State& previous_state) override;
 
-            hardware_interface::CallbackReturn on_activate(
-                const rclcpp_lifecycle::State& previous_state) override;
+        hardware_interface::CallbackReturn on_deactivate(
+            const rclcpp_lifecycle::State& previous_state) override;
 
-            hardware_interface::CallbackReturn on_deactivate(
-                const rclcpp_lifecycle::State& previous_state) override;
+        std::vector<hardware_interface::StateInterface>   export_state_interfaces()   override;
+        std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
 
-            std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
+        hardware_interface::return_type read(
+            const rclcpp::Time& time, const rclcpp::Duration& period) override;
 
-            std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
+        hardware_interface::return_type write(
+            const rclcpp::Time& time, const rclcpp::Duration& period) override;
 
-            hardware_interface::return_type read(
-                const rclcpp::Time& time, const rclcpp::Duration& period) override;
+    private:
 
-            hardware_interface::return_type write(
-                const rclcpp::Time& time, const rclcpp::Duration& period) override;
-
-        private:
-
-            bool loadServoConfigurations();
-            bool connectToHardware();
-            void disconnectFromHardware();
+        bool loadServoConfigurations();
+        bool connectToHardware();
+        void disconnectFromHardware();
     };
-}
 
-#endif
+}  // namespace vx01_hexapod_hardware
+
+#endif  // VX01_HEXAPOD_HARDWARE_HEXAPOD_HARDWARE_INTERFACE_HPP
