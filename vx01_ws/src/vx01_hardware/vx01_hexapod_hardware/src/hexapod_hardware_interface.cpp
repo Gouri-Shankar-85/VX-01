@@ -79,18 +79,13 @@ namespace vx01_hexapod_hardware {
         }
 
         if (!servo_controller_->initialize()) {
-            RCLCPP_ERROR(logger_, "Servo initialisation failed");
-            return hardware_interface::CallbackReturn::ERROR;
+            RCLCPP_WARN(logger_, "Servo initialisation had warnings — continuing anyway");
         }
 
-        // Read current hardware positions and sync commands to them
-        if (!servo_controller_->readPositions()) {
-            RCLCPP_WARN(logger_, "Could not read initial positions — defaulting to 0");
-        }
-
+        // Start all joints at 0 — skip serial readback (too slow for 18 channels)
         for (size_t i = 0; i < joint_names_.size(); ++i) {
-            hw_positions_[i] = servo_controller_->getJointAngleByIndex(i);
-            hw_commands_[i]  = hw_positions_[i];
+            hw_positions_[i] = 0.0;
+            hw_commands_[i]  = 0.0;
         }
 
         RCLCPP_INFO(logger_, "Hardware activated");
@@ -131,20 +126,15 @@ namespace vx01_hexapod_hardware {
     hardware_interface::return_type HexapodHardwareInterface::read(
         const rclcpp::Time&, const rclcpp::Duration& period)
     {
-        if (!servo_controller_->readPositions()) {
-            RCLCPP_WARN_THROTTLE(logger_, *rclcpp::Clock::make_shared(), 2000,
-                                 "Failed to read servo positions");
-            return hardware_interface::return_type::OK;  // Don't error — keep controller alive
-        }
-
+        // Mirror commanded positions as state — Maestro getPosition() round-trips
+        // are too slow for a real-time loop at 115200 baud with 18 channels.
         double dt = period.seconds();
         for (size_t i = 0; i < joint_names_.size(); ++i) {
-            double new_pos = servo_controller_->getJointAngleByIndex(i);
+            double new_pos = hw_commands_[i];
             hw_velocities_[i] = (dt > 1e-9) ? (new_pos - hw_positions_[i]) / dt : 0.0;
             hw_positions_[i]  = new_pos;
             hw_efforts_[i]    = 0.0;
         }
-
         return hardware_interface::return_type::OK;
     }
 

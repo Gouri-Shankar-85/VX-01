@@ -12,6 +12,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(controller_interface REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 # Add library
 add_library(${PROJECT_NAME} SHARED
@@ -38,6 +39,10 @@ ament_target_dependencies(${PROJECT_NAME}
   hardware_interface
   pluginlib
   controller_interface
+)
+
+target_link_libraries(${PROJECT_NAME}
+  yaml-cpp
 )
 
 # Export plugin description

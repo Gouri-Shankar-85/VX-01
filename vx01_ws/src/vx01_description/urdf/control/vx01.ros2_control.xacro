@@ -218,47 +218,6 @@
             </joint>
         </ros2_control>
 
-        <ros2_control name="vx01_drone_hardware" type="system">
-            <hardware>
-                <plugin>vx01_drone_hardware/DroneHardwareInterface</plugin>
-                <param name="pwm_frequency">${pwm_frequency}</param>
-                <param name="gpio_chip">${gpio_chip}</param>
-            </hardware>
-            <joint name="arm_joint0">
-                <command_interface name="position"><param name="min">-1.57</param><param name="max">1.57</param></command_interface>
-                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-            </joint>
-            <joint name="arm_joint1">
-                <command_interface name="position"><param name="min">-1.57</param><param name="max">1.57</param></command_interface>
-                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-            </joint>
-            <joint name="arm_joint2">
-                <command_interface name="position"><param name="min">-1.57</param><param name="max">1.57</param></command_interface>
-                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-            </joint>
-            <joint name="arm_joint3">
-                <command_interface name="position"><param name="min">-1.57</param><param name="max">1.57</param></command_interface>
-                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-            </joint>
-
-            <joint name="prop_0">
-                <command_interface name="position"></command_interface>
-                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-            </joint>
-            <joint name="prop_1">
-                <command_interface name="position"></command_interface>
-                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-            </joint>
-            <joint name="prop_2">
-                <command_interface name="position"></command_interface>
-                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-            </joint>
-            <joint name="prop_3">
-                <command_interface name="position"></command_interface>
-                <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
-            </joint>
-        </ros2_control>
-
     </xacro:unless>
 
 </xacro:macro>

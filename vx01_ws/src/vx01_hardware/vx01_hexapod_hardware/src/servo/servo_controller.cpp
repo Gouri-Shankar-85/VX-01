@@ -1,6 +1,8 @@
 #include "vx01_hexapod_hardware/servo/servo_controller.hpp"
 #include <iostream>
 #include <cmath>
+#include <chrono>
+#include <thread>
 
 namespace vx01_hexapod_hardware {
 
@@ -44,17 +46,19 @@ namespace vx01_hexapod_hardware {
                 // Set speed limit
                 uint16_t speed = static_cast<uint16_t>(config.getMaxSpeed());
                 if (!maestro_->setSpeed(servo_id, speed)) {
-                    std::cerr << "Failed to set speed for servo " << servo_id << std::endl;
-                    return false;
+                    std::cerr << "Warning: Failed to set speed for servo " << servo_id
+                              << " — continuing anyway" << std::endl;
                 }
-                
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
                 // Set acceleration limit
                 uint16_t accel = static_cast<uint16_t>(config.getMaxAcceleration());
                 if (!maestro_->setAcceleration(servo_id, accel)) {
-                    std::cerr << "Failed to set acceleration for servo " << servo_id << std::endl;
-                    return false;
+                    std::cerr << "Warning: Failed to set acceleration for servo " << servo_id
+                              << " — continuing anyway" << std::endl;
                 }
-                
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
                 std::cout << "Configured servo " << servo_id 
                         << " (" << config.getJointName() << ")" << std::endl;
             }
@@ -202,4 +206,4 @@ namespace vx01_hexapod_hardware {
         }
 
     } 
-} 
+}
