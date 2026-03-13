@@ -40,6 +40,8 @@ namespace vx01_hexapod_hardware {
 
             rclcpp::Logger logger_;
 
+            bool is_active_ = false;
+
 
         public:
 
