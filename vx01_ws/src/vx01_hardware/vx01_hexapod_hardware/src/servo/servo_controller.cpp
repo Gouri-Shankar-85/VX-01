@@ -139,7 +139,6 @@ namespace vx01_hexapod_hardware {
                 
                 // Send command to Maestro
                 if (!maestro_->setTarget(servo_id, target)) {
-                    std::cerr << "Failed to set target for servo " << servo_id << std::endl;
                     success = false;
                 }
             }

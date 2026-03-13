@@ -88,6 +88,7 @@ namespace vx01_hexapod_hardware {
             hw_commands_[i]  = 0.0;
         }
 
+        is_active_ = true;
         RCLCPP_INFO(logger_, "Hardware activated");
         return hardware_interface::CallbackReturn::SUCCESS;
     }
@@ -96,6 +97,7 @@ namespace vx01_hexapod_hardware {
         const rclcpp_lifecycle::State&)
     {
         RCLCPP_INFO(logger_, "on_deactivate");
+        is_active_ = false;
         servo_controller_->goHome();
         disconnectFromHardware();
         return hardware_interface::CallbackReturn::SUCCESS;
@@ -141,6 +143,8 @@ namespace vx01_hexapod_hardware {
     hardware_interface::return_type HexapodHardwareInterface::write(
         const rclcpp::Time&, const rclcpp::Duration&)
     {
+        if (!is_active_) return hardware_interface::return_type::OK;
+
         for (size_t i = 0; i < joint_names_.size(); ++i) {
             servo_controller_->setJointAngleByIndex(i, hw_commands_[i]);
         }

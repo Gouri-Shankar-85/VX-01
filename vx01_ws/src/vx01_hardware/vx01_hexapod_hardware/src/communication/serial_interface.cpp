@@ -5,6 +5,7 @@
 #include <sys/ioctl.h>
 #include <cstring>
 #include <iostream>
+#include <cerrno>
 
 namespace vx01_hexapod_hardware {
 
@@ -107,7 +108,12 @@ namespace vx01_hexapod_hardware {
             }
 
             ssize_t result = write(serial_fd_, &byte, 1);
-            return (result == 1);
+            if (result != 1) {
+                std::cerr << "writeByte failed: errno=" << errno
+                          << " (" << strerror(errno) << ")" << std::endl;
+                return false;
+            }
+            return true;
         }
 
         bool SerialInterface::writeBytes(const std::vector<uint8_t>& bytes) {
@@ -116,7 +122,14 @@ namespace vx01_hexapod_hardware {
             }
 
             ssize_t result = write(serial_fd_, bytes.data(), bytes.size());
-            return (result == static_cast<ssize_t>(bytes.size()));
+            if (result != static_cast<ssize_t>(bytes.size())) {
+                std::cerr << "writeBytes failed: wrote " << result
+                          << "/" << bytes.size()
+                          << " errno=" << errno
+                          << " (" << strerror(errno) << ")" << std::endl;
+                return false;
+            }
+            return true;
         }
 
         bool SerialInterface::readByte(uint8_t& byte, int timeout_ms) {
