@@ -144,4 +144,4 @@ def generate_launch_description():
         delay_leg5_controller_spawner_after_joint_state_broadcaster_spawner
     ]
     
-    return LaunchDescription([serial_port_arg] + nodes)
+    return LaunchDescription(serial_port_arg + nodes)
