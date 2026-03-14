@@ -106,6 +106,7 @@ namespace vx01_hexapod_locomotion {
         void applyIK(int leg_index, double foot_x, double foot_y, double foot_z);
         void updateLeg(int leg_index);
         void rebuildGaitPattern();
+        void validateWorkspace();   
     };
 
 }

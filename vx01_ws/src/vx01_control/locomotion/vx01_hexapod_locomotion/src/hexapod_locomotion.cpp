@@ -36,9 +36,46 @@ namespace vx01_hexapod_locomotion {
 
         initializeLegControllers();
         current_joint_angles_.resize(18, 0.0);
+        validateWorkspace();
     }
 
     HexapodLocomotion::~HexapodLocomotion() { stop(); }
+
+    void HexapodLocomotion::validateWorkspace()
+    {
+        // Check that home, front-of-stride, rear-of-stride, and lift peak
+        // all fit inside the kinematic envelope (L2+L3 = max reach from coxa pivot).
+        const double max_reach = L2_ + L3_;
+        const double half_stride = step_length_ / 2.0;
+
+        struct CheckPoint { double x, z; const char* label; };
+        CheckPoint pts[] = {
+            { home_x_,               home_z_,                "home" },
+            { home_x_ + half_stride, home_z_,                "stride_front" },
+            { home_x_ - half_stride, home_z_,                "stride_rear"  },
+            { home_x_,               home_z_ + step_height_, "lift_peak"    },
+        };
+
+        bool ok = true;
+        for (auto& p : pts) {
+            double r_xy = std::sqrt(p.x * p.x) - L1_;
+            double dist  = std::sqrt(r_xy * r_xy + p.z * p.z);
+            if (dist > max_reach) {
+                std::cerr << "[HexapodLocomotion] WORKSPACE VIOLATION at '"
+                          << p.label << "' pos=(" << p.x << ",0," << p.z
+                          << "): dist=" << dist << " > max=" << max_reach
+                          << " -- reduce step_length or raise home_z!\n";
+                ok = false;
+            }
+        }
+        if (ok) {
+            std::cout << "[HexapodLocomotion] Workspace check PASSED"
+                      << "  max_reach=" << max_reach
+                      << "  stride_front dist="
+                      << std::sqrt(std::pow(std::sqrt((home_x_+half_stride)*(home_x_+half_stride))-L1_,2)
+                                   + home_z_*home_z_) << "\n";
+        }
+    }
 
     void HexapodLocomotion::initializeLegControllers()
     {

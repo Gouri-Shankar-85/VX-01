@@ -12,10 +12,10 @@ hexapod_locomotion_node:
     # Home foot position
     home_x: 220.0
     home_y: 0.0
-    home_z: -90.0
+    home_z: -60.0       
 
     # Gait parameters
-    step_length: 50.0
+    step_length: 30.0    
     step_height: 22.0
     step_period: 2.4           
 
