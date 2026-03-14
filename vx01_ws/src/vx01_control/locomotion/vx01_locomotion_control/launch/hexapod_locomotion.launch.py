@@ -17,7 +17,7 @@ def generate_launch_description():
         package='vx01_locomotion_control',
         executable='hexapod_locomotion_node',
         name='hexapod_locomotion_node',
-        parameters=[config, {'use_sim_time': True}],
+        parameters=[config, {'use_sim_time': False}],
         output='screen',
     )
 
