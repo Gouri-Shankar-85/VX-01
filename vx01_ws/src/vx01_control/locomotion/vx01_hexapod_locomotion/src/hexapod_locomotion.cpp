@@ -127,10 +127,10 @@ namespace vx01_hexapod_locomotion {
         double gait_x, gait_y, gait_z;
         gait_pattern_->getFootPosition(leg_index, t, gait_x, gait_y, gait_z);
 
-        const double angle = leg_angles_[leg_index];
-        const double sign  = (std::cos(angle) >= 0.0) ? 1.0 : -1.0;
-
-        applyIK(leg_index, gait_x, sign * gait_y, home_z_ + gait_z);
+        // gait_x: reach along leg-local X (forward axis), already includes home offset
+        // gait_y: lateral offset (0 for straight walking)
+        // gait_z: height delta — add to home_z_ (home_z_ is negative, lift reduces magnitude)
+        applyIK(leg_index, gait_x, gait_y, home_z_ + gait_z);
     }
     
     std::vector<double> HexapodLocomotion::getJointAngles() const {
@@ -144,6 +144,40 @@ namespace vx01_hexapod_locomotion {
         theta1 = current_joint_angles_[leg_index*3+0];
         theta2 = current_joint_angles_[leg_index*3+1];
         theta3 = current_joint_angles_[leg_index*3+2];
+    }
+
+    void HexapodLocomotion::sampleLegAnglesAt(int leg_index, double t,
+                                               double& theta1, double& theta2, double& theta3)
+    {
+        // Clamp t to [0,1]
+        t = std::max(0.0, std::min(1.0, t));
+
+        double gait_x, gait_y, gait_z;
+        gait_pattern_->getFootPosition(leg_index, t, gait_x, gait_y, gait_z);
+
+        // Compute IK without touching persistent state
+        double th1 = 0.0, th2 = 0.0, th3 = 0.0;
+        bool ok = leg_controllers_[leg_index]->setFootPosition(
+            gait_x, gait_y, home_z_ + gait_z);
+        if (ok) {
+            th1 = leg_controllers_[leg_index]->getTheta1();
+            th2 = leg_controllers_[leg_index]->getTheta2();
+            th3 = leg_controllers_[leg_index]->getTheta3();
+            // Restore persistent angles
+            current_joint_angles_[leg_index*3+0] = th1;
+            current_joint_angles_[leg_index*3+1] = th2;
+            current_joint_angles_[leg_index*3+2] = th3;
+        } else {
+            std::cerr << "[sampleLegAnglesAt] IK failed leg=" << leg_index
+                      << " t=" << t << " pos=(" << gait_x << "," << gait_y
+                      << "," << (home_z_ + gait_z) << ")\n";
+            th1 = current_joint_angles_[leg_index*3+0];
+            th2 = current_joint_angles_[leg_index*3+1];
+            th3 = current_joint_angles_[leg_index*3+2];
+        }
+        theta1 = th1;
+        theta2 = th2;
+        theta3 = th3;
     }
 
     void HexapodLocomotion::setStepLength(double length) { step_length_ = length; rebuildGaitPattern(); }

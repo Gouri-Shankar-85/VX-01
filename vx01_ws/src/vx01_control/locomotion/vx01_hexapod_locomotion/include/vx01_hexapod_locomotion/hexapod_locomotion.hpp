@@ -72,6 +72,12 @@ namespace vx01_hexapod_locomotion {
         void getLegAngles(int leg_index,
                           double& theta1, double& theta2, double& theta3) const;
 
+        // Sample IK for one leg at sub-block fraction t ∈ [0,1] within the
+        // current gait block. Does NOT advance gait state. Used by the node
+        // to build multi-point trajectories that trace the full Bezier arc.
+        void sampleLegAnglesAt(int leg_index, double t,
+                               double& theta1, double& theta2, double& theta3);
+
         // Gait parameters
         void   setStepLength(double length);
         void   setStepHeight(double height);

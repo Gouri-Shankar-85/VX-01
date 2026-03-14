@@ -48,8 +48,8 @@ private:
     void gaitUpdate();
 
     void sendLegTrajectory(int leg_index,
-                           double theta1, double theta2, double theta3,
-                           double duration_sec);
+                           int  num_waypoints,
+                           double total_duration);
 
     bool allClientsReady();
 };

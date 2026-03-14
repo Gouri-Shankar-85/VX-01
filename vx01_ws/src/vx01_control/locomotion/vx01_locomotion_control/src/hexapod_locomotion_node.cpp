@@ -115,32 +115,44 @@ void HexapodLocomotionNode::gaitUpdate()
     if (current_block == last_sent_block_) return;
     last_sent_block_ = current_block;
 
-    const double traj_duration = block_period_ * 0.85;
+    RCLCPP_DEBUG(get_logger(), "Sending block %d trajectories", current_block);
+
+    // Build and send a multi-point trajectory per leg that traces the full
+    // Bezier arc across this block, giving the servo smooth lift and stride.
+    const int    N             = 8;
+    const double traj_duration = block_period_ * 0.90;
 
     for (int i = 0; i < 6; ++i) {
-        double t1, t2, t3;
-        locomotion_->getLegAngles(i, t1, t2, t3);
-        RCLCPP_INFO(get_logger(), "Block %d  Leg %d: t1=%.3f t2=%.3f t3=%.3f",
-                    current_block, i, t1, t2, t3);
-        sendLegTrajectory(i, t1, t2, t3, traj_duration);
+        sendLegTrajectory(i, N, traj_duration);
     }
 }
 
 void HexapodLocomotionNode::sendLegTrajectory(int leg_index,
-                                               double theta1, double theta2, double theta3,
-                                               double duration_sec)
+                                               int  num_waypoints,
+                                               double total_duration)
 {
     if (!action_clients_[leg_index]->action_server_is_ready()) return;
 
     auto goal = FollowJointTrajectory::Goal();
-    goal.trajectory.joint_names = joint_names_[leg_index];
-
-    trajectory_msgs::msg::JointTrajectoryPoint point;
-    point.positions = {theta1, theta2, theta3};
-    point.time_from_start = rclcpp::Duration::from_seconds(duration_sec);
-
-    goal.trajectory.points.push_back(point);
+    goal.trajectory.joint_names  = joint_names_[leg_index];
     goal.trajectory.header.stamp = rclcpp::Time(0);
+
+    for (int k = 1; k <= num_waypoints; ++k) {
+        double t        = static_cast<double>(k) / static_cast<double>(num_waypoints);
+        double time_sec = total_duration * t;
+
+        double theta1, theta2, theta3;
+        locomotion_->sampleLegAnglesAt(leg_index, t, theta1, theta2, theta3);
+
+        RCLCPP_DEBUG(get_logger(),
+            "  Leg %d  wp %d/%d (t=%.2f): t1=%.3f t2=%.3f t3=%.3f",
+            leg_index, k, num_waypoints, t, theta1, theta2, theta3);
+
+        trajectory_msgs::msg::JointTrajectoryPoint point;
+        point.positions       = {theta1, theta2, theta3};
+        point.time_from_start = rclcpp::Duration::from_seconds(time_sec);
+        goal.trajectory.points.push_back(point);
+    }
 
     action_clients_[leg_index]->async_send_goal(goal);
 }
