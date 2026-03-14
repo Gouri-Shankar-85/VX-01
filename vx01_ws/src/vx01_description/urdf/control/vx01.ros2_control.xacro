@@ -6,7 +6,8 @@
     serial_port:=/dev/ttyACM0
     baud_rate:=115200
     pwm_frequency:=50
-    gpio_chip:=gpiochip0">
+    gpio_chip:=gpiochip0
+    max_interpolation_step:=0.02">
 
     <xacro:if value="${use_sim}">
 
@@ -143,6 +144,7 @@
                 <plugin>vx01_hexapod_hardware/HexapodHardwareInterface</plugin>
                 <param name="serial_port">${serial_port}</param>
                 <param name="baud_rate">${baud_rate}</param>
+                <param name="max_interpolation_step">${max_interpolation_step}</param>
             </hardware>
             <joint name="coxa_leg0_joint">
                 <command_interface name="position"><param name="min">-1.5708</param><param name="max">1.5708</param></command_interface>
