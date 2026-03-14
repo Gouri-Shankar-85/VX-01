@@ -3,6 +3,7 @@
 
 #include "vx01_hexapod_locomotion/gait/bezier_curve.hpp"
 #include <vector>
+#include <cmath>
 
 namespace vx01_hexapod_locomotion {
     namespace gait {
@@ -16,19 +17,29 @@ namespace vx01_hexapod_locomotion {
         class GaitPattern {
         private:
             int    current_block_;
-            double S_;   // reach depth (mm)
-            double T_;   // stride length (mm)
+            double S_;   // home reach in leg-local X (mm)
+            double T_;   // stride length (mm), measured along body forward axis
             double A_;   // step height (mm)
 
             BezierCurve swing_curve_;
+
+            // Per-leg stride vectors in leg-local frame.
+            // For forward walking (+X_body), the stride direction for leg i is:
+            //   stride_x = cos(-leg_angle[i]) * T/2
+            //   stride_y = sin(-leg_angle[i]) * T/2
+            std::vector<double> leg_stride_x_;  // half-stride in leg-local X per leg
+            std::vector<double> leg_stride_y_;  // half-stride in leg-local Y per leg
 
             // gait_table_[leg_id][block] = phase
             std::vector<std::vector<LegPhase>> gait_table_;
 
         public:
-            GaitPattern(double S, double T, double A);
+            // leg_angles: mounting angle of each leg (rad), size 6
+            GaitPattern(double S, double T, double A,
+                        const std::vector<double>& leg_angles);
 
             void initializeGaitTable();
+            void initializeLegStrides(const std::vector<double>& leg_angles);
 
             int       getCurrentBlock() const;
             void      nextBlock();

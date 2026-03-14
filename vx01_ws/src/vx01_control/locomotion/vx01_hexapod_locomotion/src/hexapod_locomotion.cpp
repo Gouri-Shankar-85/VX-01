@@ -32,7 +32,7 @@ namespace vx01_hexapod_locomotion {
         };
 
         gait_pattern_ = std::make_shared<gait::GaitPattern>(
-            home_x_, step_length_, step_height_);
+            home_x_, step_length_, step_height_, leg_angles_);
 
         initializeLegControllers();
         current_joint_angles_.resize(18, 0.0);
@@ -91,7 +91,7 @@ namespace vx01_hexapod_locomotion {
     void HexapodLocomotion::rebuildGaitPattern()
     {
         gait_pattern_ = std::make_shared<gait::GaitPattern>(
-            home_x_, step_length_, step_height_);
+            home_x_, step_length_, step_height_, leg_angles_);
     }
 
     void HexapodLocomotion::applyIK(int leg_index,
@@ -161,13 +161,13 @@ namespace vx01_hexapod_locomotion {
         double t = (block_period > 1e-9) ? (gait_time_ / block_period) : 0.0;
         t = std::max(0.0, std::min(1.0, t));
 
-        double gait_x, gait_y, gait_z;
-        gait_pattern_->getFootPosition(leg_index, t, gait_x, gait_y, gait_z);
+        // getFootPosition returns position in LEG-LOCAL frame.
+        // Stride vectors are pre-computed per leg from the mounting angle so that
+        // all legs produce coordinated body-forward motion.
+        double leg_x, leg_y, leg_z_delta;
+        gait_pattern_->getFootPosition(leg_index, t, leg_x, leg_y, leg_z_delta);
 
-        // gait_x: reach along leg-local X (forward axis), already includes home offset
-        // gait_y: lateral offset (0 for straight walking)
-        // gait_z: height delta — add to home_z_ (home_z_ is negative, lift reduces magnitude)
-        applyIK(leg_index, gait_x, gait_y, home_z_ + gait_z);
+        applyIK(leg_index, leg_x, leg_y, home_z_ + leg_z_delta);
     }
     
     std::vector<double> HexapodLocomotion::getJointAngles() const {
@@ -186,28 +186,26 @@ namespace vx01_hexapod_locomotion {
     void HexapodLocomotion::sampleLegAnglesAt(int leg_index, double t,
                                                double& theta1, double& theta2, double& theta3)
     {
-        // Clamp t to [0,1]
         t = std::max(0.0, std::min(1.0, t));
 
-        double gait_x, gait_y, gait_z;
-        gait_pattern_->getFootPosition(leg_index, t, gait_x, gait_y, gait_z);
+        double leg_x, leg_y, leg_z_delta;
+        gait_pattern_->getFootPosition(leg_index, t, leg_x, leg_y, leg_z_delta);
 
         // Compute IK without touching persistent state
         double th1 = 0.0, th2 = 0.0, th3 = 0.0;
         bool ok = leg_controllers_[leg_index]->setFootPosition(
-            gait_x, gait_y, home_z_ + gait_z);
+            leg_x, leg_y, home_z_ + leg_z_delta);
         if (ok) {
             th1 = leg_controllers_[leg_index]->getTheta1();
             th2 = leg_controllers_[leg_index]->getTheta2();
             th3 = leg_controllers_[leg_index]->getTheta3();
-            // Restore persistent angles
             current_joint_angles_[leg_index*3+0] = th1;
             current_joint_angles_[leg_index*3+1] = th2;
             current_joint_angles_[leg_index*3+2] = th3;
         } else {
             std::cerr << "[sampleLegAnglesAt] IK failed leg=" << leg_index
-                      << " t=" << t << " pos=(" << gait_x << "," << gait_y
-                      << "," << (home_z_ + gait_z) << ")\n";
+                      << " t=" << t << " pos=(" << leg_x << "," << leg_y
+                      << "," << (home_z_ + leg_z_delta) << ")\n";
             th1 = current_joint_angles_[leg_index*3+0];
             th2 = current_joint_angles_[leg_index*3+1];
             th3 = current_joint_angles_[leg_index*3+2];
