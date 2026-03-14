@@ -115,41 +115,49 @@ void HexapodLocomotionNode::gaitUpdate()
     if (current_block == last_sent_block_) return;
     last_sent_block_ = current_block;
 
-    RCLCPP_INFO(get_logger(), "Block %d → sending trajectories", current_block);
+    RCLCPP_INFO(get_logger(), "Block %d", current_block);
 
-    const int    N             = 8;
     const double traj_duration = block_period_ * 0.92;
 
-    // waypoints[leg][waypoint] = {theta1, theta2, theta3}
-    std::array<std::array<std::array<double,3>, 8>, 6> waypoints;
-    for (int i = 0; i < 6; ++i) {
-        for (int k = 0; k < N; ++k) {
-            double t = static_cast<double>(k + 1) / static_cast<double>(N);
-            double th1, th2, th3;
-            locomotion_->sampleLegAnglesAt(i, t, th1, th2, th3);
-            waypoints[i][k] = {th1, th2, th3};
-        }
-    }
+    rclcpp::Time now = this->get_clock()->now();
 
-    // Now send — all data is already computed, no more library calls needed
     for (int i = 0; i < 6; ++i) {
         if (!action_clients_[i]->action_server_is_ready()) continue;
 
         auto goal = FollowJointTrajectory::Goal();
         goal.trajectory.joint_names  = joint_names_[i];
-        goal.trajectory.header.stamp = rclcpp::Time(0);
+        goal.trajectory.header.stamp = now;
 
-        for (int k = 0; k < N; ++k) {
-            double t        = static_cast<double>(k + 1) / static_cast<double>(N);
-            double time_sec = traj_duration * t;
+        bool is_swing = locomotion_->isSwingPhase(i);
 
-            trajectory_msgs::msg::JointTrajectoryPoint point;
-            point.positions       = {waypoints[i][k][0],
-                                     waypoints[i][k][1],
-                                     waypoints[i][k][2]};
-            point.time_from_start = rclcpp::Duration::from_seconds(time_sec);
-            goal.trajectory.points.push_back(point);
+        if (is_swing) {
+            // Swing leg: trace the Bezier arc with multiple waypoints so the
+            // controller follows the Z-lift curve, not just a straight line.
+            const int N = 6;
+            for (int k = 1; k <= N; ++k) {
+                double t        = static_cast<double>(k) / static_cast<double>(N);
+                double time_sec = traj_duration * t;
+                double th1, th2, th3;
+                locomotion_->sampleLegAnglesAt(i, t, th1, th2, th3);
+                trajectory_msgs::msg::JointTrajectoryPoint pt;
+                pt.positions       = {th1, th2, th3};
+                pt.time_from_start = rclcpp::Duration::from_seconds(time_sec);
+                goal.trajectory.points.push_back(pt);
+            }
+        } else {
+
+            for (int k : {1, 6}) {  // t=1/6 (just after start) and t=6/6 (end)
+                double t        = static_cast<double>(k) / 6.0;
+                double time_sec = traj_duration * t;
+                double th1, th2, th3;
+                locomotion_->sampleLegAnglesAt(i, t, th1, th2, th3);
+                trajectory_msgs::msg::JointTrajectoryPoint pt;
+                pt.positions       = {th1, th2, th3};
+                pt.time_from_start = rclcpp::Duration::from_seconds(time_sec);
+                goal.trajectory.points.push_back(pt);
+            }
         }
+
         action_clients_[i]->async_send_goal(goal);
     }
 }
