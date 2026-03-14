@@ -7,7 +7,8 @@ using namespace std::chrono_literals;
 namespace vx01_locomotion_control {
 
 HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
-: Node("hexapod_locomotion_node", options), standby_done_(false)
+: Node("hexapod_locomotion_node", options), standby_done_(false),
+  last_sent_block_(-1), block_period_(0.0)
 {
     declare_parameter("L1", 60.55);
     declare_parameter("L2", 73.84);
@@ -40,6 +41,7 @@ HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
     double step_length  = get_parameter("step_length").as_double();
     double step_height  = get_parameter("step_height").as_double();
     step_period_        = get_parameter("step_period").as_double();
+    block_period_       = step_period_ / 6.0;
     standby_coxa_       = get_parameter("standby_coxa").as_double();
     standby_femur_      = get_parameter("standby_femur").as_double();
     standby_tibia_      = get_parameter("standby_tibia").as_double();
@@ -109,14 +111,17 @@ void HexapodLocomotionNode::gaitUpdate()
     const double dt = 1.0 / update_rate_;
     locomotion_->update(dt);
 
-    const double traj_duration = dt * 0.9;
-    
+    int current_block = locomotion_->getGaitBlock();
+    if (current_block == last_sent_block_) return;
+    last_sent_block_ = current_block;
+
+    const double traj_duration = block_period_ * 0.85;
+
     for (int i = 0; i < 6; ++i) {
         double t1, t2, t3;
         locomotion_->getLegAngles(i, t1, t2, t3);
-
-        RCLCPP_INFO(get_logger(), "Leg %d: t1=%.3f t2=%.3f t3=%.3f", i, t1, t2, t3);
-
+        RCLCPP_INFO(get_logger(), "Block %d  Leg %d: t1=%.3f t2=%.3f t3=%.3f",
+                    current_block, i, t1, t2, t3);
         sendLegTrajectory(i, t1, t2, t3, traj_duration);
     }
 }

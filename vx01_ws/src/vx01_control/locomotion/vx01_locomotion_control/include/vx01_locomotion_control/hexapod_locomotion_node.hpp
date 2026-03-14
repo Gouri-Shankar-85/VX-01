@@ -39,7 +39,9 @@ private:
     double step_period_;
     double update_rate_;
 
-    bool standby_done_;
+    bool   standby_done_;
+    int    last_sent_block_;        
+    double block_period_;          
 
     void sendStandbyPose();
     void startWalking();

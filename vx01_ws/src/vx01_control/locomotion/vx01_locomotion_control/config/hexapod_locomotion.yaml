@@ -1,6 +1,6 @@
 hexapod_locomotion_node:
   ros__parameters:
-    use_sim_time: True
+    use_sim_time: false        
 
     # Robot geometry (mm / rad)
     L1: 60.55
@@ -10,20 +10,20 @@ hexapod_locomotion_node:
     beta_angle: 1.0977
 
     # Home foot position
-    home_x: 220.0  
+    home_x: 220.0
     home_y: 0.0
-    home_z: -90.0   
+    home_z: -90.0
 
     # Gait parameters
     step_length: 50.0
-    step_height: 15.0
-    step_period: 16.0
+    step_height: 20.0
+    step_period: 2.4           
 
     standby_coxa:  0.0
-    standby_femur: 0.3086
-    standby_tibia: -1.3244
+    standby_femur: -0.62
+    standby_tibia: -0.93
 
-    standby_duration: 5.0
+    standby_duration: 3.0
 
     update_rate: 50.0
 

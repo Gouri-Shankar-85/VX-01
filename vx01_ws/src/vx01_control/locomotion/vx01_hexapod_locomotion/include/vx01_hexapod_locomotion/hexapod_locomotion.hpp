@@ -81,6 +81,7 @@ namespace vx01_hexapod_locomotion {
         double getStepPeriod() const;
 
         double getBlockPeriod() const   { return step_period_ / 6.0; }
+        int    getGaitBlock()   const   { return gait_pattern_->getCurrentBlock(); }
         void   setBlockPeriod(double bp) { step_period_ = bp * 6.0; }
 
         void setHomePosition(double x, double y, double z);
