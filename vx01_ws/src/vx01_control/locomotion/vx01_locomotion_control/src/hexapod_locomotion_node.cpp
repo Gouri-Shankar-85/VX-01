@@ -157,6 +157,24 @@ void HexapodLocomotionNode::sendLegTrajectory(int leg_index,
     action_clients_[leg_index]->async_send_goal(goal);
 }
 
+void HexapodLocomotionNode::sendLegTrajectory(int leg_index,
+                                               double theta1, double theta2, double theta3,
+                                               double duration_sec)
+{
+    if (!action_clients_[leg_index]->action_server_is_ready()) return;
+
+    auto goal = FollowJointTrajectory::Goal();
+    goal.trajectory.joint_names  = joint_names_[leg_index];
+    goal.trajectory.header.stamp = rclcpp::Time(0);
+
+    trajectory_msgs::msg::JointTrajectoryPoint point;
+    point.positions       = {theta1, theta2, theta3};
+    point.time_from_start = rclcpp::Duration::from_seconds(duration_sec);
+    goal.trajectory.points.push_back(point);
+
+    action_clients_[leg_index]->async_send_goal(goal);
+}
+
 bool HexapodLocomotionNode::allClientsReady()
 {
     for (auto& client : action_clients_) {

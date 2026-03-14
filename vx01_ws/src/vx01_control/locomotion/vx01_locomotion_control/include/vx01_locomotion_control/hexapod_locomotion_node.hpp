@@ -47,9 +47,15 @@ private:
     void startWalking();
     void gaitUpdate();
 
+    // Multi-point: traces the Bezier arc across a gait block (used during walking)
     void sendLegTrajectory(int leg_index,
                            int  num_waypoints,
                            double total_duration);
+
+    // Single-point: move directly to explicit angles (used for standby pose)
+    void sendLegTrajectory(int leg_index,
+                           double theta1, double theta2, double theta3,
+                           double duration_sec);
 
     bool allClientsReady();
 };
