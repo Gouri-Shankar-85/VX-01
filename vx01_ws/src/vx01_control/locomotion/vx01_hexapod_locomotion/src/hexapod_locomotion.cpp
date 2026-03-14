@@ -1,4 +1,5 @@
 #include "vx01_hexapod_locomotion/hexapod_locomotion.hpp"
+#include "vx01_hexapod_locomotion/kinematics/inverse_kinematics.hpp"
 #include <cmath>
 #include <iostream>
 
@@ -43,8 +44,7 @@ namespace vx01_hexapod_locomotion {
 
     void HexapodLocomotion::validateWorkspace()
     {
-        // Check that home, front-of-stride, rear-of-stride, and lift peak
-        // all fit inside the kinematic envelope (L2+L3 = max reach from coxa pivot).
+
         const double max_reach = L2_ + L3_;
         const double half_stride = step_length_ / 2.0;
 
@@ -161,9 +161,6 @@ namespace vx01_hexapod_locomotion {
         double t = (block_period > 1e-9) ? (gait_time_ / block_period) : 0.0;
         t = std::max(0.0, std::min(1.0, t));
 
-        // getFootPosition returns position in LEG-LOCAL frame.
-        // Stride vectors are pre-computed per leg from the mounting angle so that
-        // all legs produce coordinated body-forward motion.
         double leg_x, leg_y, leg_z_delta;
         gait_pattern_->getFootPosition(leg_index, t, leg_x, leg_y, leg_z_delta);
 
@@ -191,21 +188,14 @@ namespace vx01_hexapod_locomotion {
         double leg_x, leg_y, leg_z_delta;
         gait_pattern_->getFootPosition(leg_index, t, leg_x, leg_y, leg_z_delta);
 
-        // Compute IK without touching persistent state
+        kinematics::InverseKinematics ik(L1_, L2_, L3_);
         double th1 = 0.0, th2 = 0.0, th3 = 0.0;
-        bool ok = leg_controllers_[leg_index]->setFootPosition(
-            leg_x, leg_y, home_z_ + leg_z_delta);
-        if (ok) {
-            th1 = leg_controllers_[leg_index]->getTheta1();
-            th2 = leg_controllers_[leg_index]->getTheta2();
-            th3 = leg_controllers_[leg_index]->getTheta3();
-            current_joint_angles_[leg_index*3+0] = th1;
-            current_joint_angles_[leg_index*3+1] = th2;
-            current_joint_angles_[leg_index*3+2] = th3;
-        } else {
+        bool ok = ik.compute(leg_x, leg_y, home_z_ + leg_z_delta, th1, th2, th3);
+        if (!ok) {
             std::cerr << "[sampleLegAnglesAt] IK failed leg=" << leg_index
                       << " t=" << t << " pos=(" << leg_x << "," << leg_y
                       << "," << (home_z_ + leg_z_delta) << ")\n";
+            // Fall back to last known good angles
             th1 = current_joint_angles_[leg_index*3+0];
             th2 = current_joint_angles_[leg_index*3+1];
             th3 = current_joint_angles_[leg_index*3+2];
