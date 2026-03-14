@@ -16,14 +16,14 @@ hexapod_locomotion_node:
 
     # Gait parameters
     step_length: 50.0
-    step_height: 25.0
+    step_height: 22.0
     step_period: 2.4           
 
     standby_coxa:  0.0
     standby_femur: -0.62
-    standby_tibia: -0.93
+    standby_tibia: 0.3
 
-    standby_duration: 3.0
+    standby_duration: 5.0
 
     update_rate: 50.0
 
