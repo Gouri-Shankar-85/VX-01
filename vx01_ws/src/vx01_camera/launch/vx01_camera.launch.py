@@ -16,12 +16,12 @@ def generate_launch_description():
             {"usb_path": "null"},
             {"confiPath": "./vx01_camera/configurationfiles"},
             {"color_pcl": False},
-            {"pub_tfTree": True},
+            {"pub_tfTree": False},
             {"depth_width": 640},
             {"depth_height": 480},
             {"rgb_width": 640},
             {"rgb_height": 480},
-            {"fps": 15},
+            {"fps": 30},
         ],
         remappings=[]
     )
