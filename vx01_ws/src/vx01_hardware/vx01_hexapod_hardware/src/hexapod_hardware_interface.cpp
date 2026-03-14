@@ -29,8 +29,13 @@ namespace vx01_hexapod_hardware {
         serial_port_ = info_.hardware_parameters.at("serial_port");
         baud_rate_   = std::stoi(info_.hardware_parameters.at("baud_rate"));
 
-        RCLCPP_INFO(logger_, "Serial port: %s  baud: %d",
-                    serial_port_.c_str(), baud_rate_);
+        double max_interp_step = 0.02;  // default
+        if (info_.hardware_parameters.count("max_interpolation_step")) {
+            max_interp_step = std::stod(info_.hardware_parameters.at("max_interpolation_step"));
+        }
+
+        RCLCPP_INFO(logger_, "Serial port: %s  baud: %d  max_interpolation_step: %.4f rad/cycle",
+                    serial_port_.c_str(), baud_rate_, max_interp_step);
 
         hw_positions_.resize(info_.joints.size(), 0.0);
         hw_velocities_.resize(info_.joints.size(), 0.0);
@@ -45,6 +50,9 @@ namespace vx01_hexapod_hardware {
         serial_          = std::make_shared<communication::SerialInterface>(serial_port_, baud_rate_);
         maestro_         = std::make_shared<communication::MaestroProtocol>(serial_);
         servo_controller_= std::make_shared<servo::ServoController>(maestro_);
+
+        // Apply interpolation speed before any servo is activated
+        servo_controller_->setMaxStepPerCycle(max_interp_step);
 
         if (!loadServoConfigurations()) {
             RCLCPP_ERROR(logger_, "Failed to load servo configurations");
@@ -97,16 +105,12 @@ namespace vx01_hexapod_hardware {
 
         consecutive_write_failures_ = 0;
         is_active_ = true;
-        RCLCPP_INFO(logger_, "Hardware activated — %zu joints ready", joint_names_.size());
+        RCLCPP_INFO(logger_, "Hardware activated — %zu joints ready  (interpolation step: %.4f rad/cycle)",
+                    joint_names_.size(), servo_controller_->getMaxStepPerCycle());
         return hardware_interface::CallbackReturn::SUCCESS;
     }
 
-    // ------------------------------------------------------------------ //
-    //  on_deactivate
-    //  IMPORTANT: set is_active_ = false FIRST so that write() stops
-    //  sending commands, THEN attempt goHome(), THEN close the port.
-    // ------------------------------------------------------------------ //
-    hardware_interface::CallbackReturn HexapodHardwareInterface::on_deactivate(
+        hardware_interface::CallbackReturn HexapodHardwareInterface::on_deactivate(
         const rclcpp_lifecycle::State&)
     {
         RCLCPP_INFO(logger_, "on_deactivate");
@@ -123,9 +127,6 @@ namespace vx01_hexapod_hardware {
         return hardware_interface::CallbackReturn::SUCCESS;
     }
 
-    // ------------------------------------------------------------------ //
-    //  export_state_interfaces / export_command_interfaces
-    // ------------------------------------------------------------------ //
     std::vector<hardware_interface::StateInterface>
     HexapodHardwareInterface::export_state_interfaces()
     {
@@ -148,11 +149,6 @@ namespace vx01_hexapod_hardware {
         return ci;
     }
 
-    // ------------------------------------------------------------------ //
-    //  read()
-    //  Mirror commanded positions as state — polling all 18 Maestro
-    //  channels over 115200 baud is too slow for a 50 Hz control loop.
-    // ------------------------------------------------------------------ //
     hardware_interface::return_type HexapodHardwareInterface::read(
         const rclcpp::Time&, const rclcpp::Duration& period)
     {
@@ -166,13 +162,6 @@ namespace vx01_hexapod_hardware {
         return hardware_interface::return_type::OK;
     }
 
-    // ------------------------------------------------------------------ //
-    //  write()
-    //  Includes auto-reconnect: if the serial port drops (EIO), the
-    //  SerialInterface marks itself closed and we try to reopen here.
-    //  We give up after MAX_CONSECUTIVE_FAILURES attempts to avoid
-    //  spamming reconnect attempts every cycle.
-    // ------------------------------------------------------------------ //
     hardware_interface::return_type HexapodHardwareInterface::write(
         const rclcpp::Time&, const rclcpp::Duration&)
     {
@@ -206,11 +195,11 @@ namespace vx01_hexapod_hardware {
             }
         }
 
-        // ---- Normal write path ---- //
         for (size_t i = 0; i < joint_names_.size(); ++i) {
             servo_controller_->setJointAngleByIndex(i, hw_commands_[i]);
         }
 
+        // ---- Interpolate + send to Maestro ---- //
         if (!servo_controller_->writeCommands()) {
             // writeCommands() failing once is not fatal — the serial layer
             // already printed the error and marked is_open_=false if it was EIO.

@@ -3,6 +3,7 @@
 #include <cmath>
 #include <chrono>
 #include <thread>
+#include <algorithm>
 
 namespace vx01_hexapod_hardware {
 
@@ -14,14 +15,15 @@ namespace vx01_hexapod_hardware {
         void ServoController::addServo(const ServoConfig& config) {
 
             servo_configs_.push_back(config);
-            
+
             // Map joint name to index
             int index = servo_configs_.size() - 1;
             joint_name_to_index_[config.getJointName()] = index;
-            
+
             // Initialize state vectors
             current_angles_.push_back(0.0);
             command_angles_.push_back(0.0);
+            target_angles_.push_back(0.0);
             current_pulses_.push_back(1500.0);  // Neutral position
         }
 
@@ -29,20 +31,28 @@ namespace vx01_hexapod_hardware {
             return servo_configs_.size();
         }
 
+        void ServoController::setMaxStepPerCycle(double step_rad) {
+            max_step_per_cycle_ = step_rad;
+        }
+
+        double ServoController::getMaxStepPerCycle() const {
+            return max_step_per_cycle_;
+        }
+
         bool ServoController::initialize() {
-            
+
             if (servo_configs_.empty()) {
                 std::cerr << "No servos configured" << std::endl;
                 return false;
             }
-            
+
             std::cout << "Initializing " << servo_configs_.size() << " servos..." << std::endl;
-            
+
             // Set speed and acceleration limits for each servo
             for (size_t i = 0; i < servo_configs_.size(); i++) {
                 const ServoConfig& config = servo_configs_[i];
                 int servo_id = config.getServoId();
-                
+
                 // Set speed limit
                 uint16_t speed = static_cast<uint16_t>(config.getMaxSpeed());
                 if (!maestro_->setSpeed(servo_id, speed)) {
@@ -59,22 +69,27 @@ namespace vx01_hexapod_hardware {
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
-                std::cout << "Configured servo " << servo_id 
+                std::cout << "Configured servo " << servo_id
                         << " (" << config.getJointName() << ")" << std::endl;
             }
-            
+
             std::cout << "Servo initialization complete" << std::endl;
+            std::cout << "Interpolation max step: " << max_step_per_cycle_
+                      << " rad/cycle (~" << (max_step_per_cycle_ * 50.0 * 180.0 / M_PI)
+                      << " deg/s at 50 Hz)" << std::endl;
             return true;
         }
 
         bool ServoController::goHome() {
             std::cout << "Moving all servos to home position..." << std::endl;
-            
-            // Set all servos to neutral position (0 radians)
+
+            // Snap both buffers to 0 immediately — goHome is an
+            // emergency/shutdown operation and must not be slow.
             for (size_t i = 0; i < servo_configs_.size(); i++) {
+                target_angles_[i]  = 0.0;
                 command_angles_[i] = 0.0;
             }
-            
+
             return writeCommands();
         }
 
@@ -85,7 +100,7 @@ namespace vx01_hexapod_hardware {
                 std::cerr << "Joint not found: " << joint_name << std::endl;
                 return false;
             }
-            
+
             int index = it->second;
             return setJointAngleByIndex(index, angle);
         }
@@ -96,8 +111,10 @@ namespace vx01_hexapod_hardware {
                 std::cerr << "Invalid servo index: " << index << std::endl;
                 return false;
             }
-            
-            command_angles_[index] = angle;
+
+            // Store the goal — writeCommands() will step command_angles_ toward
+            // this value smoothly rather than jumping to it immediately.
+            target_angles_[index] = angle;
             return true;
         }
 
@@ -108,7 +125,7 @@ namespace vx01_hexapod_hardware {
                 std::cerr << "Joint not found: " << joint_name << std::endl;
                 return 0.0;
             }
-            
+
             int index = it->second;
             return getJointAngleByIndex(index);
         }
@@ -118,48 +135,75 @@ namespace vx01_hexapod_hardware {
             if (index < 0 || index >= static_cast<int>(current_angles_.size())) {
                 return 0.0;
             }
-            
+
             return current_angles_[index];
         }
 
         bool ServoController::writeCommands() {
 
+            if (max_step_per_cycle_ > 0.0) {
+                for (size_t i = 0; i < servo_configs_.size(); ++i) {
+                    double error = target_angles_[i] - command_angles_[i];
+                    if (std::abs(error) <= max_step_per_cycle_) {
+                        // Within one step — just snap to avoid hunting around the target
+                        command_angles_[i] = target_angles_[i];
+                    } else {
+                        // Take one step in the correct direction
+                        command_angles_[i] += std::copysign(max_step_per_cycle_, error);
+                    }
+                }
+            } else {
+                // Instant mode — command = target (original behaviour)
+                for (size_t i = 0; i < servo_configs_.size(); ++i) {
+                    command_angles_[i] = target_angles_[i];
+                }
+            }
+
             bool success = true;
-            
+
             for (size_t i = 0; i < servo_configs_.size(); i++) {
                 const ServoConfig& config = servo_configs_[i];
                 int servo_id = config.getServoId();
                 double angle = command_angles_[i];
-                
+
                 // Convert angle to pulse width
                 double pulse_us = config.angleToPulse(angle);
-                
+
                 // Convert to target value (quarter-microseconds)
                 uint16_t target = communication::MaestroProtocol::microsecondsToTarget(pulse_us);
-                
+
                 // Send command to Maestro
                 if (!maestro_->setTarget(servo_id, target)) {
                     success = false;
                 }
             }
-            
+
             return success;
+        }
+
+        bool ServoController::hasReachedTarget(double tolerance_rad) const {
+            for (size_t i = 0; i < servo_configs_.size(); ++i) {
+                if (std::abs(target_angles_[i] - command_angles_[i]) > tolerance_rad) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         bool ServoController::readPositions() {
 
             bool success = true;
-            
+
             for (size_t i = 0; i < servo_configs_.size(); i++) {
                 const ServoConfig& config = servo_configs_[i];
                 int servo_id = config.getServoId();
-                
+
                 uint16_t position;
                 if (maestro_->getPosition(servo_id, position)) {
                     // Convert from quarter-microseconds to microseconds
                     double pulse_us = communication::MaestroProtocol::targetToMicroseconds(position);
                     current_pulses_[i] = pulse_us;
-                    
+
                     // Convert to angle
                     current_angles_[i] = config.pulseToAngle(pulse_us);
                 } else {
@@ -167,7 +211,7 @@ namespace vx01_hexapod_hardware {
                     success = false;
                 }
             }
-            
+
             return success;
         }
 
@@ -199,10 +243,10 @@ namespace vx01_hexapod_hardware {
             if (it == joint_name_to_index_.end()) {
                 return ServoConfig();
             }
-            
+
             int index = it->second;
             return getServoConfig(index);
         }
 
-    } 
+    }
 }
