@@ -35,10 +35,10 @@ namespace vx01_hexapod_locomotion {
             z = a*P1z_ + b*P2z_ + c*P3z_;
         }
 
-        void BezierCurve::createSwingTrajectory(double T, double /*S*/, double A) {
-            P1x_ = -T / 2.0;  P1y_ = 0.0;  P1z_ = 0.0;
-            P2x_ =  0.0;      P2y_ = 0.0;  P2z_ = A;
-            P3x_ =  T / 2.0;  P3y_ = 0.0;  P3z_ = 0.0;
+        void BezierCurve::createSwingTrajectory(double T, double S, double A) {
+            P1x_ = S;   P1y_ = -T / 2.0;  P1z_ = 0.0;   // rear
+            P2x_ = S;   P2y_ =  0.0;      P2z_ = A;       // mid-lift
+            P3x_ = S;   P3y_ =  T / 2.0;  P3z_ = 0.0;    // front
         }
 
     }  
