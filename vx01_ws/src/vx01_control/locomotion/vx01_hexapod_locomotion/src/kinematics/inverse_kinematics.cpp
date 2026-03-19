@@ -27,8 +27,7 @@ namespace vx01_hexapod_locomotion {
             double ct1 = std::cos(theta1);
             if (std::abs(ct1) < 1e-9) return false;
 
-            // double r2 = xp / ct1 - L1_;
-            double r2 = std::sqrt(xp*xp + yp*yp) - L1_;
+            double r2 = xp / ct1 - L1_;
 
             double r1 = std::sqrt(zp*zp + r2*r2);
 
