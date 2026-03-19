@@ -72,9 +72,11 @@ namespace vx01_hexapod_locomotion {
 
                 double bx, by, bz;
                 swing_curve_.getPoint(global_t, bx, by, bz);
-                x = bx;   // = S constant
-                y = by;   // Bezier sweeps -T/2 → 0 → +T/2
-                z = bz;   // Bezier lifts 0 → A → 0
+
+                double scale = (T_ > 1e-9) ? (bx / (T_ / 2.0)) : 0.0;
+                x = 0.0;   // forward in leg-local X
+                y = S_ + scale * (T_ / 2.0);                         // no lateral drift
+                z = bz;
 
             } else {
                 int drag_start = (leg_id==0||leg_id==2||leg_id==4) ? 3 : 0;
@@ -82,8 +84,8 @@ namespace vx01_hexapod_locomotion {
                 double global_t = (static_cast<double>(drag_sub) + tc) / 3.0;
 
                 double scale = 1.0 - 2.0 * global_t;
-                x = S_;
-                y = scale * (T_ / 2.0);
+                x = 0.0;  // forward in leg-local X
+                y = S_ + scale * (T_ / 2.0);
                 z = 0.0;
             }
         }
