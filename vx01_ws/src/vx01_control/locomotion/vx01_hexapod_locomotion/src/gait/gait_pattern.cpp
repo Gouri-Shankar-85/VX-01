@@ -65,9 +65,6 @@ namespace vx01_hexapod_locomotion {
             double tc = (t < 0.0) ? 0.0 : (t > 1.0 ? 1.0 : t);
             LegPhase phase = getLegPhase(leg_id);
 
-            const double sx = leg_stride_x_[leg_id];  // half-stride in leg X
-            const double sy = leg_stride_y_[leg_id];  // half-stride in leg Y
-
             if (phase == LegPhase::SWING) {
                 int swing_start = (leg_id==0||leg_id==2||leg_id==4) ? 0 : 3;
                 int swing_sub   = current_block_ - swing_start;
