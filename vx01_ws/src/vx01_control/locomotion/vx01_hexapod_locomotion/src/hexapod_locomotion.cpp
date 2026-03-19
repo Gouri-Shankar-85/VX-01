@@ -222,4 +222,17 @@ namespace vx01_hexapod_locomotion {
         x = home_x_; y = home_y_; z = home_z_;
     }
 
+    void HexapodLocomotion::setBodyRPY(double roll, double pitch, double yaw) {
+        body_translation_.setRPY(roll, pitch, yaw);
+    }
+
+    void HexapodLocomotion::setBodyTranslation(double tx, double ty, double tz) {
+        body_translation_.setTranslation(tx, ty, tz);
+    }
+
+    void HexapodLocomotion::setBodyPose(double tx, double ty, double tz,
+                                        double roll, double pitch, double yaw) {
+        body_translation_.setPose(tx, ty, tz, roll, pitch, yaw);
+    }
+
 }

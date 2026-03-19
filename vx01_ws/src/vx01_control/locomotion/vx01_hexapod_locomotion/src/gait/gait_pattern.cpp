@@ -15,13 +15,13 @@ namespace vx01_hexapod_locomotion {
             initializeLegStrides(leg_angles);
         }
 
-        void GaitPattern::initializeLegStrides(const std::vector<double>& leg_angles)
+        void GaitPattern::initializeLegStrides(const std::vector<double>& /*leg_angles*/)
         {
             leg_stride_x_.resize(6);
             leg_stride_y_.resize(6);
             for (int i = 0; i < 6; ++i) {
-                leg_stride_x_[i] = std::cos(-leg_angles[i]) * (T_ / 2.0);
-                leg_stride_y_[i] = std::sin(-leg_angles[i]) * (T_ / 2.0);
+                leg_stride_x_[i] = T_ / 2.0;   // always forward in leg-local X
+                leg_stride_y_[i] = 0.0;         // never lateral
             }
         }
 
@@ -69,31 +69,26 @@ namespace vx01_hexapod_locomotion {
             const double sy = leg_stride_y_[leg_id];  // half-stride in leg Y
 
             if (phase == LegPhase::SWING) {
-                // Group A swings blocks 0,1,2 → sub 0,1,2
-                // Group B swings blocks 3,4,5 → sub 0,1,2
-                int swing_start = (leg_id == 0 || leg_id == 2 || leg_id == 4) ? 0 : 3;
-                int swing_sub   = current_block_ - swing_start;  // 0, 1, or 2
+                int swing_start = (leg_id==0||leg_id==2||leg_id==4) ? 0 : 3;
+                int swing_sub   = current_block_ - swing_start;
                 double global_t = (static_cast<double>(swing_sub) + tc) / 3.0;
 
                 double bx, by, bz;
                 swing_curve_.getPoint(global_t, bx, by, bz);
 
                 double scale = (T_ > 1e-9) ? (bx / (T_ / 2.0)) : 0.0;
-                x = S_ + scale * sx;
-                y =      scale * sy;
+                x = S_ + scale * (T_ / 2.0);   // forward in leg-local X
+                y = 0.0;                         // no lateral drift
                 z = bz;
 
             } else {
-                // Group A drags blocks 3,4,5 → sub 0,1,2
-                // Group B drags blocks 0,1,2 → sub 0,1,2
-                int drag_start = (leg_id == 0 || leg_id == 2 || leg_id == 4) ? 3 : 0;
-                int drag_sub   = current_block_ - drag_start;  // 0, 1, or 2
+                int drag_start = (leg_id==0||leg_id==2||leg_id==4) ? 3 : 0;
+                int drag_sub   = current_block_ - drag_start;
                 double global_t = (static_cast<double>(drag_sub) + tc) / 3.0;
 
-                // scale: +1 at front (start of drag), -1 at rear (end of drag)
                 double scale = 1.0 - 2.0 * global_t;
-                x = S_ + scale * sx;
-                y =      scale * sy;
+                x = S_ + scale * (T_ / 2.0);   // forward in leg-local X
+                y = 0.0;
                 z = 0.0;
             }
         }
