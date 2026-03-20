@@ -15,9 +15,9 @@ HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
     declare_parameter("L3", 112.16);
     declare_parameter("body_radius", 100.0);
     declare_parameter("beta_angle", 1.0977);
-    declare_parameter("home_x", 222.8);
+    declare_parameter("home_x", 227.11);
     declare_parameter("home_y", 0.0);
-    declare_parameter("home_z", -72.9);
+    declare_parameter("home_z", -78.19);
     declare_parameter("step_length", 110.0);
     declare_parameter("step_height", 45.0);
     declare_parameter("step_period", 6.0);
@@ -96,12 +96,24 @@ void HexapodLocomotionNode::sendStandbyPose()
 
 void HexapodLocomotionNode::startWalking()
 {
-    RCLCPP_INFO(get_logger(), "Starting tripod gait walk...");
+    RCLCPP_INFO(get_logger(), "Moving to gait start position...");
 
+    // Move all legs to their gait-start position smoothly before walking
     locomotion_->walk();
     locomotion_->setVelocity(1.0, 0.0, 0.0);
-    
+
+    // Sample block=0 position for each leg at t=0 and send as a pre-walk pose
+    for (int i = 0; i < 6; ++i) {
+        double th1, th2, th3;
+        locomotion_->sampleLegAnglesAt(i, 0.0, th1, th2, th3);
+        sendLegTrajectory(i, th1, th2, th3, 2.0);  // 2 second smooth transition
+    }
+
+    // Wait for the transition to complete
+    rclcpp::sleep_for(std::chrono::milliseconds(2200));
+
     standby_done_ = true;
+    RCLCPP_INFO(get_logger(), "Starting tripod gait walk...");
 }
 
 void HexapodLocomotionNode::gaitUpdate()
