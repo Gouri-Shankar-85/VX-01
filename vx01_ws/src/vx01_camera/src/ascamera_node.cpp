@@ -28,7 +28,7 @@ int main(int argc, char **argv)
     auto buf = std::make_shared<LogRedirectBuffer>(logger);
     std::cout.rdbuf(buf.get());
     std::cerr.rdbuf(buf.get());
-    RCLCPP_INFO(logger, "hello world angstrong camera ros2 node");
+    RCLCPP_INFO(logger, "hello world VX-01 camera ros2 node");
 
     node->start();
     rclcpp::WallRate loop_rate(25);
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     }
     node->stop();
 
-    RCLCPP_INFO(logger, "angstrong camera ros2 node shutdown");
+    RCLCPP_INFO(logger, "VX-01 camera ros2 node shutdown");
 
     rclcpp::shutdown();
     return 0;
