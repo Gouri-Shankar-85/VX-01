@@ -40,14 +40,13 @@ private:
     double update_rate_;
 
     bool   standby_done_;
-    int    last_sent_block_;        
-    double block_period_;          
+    int    last_sent_block_;
+    double block_period_;
 
     void sendStandbyPose();
     void startWalking();
     void gaitUpdate();
 
-    // Multi-point: traces the Bezier arc across a gait block (used during walking)
     void sendLegTrajectory(int leg_index,
                            double theta1, double theta2, double theta3,
                            double duration_sec);
@@ -55,6 +54,6 @@ private:
     bool allClientsReady();
 };
 
-}  
+}
 
 #endif

@@ -21,7 +21,6 @@ namespace vx01_hexapod_locomotion {
         std::vector<std::shared_ptr<control::LegController>> leg_controllers_;
         std::shared_ptr<gait::GaitPattern>                   gait_pattern_;
 
-        // Body pose module (orientation + translation)
         body::BodyTranslation body_translation_;
 
         double L1_, L2_, L3_;
@@ -43,7 +42,6 @@ namespace vx01_hexapod_locomotion {
         double step_height_;
         double track_width_;
 
-        // Home foot position in O-frame (mm)
         double home_x_;
         double home_y_;
         double home_z_;
@@ -75,7 +73,12 @@ namespace vx01_hexapod_locomotion {
         void sampleLegAnglesAt(int leg_index, double t,
                                double& theta1, double& theta2, double& theta3);
 
-        // Gait parameters
+        void sampleSwingAtGlobalT(int leg_index, double global_t,
+                                  double& theta1, double& theta2, double& theta3);
+
+        void sampleDragAtGlobalT(int leg_index, double global_t,
+                                 double& theta1, double& theta2, double& theta3);
+
         void   setStepLength(double length);
         void   setStepHeight(double height);
         void   setStepPeriod(double period);
@@ -83,8 +86,8 @@ namespace vx01_hexapod_locomotion {
         double getStepHeight() const;
         double getStepPeriod() const;
 
-        double getBlockPeriod() const   { return step_period_ / 6.0; }
-        int    getGaitBlock()   const   { return gait_pattern_->getCurrentBlock(); }
+        double getBlockPeriod() const    { return step_period_ / 6.0; }
+        int    getGaitBlock()   const    { return gait_pattern_->getCurrentBlock(); }
         bool   isSwingPhase(int leg)const{ return gait_pattern_->isSwingPhase(leg); }
         void   setBlockPeriod(double bp) { step_period_ = bp * 6.0; }
 
@@ -92,10 +95,7 @@ namespace vx01_hexapod_locomotion {
         void getHomePosition(double& x, double& y, double& z) const;
 
         void setBodyRPY(double roll, double pitch, double yaw);
-
         void setBodyTranslation(double tx, double ty, double tz);
-
-        // Combined pose
         void setBodyPose(double tx, double ty, double tz,
                          double roll, double pitch, double yaw);
 
@@ -104,7 +104,7 @@ namespace vx01_hexapod_locomotion {
         void applyIK(int leg_index, double foot_x, double foot_y, double foot_z);
         void updateLeg(int leg_index);
         void rebuildGaitPattern();
-        void validateWorkspace();   
+        void validateWorkspace();
     };
 
 }

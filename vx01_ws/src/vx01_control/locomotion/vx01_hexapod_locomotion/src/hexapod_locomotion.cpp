@@ -18,18 +18,16 @@ namespace vx01_hexapod_locomotion {
       step_height_(step_height),
       track_width_(home_x),
       home_x_(home_x), home_y_(home_y), home_z_(home_z)
-
     {
-
         const double b = beta_angle;
 
         leg_angles_ = {
-             0.0,       // leg 0: right side          
-             b,         // leg 1: front-right         
-             2.0 * b,   // leg 2: front-left          
-             M_PI,      // leg 3: left side           
-            -2.0 * b,   // leg 4: rear-left          
-            -b          // leg 5: rear-right          
+             0.0,
+             b,
+             2.0 * b,
+             M_PI,
+            -2.0 * b,
+            -b
         };
 
         gait_pattern_ = std::make_shared<gait::GaitPattern>(
@@ -61,8 +59,8 @@ namespace vx01_hexapod_locomotion {
             double dist  = std::sqrt(r_xy*r_xy + p.z*p.z);
             if (dist > max_reach || r_xy < 0.0) {
                 std::cerr << "[HexapodLocomotion] WORKSPACE VIOLATION at '"
-                        << p.label << "': dist=" << dist
-                        << " > max=" << max_reach << "\n";
+                          << p.label << "': dist=" << dist
+                          << " > max=" << max_reach << "\n";
                 ok = false;
             }
         }
@@ -158,7 +156,7 @@ namespace vx01_hexapod_locomotion {
 
         applyIK(leg_index, leg_x, leg_y, home_z_ + leg_z_delta);
     }
-    
+
     std::vector<double> HexapodLocomotion::getJointAngles() const {
         return current_joint_angles_;
     }
@@ -187,7 +185,56 @@ namespace vx01_hexapod_locomotion {
             std::cerr << "[sampleLegAnglesAt] IK failed leg=" << leg_index
                       << " t=" << t << " pos=(" << leg_x << "," << leg_y
                       << "," << (home_z_ + leg_z_delta) << ")\n";
-            // Fall back to last known good angles
+            th1 = current_joint_angles_[leg_index*3+0];
+            th2 = current_joint_angles_[leg_index*3+1];
+            th3 = current_joint_angles_[leg_index*3+2];
+        }
+        theta1 = th1;
+        theta2 = th2;
+        theta3 = th3;
+    }
+
+    void HexapodLocomotion::sampleSwingAtGlobalT(int leg_index, double global_t,
+                                                  double& theta1, double& theta2, double& theta3)
+    {
+        global_t = std::max(0.0, std::min(1.0, global_t));
+
+        double T  = step_length_;
+        double u  = 1.0 - global_t;
+        double bx = home_x_;
+        double by = u*u*(-T/2.0) + 2.0*u*global_t*(0.0) + global_t*global_t*(T/2.0);
+        double bz = u*u*(0.0)    + 2.0*u*global_t*step_height_ + global_t*global_t*(0.0);
+
+        kinematics::InverseKinematics ik(L1_, L2_, L3_);
+        double th1 = 0.0, th2 = 0.0, th3 = 0.0;
+        bool ok = ik.compute(bx, by, home_z_ + bz, th1, th2, th3);
+        if (!ok) {
+            std::cerr << "[sampleSwingAtGlobalT] IK failed leg=" << leg_index
+                      << " global_t=" << global_t << "\n";
+            th1 = current_joint_angles_[leg_index*3+0];
+            th2 = current_joint_angles_[leg_index*3+1];
+            th3 = current_joint_angles_[leg_index*3+2];
+        }
+        theta1 = th1;
+        theta2 = th2;
+        theta3 = th3;
+    }
+
+    void HexapodLocomotion::sampleDragAtGlobalT(int leg_index, double global_t,
+                                                 double& theta1, double& theta2, double& theta3)
+    {
+        global_t = std::max(0.0, std::min(1.0, global_t));
+
+        double scale = 1.0 - 2.0 * global_t;
+        double bx = home_x_;
+        double by = scale * (step_length_ / 2.0);
+
+        kinematics::InverseKinematics ik(L1_, L2_, L3_);
+        double th1 = 0.0, th2 = 0.0, th3 = 0.0;
+        bool ok = ik.compute(bx, by, home_z_, th1, th2, th3);
+        if (!ok) {
+            std::cerr << "[sampleDragAtGlobalT] IK failed leg=" << leg_index
+                      << " global_t=" << global_t << "\n";
             th1 = current_joint_angles_[leg_index*3+0];
             th2 = current_joint_angles_[leg_index*3+1];
             th3 = current_joint_angles_[leg_index*3+2];
@@ -207,7 +254,7 @@ namespace vx01_hexapod_locomotion {
 
     void HexapodLocomotion::setHomePosition(double x, double y, double z) {
         home_x_ = x; home_y_ = y; home_z_ = z;
-        rebuildGaitPattern();  
+        rebuildGaitPattern();
     }
 
     void HexapodLocomotion::getHomePosition(double& x, double& y, double& z) const {
