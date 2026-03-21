@@ -145,10 +145,17 @@ void HexapodLocomotionNode::gaitUpdate()
         goal.trajectory.header.stamp = now;
 
         const int N = 12;
+        RCLCPP_INFO(get_logger(), "Leg %d swing waypoints:", i);
         for (int k = 1; k <= N; ++k) {
             double global_t = static_cast<double>(k) / static_cast<double>(N);
             double th1, th2, th3;
             locomotion_->sampleSwingAtGlobalT(i, global_t, th1, th2, th3);
+            RCLCPP_INFO(get_logger(),
+                "  t=%.2f  coxa=%.3f(%.1f°)  femur=%.3f(%.1f°)  tibia=%.3f(%.1f°)",
+                global_t,
+                th1, th1*180.0/M_PI,
+                th2, th2*180.0/M_PI,
+                th3, th3*180.0/M_PI);
             trajectory_msgs::msg::JointTrajectoryPoint pt;
             pt.positions       = {th1, th2, th3};
             pt.time_from_start = rclcpp::Duration::from_seconds(group_duration * global_t);
