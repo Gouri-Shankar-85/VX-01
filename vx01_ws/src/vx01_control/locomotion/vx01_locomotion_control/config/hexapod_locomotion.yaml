@@ -1,6 +1,6 @@
 hexapod_locomotion_node:
   ros__parameters:
-    use_sim_time: false        
+    use_sim_time: false
 
     L1: 60.55
     L2: 73.84
@@ -13,7 +13,7 @@ hexapod_locomotion_node:
     home_z: -99.118
 
     step_length: 60.0
-    step_height: 50.0
+    step_height: 70.0
     step_period: 4.0
 
     standby_coxa:  0.0
@@ -21,6 +21,7 @@ hexapod_locomotion_node:
     standby_tibia:  0.3
 
     standby_duration: 5.0
+
     update_rate: 50.0
 
     leg_controllers:

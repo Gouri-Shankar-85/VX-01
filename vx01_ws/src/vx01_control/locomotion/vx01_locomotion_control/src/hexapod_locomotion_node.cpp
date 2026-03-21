@@ -19,7 +19,7 @@ HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
     declare_parameter("home_y", 0.0);
     declare_parameter("home_z", -99.118);
     declare_parameter("step_length", 60.0);
-    declare_parameter("step_height", 50.0);
+    declare_parameter("step_height", 70.0);
     declare_parameter("step_period", 4.0);
     declare_parameter("standby_coxa",  0.0);
     declare_parameter("standby_femur", -0.75);
@@ -134,39 +134,46 @@ void HexapodLocomotionNode::gaitUpdate()
     const double group_duration = block_period_ * 3.0 * 0.95;
     rclcpp::Time now = this->get_clock()->now();
 
+    // Send swing trajectory to current swing group
     for (int i = 0; i < 6; ++i) {
+        if (!locomotion_->isSwingPhase(i)) continue;
         if (!action_clients_[i]->action_server_is_ready()) continue;
 
         auto goal = FollowJointTrajectory::Goal();
         goal.trajectory.joint_names  = joint_names_[i];
         goal.trajectory.header.stamp = now;
 
-        if (locomotion_->isSwingPhase(i)) {
-            const int N = 12;
-            for (int k = 1; k <= N; ++k) {
-                double global_t = static_cast<double>(k) / static_cast<double>(N);
-                double time_sec = group_duration * global_t;
-                double th1, th2, th3;
-                locomotion_->sampleSwingAtGlobalT(i, global_t, th1, th2, th3);
-                trajectory_msgs::msg::JointTrajectoryPoint pt;
-                pt.positions       = {th1, th2, th3};
-                pt.time_from_start = rclcpp::Duration::from_seconds(time_sec);
-                goal.trajectory.points.push_back(pt);
-            }
-        } else {
-            const int N = 6;
-            for (int k = 1; k <= N; ++k) {
-                double global_t = static_cast<double>(k) / static_cast<double>(N);
-                double time_sec = group_duration * global_t;
-                double th1, th2, th3;
-                locomotion_->sampleDragAtGlobalT(i, global_t, th1, th2, th3);
-                trajectory_msgs::msg::JointTrajectoryPoint pt;
-                pt.positions       = {th1, th2, th3};
-                pt.time_from_start = rclcpp::Duration::from_seconds(time_sec);
-                goal.trajectory.points.push_back(pt);
-            }
+        const int N = 12;
+        for (int k = 1; k <= N; ++k) {
+            double global_t = static_cast<double>(k) / static_cast<double>(N);
+            double th1, th2, th3;
+            locomotion_->sampleSwingAtGlobalT(i, global_t, th1, th2, th3);
+            trajectory_msgs::msg::JointTrajectoryPoint pt;
+            pt.positions       = {th1, th2, th3};
+            pt.time_from_start = rclcpp::Duration::from_seconds(group_duration * global_t);
+            goal.trajectory.points.push_back(pt);
         }
+        action_clients_[i]->async_send_goal(goal);
+    }
 
+    for (int i = 0; i < 6; ++i) {
+        if (locomotion_->isSwingPhase(i)) continue;
+        if (!action_clients_[i]->action_server_is_ready()) continue;
+
+        auto goal = FollowJointTrajectory::Goal();
+        goal.trajectory.joint_names  = joint_names_[i];
+        goal.trajectory.header.stamp = now;
+
+        const int N = 6;
+        for (int k = 1; k <= N; ++k) {
+            double global_t = static_cast<double>(k) / static_cast<double>(N);
+            double th1, th2, th3;
+            locomotion_->sampleDragAtGlobalT(i, global_t, th1, th2, th3);
+            trajectory_msgs::msg::JointTrajectoryPoint pt;
+            pt.positions       = {th1, th2, th3};
+            pt.time_from_start = rclcpp::Duration::from_seconds(group_duration * global_t);
+            goal.trajectory.points.push_back(pt);
+        }
         action_clients_[i]->async_send_goal(goal);
     }
 }
