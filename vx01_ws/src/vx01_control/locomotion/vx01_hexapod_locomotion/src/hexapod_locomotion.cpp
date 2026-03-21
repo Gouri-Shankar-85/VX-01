@@ -199,11 +199,11 @@ namespace vx01_hexapod_locomotion {
     {
         global_t = std::max(0.0, std::min(1.0, global_t));
 
-        double T  = step_length_;
+        double half_stride = std::cos(leg_angles_[leg_index]) * (step_length_ / 2.0);
         double u  = 1.0 - global_t;
         double bx = home_x_;
-        double by = u*u*(-T/2.0) + 2.0*u*global_t*(0.0) + global_t*global_t*(T/2.0);
-        double bz = u*u*(0.0)    + 2.0*u*global_t*step_height_ + global_t*global_t*(0.0);
+        double by = u*u*(-half_stride) + 2.0*u*global_t*(0.0) + global_t*global_t*(half_stride);
+        double bz = u*u*(0.0) + 2.0*u*global_t*step_height_ + global_t*global_t*(0.0);
 
         kinematics::InverseKinematics ik(L1_, L2_, L3_);
         double th1 = 0.0, th2 = 0.0, th3 = 0.0;
@@ -225,9 +225,10 @@ namespace vx01_hexapod_locomotion {
     {
         global_t = std::max(0.0, std::min(1.0, global_t));
 
+        double half_stride = std::cos(leg_angles_[leg_index]) * (step_length_ / 2.0);
         double scale = 1.0 - 2.0 * global_t;
         double bx = home_x_;
-        double by = scale * (step_length_ / 2.0);
+        double by = scale * half_stride;
 
         kinematics::InverseKinematics ik(L1_, L2_, L3_);
         double th1 = 0.0, th2 = 0.0, th3 = 0.0;
