@@ -15,15 +15,15 @@ HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
     declare_parameter("L3", 112.16);
     declare_parameter("body_radius", 100.0);
     declare_parameter("beta_angle", 1.0977);
-    declare_parameter("home_x", 215.572);
+    declare_parameter("home_x", 213.600);
     declare_parameter("home_y", 0.0);
-    declare_parameter("home_z", -99.118);
-    declare_parameter("step_length", 60.0);
-    declare_parameter("step_height", 70.0);
+    declare_parameter("home_z", -90.986);
+    declare_parameter("step_length", 80.0);
+    declare_parameter("step_height", 60.0);
     declare_parameter("step_period", 4.0);
     declare_parameter("standby_coxa",  0.0);
-    declare_parameter("standby_femur", -0.75);
-    declare_parameter("standby_tibia",  0.3);
+    declare_parameter("standby_femur", -0.9);
+    declare_parameter("standby_tibia",  0.6);
     declare_parameter("standby_duration", 5.0);
     declare_parameter("update_rate", 50.0);
     declare_parameter("leg_controllers", std::vector<std::string>{
