@@ -17,8 +17,8 @@ hexapod_locomotion_node:
     step_period: 4.0
 
     standby_coxa:  0.0
-    standby_femur: -0.7156
-    standby_tibia:  0.6
+    standby_femur: -1.5
+    standby_tibia:  0.3
 
     standby_duration: 5.0
     update_rate: 50.0

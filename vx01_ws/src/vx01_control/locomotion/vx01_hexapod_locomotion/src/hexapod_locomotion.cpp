@@ -188,12 +188,19 @@ namespace vx01_hexapod_locomotion {
         double half = std::cos(leg_angles_[leg_index]) * (step_length_ / 2.0);
         double u    = 1.0 - global_t;
 
-        double by = u*u*(half) + 2.0*u*global_t*(0.0) + global_t*global_t*(-half);
-        double bz = 4.0*u*global_t * step_height_;
+        // Coxa sweep: from +half (front) to -half (rear)
+        double by = u*u*(half) + global_t*global_t*(-half);
 
+        // Z lift: independent of Y sweep, computed at y=0
+        double bz = 4.0 * u * global_t * step_height_;
+
+        // theta1 from coxa sweep only
+        double th1 = std::atan2(by, home_x_);
+
+        // theta2/theta3 from Z lift only (y=0, full reach)
         kinematics::InverseKinematics ik(L1_, L2_, L3_);
-        double th1=0.0, th2=0.0, th3=0.0;
-        bool ok = ik.compute(home_x_, by, home_z_ + bz, th1, th2, th3);
+        double dummy_th1=0.0, th2=0.0, th3=0.0;
+        bool ok = ik.compute(home_x_, 0.0, home_z_ + bz, dummy_th1, th2, th3);
         if (!ok) {
             std::cerr << "[sampleSwingAtGlobalT] IK failed leg=" << leg_index
                       << " global_t=" << global_t << "\n";
