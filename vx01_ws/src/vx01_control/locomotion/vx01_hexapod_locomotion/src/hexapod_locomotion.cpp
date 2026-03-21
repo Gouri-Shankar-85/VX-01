@@ -17,7 +17,8 @@ namespace vx01_hexapod_locomotion {
       step_length_(step_length),
       step_height_(step_height),
       track_width_(home_x),
-      home_x_(home_x), home_y_(home_y), home_z_(home_z)
+      home_x_(home_x), home_y_(home_y), home_z_(home_z),
+      stance_femur_(0.0), stance_tibia_(0.0)
     {
         const double b = beta_angle;
         leg_angles_ = { 0.0, b, 2.0*b, M_PI, -2.0*b, -b };
@@ -188,28 +189,26 @@ namespace vx01_hexapod_locomotion {
         double u    = 1.0 - global_t;
         double half = std::cos(leg_angles_[leg_index]) * (step_length_ / 2.0);
 
-        // Get home femur and tibia from IK at home position (y=0)
-        double home_th1, home_th2, home_th3;
-        kinematics::InverseKinematics ik(L1_, L2_, L3_);
-        bool ok = ik.compute(home_x_, 0.0, home_z_, home_th1, home_th2, home_th3);
-        if (!ok) {
-            theta1 = current_joint_angles_[leg_index*3+0];
-            theta2 = current_joint_angles_[leg_index*3+1];
-            theta3 = current_joint_angles_[leg_index*3+2];
-            return;
-        }
-
         // theta1 (coxa): Bezier sweep +half -> 0 -> -half
         theta1 = std::atan2(u*u*(half) + global_t*global_t*(-half), home_x_);
 
-        // theta2 (femur): lift arc using femur-only approximation
-        // dz/dth2 at home = L2*cos(th2) + L3*cos(th2+th3)
-        double dz_dth2 = L2_ * std::cos(home_th2) + L3_ * std::cos(home_th2 + home_th3);
+        // theta2 (femur): lift arc using direct stance angle
+        // dz/dth2 = L2*cos(th2) + L3*cos(th2+th3) at stance position
+        double dz_dth2 = L2_ * std::cos(stance_femur_) +
+                         L3_ * std::cos(stance_femur_ + stance_tibia_);
         double lift_angle = (std::abs(dz_dth2) > 1e-6) ? (step_height_ / dz_dth2) : 0.0;
-        theta2 = home_th2 + lift_angle * 4.0 * u * global_t;
+
+        // Arc: stance at start/end, peak lift at midpoint
+        theta2 = stance_femur_ + lift_angle * 4.0 * u * global_t;
 
         // theta3 (tibia): constant throughout swing
-        theta3 = home_th3;
+        theta3 = stance_tibia_;
+    }
+
+    void HexapodLocomotion::setStancePose(double femur, double tibia)
+    {
+        stance_femur_ = femur;
+        stance_tibia_ = tibia;
     }
 
     void HexapodLocomotion::sampleDragAtGlobalT(int leg_index, double global_t,

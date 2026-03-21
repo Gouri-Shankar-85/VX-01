@@ -46,6 +46,9 @@ namespace vx01_hexapod_locomotion {
         double home_y_;
         double home_z_;
 
+        double stance_femur_;
+        double stance_tibia_;
+
         std::vector<double> current_joint_angles_;
 
     public:
@@ -90,6 +93,8 @@ namespace vx01_hexapod_locomotion {
         int    getGaitBlock()   const    { return gait_pattern_->getCurrentBlock(); }
         bool   isSwingPhase(int leg)const{ return gait_pattern_->isSwingPhase(leg); }
         void   setBlockPeriod(double bp) { step_period_ = bp * 6.0; }
+
+        void setStancePose(double femur, double tibia);
 
         void setHomePosition(double x, double y, double z);
         void getHomePosition(double& x, double& y, double& z) const;

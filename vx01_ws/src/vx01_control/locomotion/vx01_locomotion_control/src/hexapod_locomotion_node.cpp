@@ -54,6 +54,8 @@ HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
         home_x, home_y, home_z,
         step_length, step_height, step_period_);
 
+    locomotion_->setStancePose(standby_femur_, standby_tibia_);
+
     joint_names_ = {
         {"coxa_leg0_joint", "femur_leg0_joint", "tibia_leg0_joint"},
         {"coxa_leg1_joint", "femur_leg1_joint", "tibia_leg1_joint"},
