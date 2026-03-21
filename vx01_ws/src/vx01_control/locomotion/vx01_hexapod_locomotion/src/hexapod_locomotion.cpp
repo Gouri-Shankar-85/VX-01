@@ -20,15 +20,7 @@ namespace vx01_hexapod_locomotion {
       home_x_(home_x), home_y_(home_y), home_z_(home_z)
     {
         const double b = beta_angle;
-
-        leg_angles_ = {
-             0.0,
-             b,
-             2.0 * b,
-             M_PI,
-            -2.0 * b,
-            -b
-        };
+        leg_angles_ = { 0.0, b, 2.0*b, M_PI, -2.0*b, -b };
 
         gait_pattern_ = std::make_shared<gait::GaitPattern>(
             home_x_, step_length_, step_height_, leg_angles_);
@@ -42,15 +34,15 @@ namespace vx01_hexapod_locomotion {
 
     void HexapodLocomotion::validateWorkspace()
     {
-        const double max_reach = L2_ + L3_;
+        const double max_reach   = L2_ + L3_;
         const double half_stride = step_length_ / 2.0;
 
         struct CheckPoint { double x, y, z; const char* label; };
         CheckPoint pts[] = {
-            { home_x_,  0.0,           home_z_,                "home"         },
-            { home_x_,  half_stride,   home_z_,                "stride_front" },
-            { home_x_, -half_stride,   home_z_,                "stride_rear"  },
-            { home_x_,  0.0,           home_z_ + step_height_, "lift_peak"    },
+            { home_x_,  0.0,          home_z_,                "home"         },
+            { home_x_,  half_stride,  home_z_,                "stride_front" },
+            { home_x_, -half_stride,  home_z_,                "stride_rear"  },
+            { home_x_,  0.0,          home_z_ + step_height_, "lift_peak"    },
         };
 
         bool ok = true;
@@ -104,9 +96,8 @@ namespace vx01_hexapod_locomotion {
         velocity_x_ = velocity_y_ = velocity_omega_ = 0.0;
         gait_time_  = 0.0;
         gait_pattern_->reset();
-        for (int i = 0; i < 6; ++i) {
+        for (int i = 0; i < 6; ++i)
             applyIK(i, home_x_, home_y_, home_z_);
-        }
     }
 
     void HexapodLocomotion::walk()
@@ -153,7 +144,6 @@ namespace vx01_hexapod_locomotion {
 
         double leg_x, leg_y, leg_z_delta;
         gait_pattern_->getFootPosition(leg_index, t, leg_x, leg_y, leg_z_delta);
-
         applyIK(leg_index, leg_x, leg_y, home_z_ + leg_z_delta);
     }
 
@@ -179,19 +169,15 @@ namespace vx01_hexapod_locomotion {
         gait_pattern_->getFootPosition(leg_index, t, leg_x, leg_y, leg_z_delta);
 
         kinematics::InverseKinematics ik(L1_, L2_, L3_);
-        double th1 = 0.0, th2 = 0.0, th3 = 0.0;
+        double th1=0.0, th2=0.0, th3=0.0;
         bool ok = ik.compute(leg_x, leg_y, home_z_ + leg_z_delta, th1, th2, th3);
         if (!ok) {
-            std::cerr << "[sampleLegAnglesAt] IK failed leg=" << leg_index
-                      << " t=" << t << " pos=(" << leg_x << "," << leg_y
-                      << "," << (home_z_ + leg_z_delta) << ")\n";
+            std::cerr << "[sampleLegAnglesAt] IK failed leg=" << leg_index << "\n";
             th1 = current_joint_angles_[leg_index*3+0];
             th2 = current_joint_angles_[leg_index*3+1];
             th3 = current_joint_angles_[leg_index*3+2];
         }
-        theta1 = th1;
-        theta2 = th2;
-        theta3 = th3;
+        theta1=th1; theta2=th2; theta3=th3;
     }
 
     void HexapodLocomotion::sampleSwingAtGlobalT(int leg_index, double global_t,
@@ -199,15 +185,15 @@ namespace vx01_hexapod_locomotion {
     {
         global_t = std::max(0.0, std::min(1.0, global_t));
 
-        double half_stride = std::cos(leg_angles_[leg_index]) * (step_length_ / 2.0);
-        double u  = 1.0 - global_t;
-        double bx = home_x_;
-        double by = u*u*(half_stride) + 2.0*u*global_t*(0.0) + global_t*global_t*(-half_stride);
-        double bz = u*u*(0.0) + 2.0*u*global_t*step_height_ + global_t*global_t*(0.0);
+        double half = std::cos(leg_angles_[leg_index]) * (step_length_ / 2.0);
+        double u    = 1.0 - global_t;
+
+        double by = u*u*(half) + 2.0*u*global_t*(0.0) + global_t*global_t*(-half);
+        double bz = 2.0*u*global_t * step_height_;
 
         kinematics::InverseKinematics ik(L1_, L2_, L3_);
-        double th1 = 0.0, th2 = 0.0, th3 = 0.0;
-        bool ok = ik.compute(bx, by, home_z_ + bz, th1, th2, th3);
+        double th1=0.0, th2=0.0, th3=0.0;
+        bool ok = ik.compute(home_x_, by, home_z_ + bz, th1, th2, th3);
         if (!ok) {
             std::cerr << "[sampleSwingAtGlobalT] IK failed leg=" << leg_index
                       << " global_t=" << global_t << "\n";
@@ -215,9 +201,7 @@ namespace vx01_hexapod_locomotion {
             th2 = current_joint_angles_[leg_index*3+1];
             th3 = current_joint_angles_[leg_index*3+2];
         }
-        theta1 = th1;
-        theta2 = th2;
-        theta3 = th3;
+        theta1=th1; theta2=th2; theta3=th3;
     }
 
     void HexapodLocomotion::sampleDragAtGlobalT(int leg_index, double global_t,
@@ -225,24 +209,19 @@ namespace vx01_hexapod_locomotion {
     {
         global_t = std::max(0.0, std::min(1.0, global_t));
 
-        double half_stride = std::cos(leg_angles_[leg_index]) * (step_length_ / 2.0);
-        double scale = 2.0 * global_t - 1.0;
-        double bx = home_x_;
-        double by = scale * half_stride;
+        double half = std::cos(leg_angles_[leg_index]) * (step_length_ / 2.0);
+        double by   = -half + 2.0 * half * global_t;
 
         kinematics::InverseKinematics ik(L1_, L2_, L3_);
-        double th1 = 0.0, th2 = 0.0, th3 = 0.0;
-        bool ok = ik.compute(bx, by, home_z_, th1, th2, th3);
+        double th1=0.0, th2=0.0, th3=0.0;
+        bool ok = ik.compute(home_x_, by, home_z_, th1, th2, th3);
         if (!ok) {
-            std::cerr << "[sampleDragAtGlobalT] IK failed leg=" << leg_index
-                      << " global_t=" << global_t << "\n";
+            std::cerr << "[sampleDragAtGlobalT] IK failed leg=" << leg_index << "\n";
             th1 = current_joint_angles_[leg_index*3+0];
             th2 = current_joint_angles_[leg_index*3+1];
             th3 = current_joint_angles_[leg_index*3+2];
         }
-        theta1 = th1;
-        theta2 = th2;
-        theta3 = th3;
+        theta1=th1; theta2=th2; theta3=th3;
     }
 
     void HexapodLocomotion::setStepLength(double length) { step_length_ = length; rebuildGaitPattern(); }

@@ -30,24 +30,24 @@ HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
         "leg_0_controller","leg_1_controller","leg_2_controller",
         "leg_3_controller","leg_4_controller","leg_5_controller"});
 
-    double L1           = get_parameter("L1").as_double();
-    double L2           = get_parameter("L2").as_double();
-    double L3           = get_parameter("L3").as_double();
-    double body_radius  = get_parameter("body_radius").as_double();
-    double beta_angle   = get_parameter("beta_angle").as_double();
-    double home_x       = get_parameter("home_x").as_double();
-    double home_y       = get_parameter("home_y").as_double();
-    double home_z       = get_parameter("home_z").as_double();
-    double step_length  = get_parameter("step_length").as_double();
-    double step_height  = get_parameter("step_height").as_double();
-    step_period_        = get_parameter("step_period").as_double();
-    block_period_       = step_period_ / 6.0;
-    standby_coxa_       = get_parameter("standby_coxa").as_double();
-    standby_femur_      = get_parameter("standby_femur").as_double();
-    standby_tibia_      = get_parameter("standby_tibia").as_double();
-    standby_duration_   = get_parameter("standby_duration").as_double();
-    update_rate_        = get_parameter("update_rate").as_double();
-    controller_names_   = get_parameter("leg_controllers").as_string_array();
+    double L1          = get_parameter("L1").as_double();
+    double L2          = get_parameter("L2").as_double();
+    double L3          = get_parameter("L3").as_double();
+    double body_radius = get_parameter("body_radius").as_double();
+    double beta_angle  = get_parameter("beta_angle").as_double();
+    double home_x      = get_parameter("home_x").as_double();
+    double home_y      = get_parameter("home_y").as_double();
+    double home_z      = get_parameter("home_z").as_double();
+    double step_length = get_parameter("step_length").as_double();
+    double step_height = get_parameter("step_height").as_double();
+    step_period_       = get_parameter("step_period").as_double();
+    block_period_      = step_period_ / 6.0;
+    standby_coxa_      = get_parameter("standby_coxa").as_double();
+    standby_femur_     = get_parameter("standby_femur").as_double();
+    standby_tibia_     = get_parameter("standby_tibia").as_double();
+    standby_duration_  = get_parameter("standby_duration").as_double();
+    update_rate_       = get_parameter("update_rate").as_double();
+    controller_names_  = get_parameter("leg_controllers").as_string_array();
 
     locomotion_ = std::make_shared<vx01_hexapod_locomotion::HexapodLocomotion>(
         L1, L2, L3, body_radius, beta_angle,
@@ -65,8 +65,7 @@ HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
 
     for (int i = 0; i < 6; ++i) {
         auto client = rclcpp_action::create_client<FollowJointTrajectory>(
-            this,
-            "/" + controller_names_[i] + "/follow_joint_trajectory");
+            this, "/" + controller_names_[i] + "/follow_joint_trajectory");
         action_clients_.push_back(client);
     }
 
@@ -89,9 +88,8 @@ HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
 void HexapodLocomotionNode::sendStandbyPose()
 {
     RCLCPP_INFO(get_logger(), "Moving to standby pose...");
-    for (int i = 0; i < 6; ++i) {
+    for (int i = 0; i < 6; ++i)
         sendLegTrajectory(i, standby_coxa_, standby_femur_, standby_tibia_, standby_duration_);
-    }
 }
 
 void HexapodLocomotionNode::startWalking()
@@ -134,7 +132,6 @@ void HexapodLocomotionNode::gaitUpdate()
     const double group_duration = block_period_ * 3.0 * 0.95;
     rclcpp::Time now = this->get_clock()->now();
 
-    // Send swing trajectory to current swing group
     for (int i = 0; i < 6; ++i) {
         if (!locomotion_->isSwingPhase(i)) continue;
         if (!action_clients_[i]->action_server_is_ready()) continue;
@@ -148,27 +145,6 @@ void HexapodLocomotionNode::gaitUpdate()
             double global_t = static_cast<double>(k) / static_cast<double>(N);
             double th1, th2, th3;
             locomotion_->sampleSwingAtGlobalT(i, global_t, th1, th2, th3);
-            trajectory_msgs::msg::JointTrajectoryPoint pt;
-            pt.positions       = {th1, th2, th3};
-            pt.time_from_start = rclcpp::Duration::from_seconds(group_duration * global_t);
-            goal.trajectory.points.push_back(pt);
-        }
-        action_clients_[i]->async_send_goal(goal);
-    }
-
-    for (int i = 0; i < 6; ++i) {
-        if (locomotion_->isSwingPhase(i)) continue;
-        if (!action_clients_[i]->action_server_is_ready()) continue;
-
-        auto goal = FollowJointTrajectory::Goal();
-        goal.trajectory.joint_names  = joint_names_[i];
-        goal.trajectory.header.stamp = now;
-
-        const int N = 6;
-        for (int k = 1; k <= N; ++k) {
-            double global_t = static_cast<double>(k) / static_cast<double>(N);
-            double th1, th2, th3;
-            locomotion_->sampleDragAtGlobalT(i, global_t, th1, th2, th3);
             trajectory_msgs::msg::JointTrajectoryPoint pt;
             pt.positions       = {th1, th2, th3};
             pt.time_from_start = rclcpp::Duration::from_seconds(group_duration * global_t);
@@ -198,9 +174,8 @@ void HexapodLocomotionNode::sendLegTrajectory(int leg_index,
 
 bool HexapodLocomotionNode::allClientsReady()
 {
-    for (auto& client : action_clients_) {
+    for (auto& client : action_clients_)
         if (!client->action_server_is_ready()) return false;
-    }
     return true;
 }
 
