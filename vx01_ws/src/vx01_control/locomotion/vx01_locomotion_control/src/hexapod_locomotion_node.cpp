@@ -22,7 +22,7 @@ HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
     declare_parameter("step_height", 60.0);
     declare_parameter("step_period", 4.0);
     declare_parameter("standby_coxa",  0.0);
-    declare_parameter("standby_femur", -0.9);
+    declare_parameter("standby_femur", -1.2);
     declare_parameter("standby_tibia",  0.6);
     declare_parameter("standby_duration", 5.0);
     declare_parameter("update_rate", 50.0);
