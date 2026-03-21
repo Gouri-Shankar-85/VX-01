@@ -15,14 +15,14 @@ HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
     declare_parameter("L3", 112.16);
     declare_parameter("body_radius", 100.0);
     declare_parameter("beta_angle", 1.0977);
-    declare_parameter("home_x", 213.600);
+    declare_parameter("home_x", 227.689);
     declare_parameter("home_y", 0.0);
-    declare_parameter("home_z", -90.986);
+    declare_parameter("home_z", -61.379);
     declare_parameter("step_length", 80.0);
-    declare_parameter("step_height", 60.0);
+    declare_parameter("step_height", 80.0);
     declare_parameter("step_period", 4.0);
     declare_parameter("standby_coxa",  0.0);
-    declare_parameter("standby_femur", -1.2);
+    declare_parameter("standby_femur", -0.7156);
     declare_parameter("standby_tibia",  0.6);
     declare_parameter("standby_duration", 5.0);
     declare_parameter("update_rate", 50.0);
@@ -101,7 +101,11 @@ void HexapodLocomotionNode::startWalking()
 
     for (int i = 0; i < 6; ++i) {
         double th1, th2, th3;
-        locomotion_->sampleSwingAtGlobalT(i, 0.0, th1, th2, th3);
+        if (locomotion_->isSwingPhase(i)) {
+            locomotion_->sampleSwingAtGlobalT(i, 0.0, th1, th2, th3);
+        } else {
+            locomotion_->sampleDragAtGlobalT(i, 0.0, th1, th2, th3);
+        }
         sendLegTrajectory(i, th1, th2, th3, 2.0);
     }
 

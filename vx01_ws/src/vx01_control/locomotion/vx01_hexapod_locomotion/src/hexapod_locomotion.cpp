@@ -189,7 +189,7 @@ namespace vx01_hexapod_locomotion {
         double u    = 1.0 - global_t;
 
         double by = u*u*(half) + 2.0*u*global_t*(0.0) + global_t*global_t*(-half);
-        double bz = 2.0*u*global_t * step_height_;
+        double bz = 4.0*u*global_t * step_height_;
 
         kinematics::InverseKinematics ik(L1_, L2_, L3_);
         double th1=0.0, th2=0.0, th3=0.0;

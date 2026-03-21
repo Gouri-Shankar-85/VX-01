@@ -8,16 +8,16 @@ hexapod_locomotion_node:
     body_radius: 100.0
     beta_angle: 1.0977
 
-    home_x: 213.600
+    home_x: 227.689
     home_y: 0.0
-    home_z: -90.986
+    home_z: -61.379
 
     step_length: 80.0
-    step_height: 60.0
+    step_height: 80.0
     step_period: 4.0
 
     standby_coxa:  0.0
-    standby_femur: -1.2
+    standby_femur: -0.7156
     standby_tibia:  0.6
 
     standby_duration: 5.0
