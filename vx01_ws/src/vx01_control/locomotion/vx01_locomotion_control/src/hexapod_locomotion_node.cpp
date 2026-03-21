@@ -15,15 +15,15 @@ HexapodLocomotionNode::HexapodLocomotionNode(const rclcpp::NodeOptions& options)
     declare_parameter("L3", 112.16);
     declare_parameter("body_radius", 100.0);
     declare_parameter("beta_angle", 1.0977);
-    declare_parameter("home_x", 227.11);
+    declare_parameter("home_x", 215.572);
     declare_parameter("home_y", 0.0);
-    declare_parameter("home_z", -78.19);
-    declare_parameter("step_length", 80.0);
-    declare_parameter("step_height", 45.0);
-    declare_parameter("step_period", 4.0);
+    declare_parameter("home_z", -99.118);
+    declare_parameter("step_length", 60.0);
+    declare_parameter("step_height", 50.0);
+    declare_parameter("step_period", 6.0);
     declare_parameter("standby_coxa",  0.0);
-    declare_parameter("standby_femur", -0.0545);
-    declare_parameter("standby_tibia",  0.6067);
+    declare_parameter("standby_femur", -0.75);
+    declare_parameter("standby_tibia",  0.3);
     declare_parameter("standby_duration", 5.0);
     declare_parameter("update_rate", 50.0);
     declare_parameter("leg_controllers", std::vector<std::string>{
@@ -98,15 +98,18 @@ void HexapodLocomotionNode::startWalking()
 {
     RCLCPP_INFO(get_logger(), "Moving to gait start position...");
 
+    // Move all legs to their gait-start position smoothly before walking
     locomotion_->walk();
     locomotion_->setVelocity(1.0, 0.0, 0.0);
 
+    // Sample block=0 position for each leg at t=0 and send as a pre-walk pose
     for (int i = 0; i < 6; ++i) {
         double th1, th2, th3;
         locomotion_->sampleLegAnglesAt(i, 0.0, th1, th2, th3);
-        sendLegTrajectory(i, th1, th2, th3, 2.0);
+        sendLegTrajectory(i, th1, th2, th3, 2.0);  // 2 second smooth transition
     }
 
+    // Wait for the transition to complete
     rclcpp::sleep_for(std::chrono::milliseconds(2200));
 
     standby_done_ = true;
@@ -124,14 +127,12 @@ void HexapodLocomotionNode::gaitUpdate()
     if (current_block == last_sent_block_) return;
     last_sent_block_ = current_block;
 
-    if (current_block != 0 && current_block != 3) return;
-
-    const double traj_duration = block_period_ * 3.0 * 0.90;
-    rclcpp::Time now = this->get_clock()->now();
-
     RCLCPP_INFO(get_logger(), "Block %d — swing legs: %s",
         current_block,
-        current_block == 0 ? "0,2,4" : "1,3,5");
+        current_block < 3 ? "0,2,4" : "1,3,5");
+
+    const double traj_duration = block_period_ * 0.90;
+    rclcpp::Time now = this->get_clock()->now();
 
     for (int i = 0; i < 6; ++i) {
         if (!locomotion_->isSwingPhase(i)) continue;
@@ -141,9 +142,31 @@ void HexapodLocomotionNode::gaitUpdate()
         goal.trajectory.joint_names  = joint_names_[i];
         goal.trajectory.header.stamp = now;
 
-        const int N = 10;
+        const int N = 8;
         for (int k = 1; k <= N; ++k) {
             double t        = static_cast<double>(k) / static_cast<double>(N);
+            double time_sec = traj_duration * t;
+            double th1, th2, th3;
+            locomotion_->sampleLegAnglesAt(i, t, th1, th2, th3);
+            trajectory_msgs::msg::JointTrajectoryPoint pt;
+            pt.positions       = {th1, th2, th3};
+            pt.time_from_start = rclcpp::Duration::from_seconds(time_sec);
+            goal.trajectory.points.push_back(pt);
+        }
+        action_clients_[i]->async_send_goal(goal);
+    }
+
+    for (int i = 0; i < 6; ++i) {
+        if (locomotion_->isSwingPhase(i)) continue;
+        if (!action_clients_[i]->action_server_is_ready()) continue;
+
+        auto goal = FollowJointTrajectory::Goal();
+        goal.trajectory.joint_names  = joint_names_[i];
+        goal.trajectory.header.stamp = now;
+
+        // Two points: start of drag and end of drag
+        for (int k : {1, 6}) {
+            double t        = static_cast<double>(k) / 6.0;
             double time_sec = traj_duration * t;
             double th1, th2, th3;
             locomotion_->sampleLegAnglesAt(i, t, th1, th2, th3);
@@ -182,7 +205,7 @@ bool HexapodLocomotionNode::allClientsReady()
     return true;
 }
 
-} // namespace vx01_locomotion_control
+}  
 
 int main(int argc, char* argv[])
 {

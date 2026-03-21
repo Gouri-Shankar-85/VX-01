@@ -1,6 +1,6 @@
 hexapod_locomotion_node:
   ros__parameters:
-    use_sim_time: false
+    use_sim_time: false        
 
     L1: 60.55
     L2: 73.84
@@ -8,20 +8,19 @@ hexapod_locomotion_node:
     body_radius: 100.0
     beta_angle: 1.0977
 
-    home_x: 227.11
+    home_x: 215.572
     home_y: 0.0
-    home_z: -78.19
+    home_z: -99.118
 
-    step_length: 80.0
-    step_height: 45.0
+    step_length: 60.0
+    step_height: 50.0
     step_period: 4.0
 
     standby_coxa:  0.0
-    standby_femur: -0.62
-    standby_tibia: 0.3
+    standby_femur: -0.75
+    standby_tibia:  0.3
 
     standby_duration: 5.0
-
     update_rate: 50.0
 
     leg_controllers:
