@@ -22,7 +22,8 @@ class TerrainClassifierNode(Node):
 
         topics = self._load_topics(config_path)
         self.bridge = CvBridge()
-        self.active = True  
+        self.active = True
+
         self.create_subscription(Image,        topics['camera_depth'], self._cb_depth,   10)
         self.create_subscription(MissionState, topics['mission_mode'], self._cb_mission, 10)
 
@@ -56,7 +57,7 @@ class TerrainClassifierNode(Node):
 
         t              = Terrain()
         t.slope        = float(slope)
-        t.gap_detected = gap_flag
+        t.gap_detected = bool(gap_flag)   # explicit cast — numpy.bool_ is not accepted
 
         if gap_flag:
             t.terrain_type = 'GAP'
@@ -83,7 +84,10 @@ class TerrainClassifierNode(Node):
         if row.size < 2:
             return 0.0
         grad      = np.abs(np.gradient(row))
-        slope_rad = np.arctan(np.nanmean(grad))
+        valid_grad = grad[~np.isnan(grad)]
+        if valid_grad.size == 0:
+            return 0.0
+        slope_rad = np.arctan(np.mean(valid_grad))
         return float(np.degrees(slope_rad))
 
     def _detect_gap(self, depth: np.ndarray) -> bool:
@@ -94,7 +98,7 @@ class TerrainClassifierNode(Node):
         mean_depth = np.nanmean(roi)
         far_pixels = np.sum(roi > mean_depth + self.GAP_DEPTH_DIFF)
         ratio      = far_pixels / roi.size
-        return ratio > self.GAP_AREA_RATIO
+        return bool(ratio > self.GAP_AREA_RATIO)   # explicit cast
 
     def _walkability(self, terrain: Terrain, depth: np.ndarray) -> Walkability:
         scores = {
@@ -110,7 +114,7 @@ class TerrainClassifierNode(Node):
 
         w          = Walkability()
         w.score    = float(score)
-        w.walkable = score >= 0.5
+        w.walkable = bool(score >= 0.5)   # explicit cast
         return w
 
 
