@@ -15,10 +15,10 @@ class MappingNode(Node):
 
         topics = self._load_topics(config_path)
 
-        self.create_subscription(Image,        topics['camera_color'],  self._cb_color,  10)
-        self.create_subscription(Image,        topics['camera_depth'],  self._cb_depth,  10)
-        self.create_subscription(PointCloud2,  topics['camera_points'], self._cb_cloud,  10)
-        self.create_subscription(Imu,          topics['imu'],           self._cb_imu,    10)
+        self.create_subscription(Image,       topics['camera_color'],  self._cb_color, 10)
+        self.create_subscription(Image,       topics['camera_depth'],  self._cb_depth, 10)
+        self.create_subscription(PointCloud2, topics['camera_points'], self._cb_cloud, 10)
+        self.create_subscription(Imu,         topics['imu'],           self._cb_imu,   10)
 
         self.pub_map   = self.create_publisher(OccupancyGrid, topics['map'],             10)
         self.pub_odom  = self.create_publisher(Odometry,      topics['odom'],            10)
@@ -43,8 +43,12 @@ class MappingNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    config = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'topics.yaml')
+    config = os.path.expanduser('~/vx-01/vx01_ws/src/vx01_perception/config/topics.yaml')
     node   = MappingNode(config)
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
