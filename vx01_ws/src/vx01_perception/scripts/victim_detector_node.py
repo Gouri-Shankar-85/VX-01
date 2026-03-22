@@ -154,7 +154,7 @@ class VictimDetectorNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    config = os.path.join(os.path.dirname(__file__), '..', 'config', 'topics.yaml')
+    config = os.path.expanduser('~/vx-01/vx01_ws/src/vx01_perception/config/topics.yaml')
     node   = VictimDetectorNode(config)
     rclpy.spin(node)
     node.destroy_node()
