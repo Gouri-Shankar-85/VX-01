@@ -42,7 +42,7 @@ private:
     bool   standby_done_;
     int    last_sent_block_;
     double block_period_;
-
+    std::vector<double> last_sent_angles_;  
     void sendStandbyPose();
     void startWalking();
     void gaitUpdate();

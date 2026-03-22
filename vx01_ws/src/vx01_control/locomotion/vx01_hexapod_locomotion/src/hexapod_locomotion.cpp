@@ -35,25 +35,22 @@ namespace vx01_hexapod_locomotion {
 
     void HexapodLocomotion::validateWorkspace()
     {
-        const double max_reach   = L2_ + L3_;
-        const double half_stride = step_length_ / 2.0;
+        const double max_reach = L2_ + L3_;
 
-        struct CheckPoint { double x, y, z; const char* label; };
+        struct CheckPoint { double x, z; const char* label; };
         CheckPoint pts[] = {
-            { home_x_,  0.0,          home_z_,                "home"         },
-            { home_x_,  half_stride,  home_z_,                "stride_front" },
-            { home_x_, -half_stride,  home_z_,                "stride_rear"  },
-            { home_x_,  0.0,          home_z_ + step_height_, "lift_peak"    },
+            { home_x_,  home_z_,                "home (local)"      },
+            { home_x_,  home_z_ + step_height_, "lift_peak (local)" },
         };
 
         bool ok = true;
         for (auto& p : pts) {
-            double r_xy = std::sqrt(p.x*p.x + p.y*p.y) - L1_;
-            double dist  = std::sqrt(r_xy*r_xy + p.z*p.z);
-            if (dist > max_reach || r_xy < 0.0) {
+            double r2   = p.x - L1_;
+            double dist = std::sqrt(r2*r2 + p.z*p.z);
+            if (dist > max_reach || r2 < 0.0) {
                 std::cerr << "[HexapodLocomotion] WORKSPACE VIOLATION at '"
                           << p.label << "': dist=" << dist
-                          << " > max=" << max_reach << "\n";
+                          << " max=" << max_reach << "\n";
                 ok = false;
             }
         }
@@ -186,23 +183,26 @@ namespace vx01_hexapod_locomotion {
     {
         global_t = std::max(0.0, std::min(1.0, global_t));
 
-        double u    = 1.0 - global_t;
-        double half = std::cos(leg_angles_[leg_index]) * (step_length_ / 2.0);
+        const double half = step_length_ / 2.0;
+        const double u    = 1.0 - global_t;
 
-        // theta1 (coxa): Bezier sweep +half -> 0 -> -half
-        theta1 = std::atan2(u*u*(half) + global_t*global_t*(-half), home_x_);
+        const double foot_y = u*u*(-half) + global_t*global_t*(half);
+        const double foot_z = home_z_ + 2.0 * u * global_t * step_height_;
 
-        // theta2 (femur): lift arc using direct stance angle
-        // dz/dth2 = L2*cos(th2) + L3*cos(th2+th3) at stance position
-        double dz_dth2 = L2_ * std::cos(stance_femur_) +
-                         L3_ * std::cos(stance_femur_ + stance_tibia_);
-        double lift_angle = (std::abs(dz_dth2) > 1e-6) ? (step_height_ / dz_dth2) : 0.0;
-
-        // Arc: stance at start/end, peak lift at midpoint
-        theta2 = stance_femur_ + lift_angle * 4.0 * u * global_t;
-
-        // theta3 (tibia): constant throughout swing
-        theta3 = stance_tibia_;
+        kinematics::InverseKinematics ik(L1_, L2_, L3_);
+        double th1 = 0.0, th2 = 0.0, th3 = 0.0;
+        bool ok = ik.compute(home_x_, foot_y, foot_z, th1, th2, th3);
+        if (!ok) {
+            std::cerr << "[sampleSwingAtGlobalT] IK failed leg=" << leg_index
+                      << " t=" << global_t
+                      << " foot=(" << home_x_ << "," << foot_y << "," << foot_z << ")\n";
+            th1 = current_joint_angles_[leg_index*3+0];
+            th2 = current_joint_angles_[leg_index*3+1];
+            th3 = current_joint_angles_[leg_index*3+2];
+        }
+        theta1 = th1;
+        theta2 = th2;
+        theta3 = th3;
     }
 
     void HexapodLocomotion::setStancePose(double femur, double tibia)
@@ -216,14 +216,15 @@ namespace vx01_hexapod_locomotion {
     {
         global_t = std::max(0.0, std::min(1.0, global_t));
 
-        double half = std::cos(leg_angles_[leg_index]) * (step_length_ / 2.0);
-        double by   = -half + 2.0 * half * global_t;
-
+        const double half = step_length_ / 2.0;
+        const double by   = half - 2.0 * half * global_t; 
+        
         kinematics::InverseKinematics ik(L1_, L2_, L3_);
         double th1=0.0, th2=0.0, th3=0.0;
         bool ok = ik.compute(home_x_, by, home_z_, th1, th2, th3);
         if (!ok) {
-            std::cerr << "[sampleDragAtGlobalT] IK failed leg=" << leg_index << "\n";
+            std::cerr << "[sampleDragAtGlobalT] IK failed leg=" << leg_index
+                      << " y=" << by << "\n";
             th1 = current_joint_angles_[leg_index*3+0];
             th2 = current_joint_angles_[leg_index*3+1];
             th3 = current_joint_angles_[leg_index*3+2];

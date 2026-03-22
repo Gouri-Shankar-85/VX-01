@@ -12,13 +12,13 @@ hexapod_locomotion_node:
     home_y: 0.0
     home_z: -61.379
 
-    step_length: 80.0
-    step_height: 80.0
-    step_period: 4.0
+    step_length: 120.0
+    step_height:  40.0
+    step_period:   4.0
 
-    standby_coxa:  0.0
-    standby_femur: -1.5
-    standby_tibia:  0.3
+    standby_coxa:   0.0
+    standby_femur: -0.7156
+    standby_tibia:  0.6000
 
     standby_duration: 5.0
     update_rate: 50.0
