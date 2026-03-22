@@ -1,4 +1,4 @@
-hexapod_locomotion_node:
+hexapod_forward_walk_node:
   ros__parameters:
     use_sim_time: false
 
@@ -19,9 +19,46 @@ hexapod_locomotion_node:
     standby_coxa:   0.0
     standby_femur: -0.7156
     standby_tibia:  0.6000
-
     standby_duration: 5.0
+
     update_rate: 50.0
+
+    leg_controllers:
+      - leg_0_controller
+      - leg_1_controller
+      - leg_2_controller
+      - leg_3_controller
+      - leg_4_controller
+      - leg_5_controller
+
+hexapod_turn_node:
+  ros__parameters:
+    use_sim_time: false
+
+    L1: 60.55
+    L2: 73.84
+    L3: 112.16
+    body_radius: 100.0
+    beta_angle: 1.0977
+
+    home_x: 227.689
+    home_y: 0.0
+    home_z: -61.379
+
+    step_length: 120.0
+    step_height:  40.0
+    step_period:   4.0
+
+    standby_coxa:   0.0
+    standby_femur: -0.7156
+    standby_tibia:  0.6000
+    standby_duration: 5.0
+
+    update_rate: 50.0
+
+    # +1 = counter-clockwise 
+    # -1 = clockwise         
+    turn_direction: 1
 
     leg_controllers:
       - leg_0_controller

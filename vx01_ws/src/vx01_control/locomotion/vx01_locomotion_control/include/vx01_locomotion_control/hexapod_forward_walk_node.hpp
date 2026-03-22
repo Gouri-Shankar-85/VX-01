@@ -1,5 +1,5 @@
-#ifndef VX01_LOCOMOTION_CONTROL_HEXAPOD_LOCOMOTION_NODE_HPP
-#define VX01_LOCOMOTION_CONTROL_HEXAPOD_LOCOMOTION_NODE_HPP
+#ifndef VX01_LOCOMOTION_CONTROL_HEXAPOD_FORWARD_WALK_NODE_HPP
+#define VX01_LOCOMOTION_CONTROL_HEXAPOD_FORWARD_WALK_NODE_HPP
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
@@ -18,10 +18,10 @@ namespace vx01_locomotion_control {
 using FollowJointTrajectory = control_msgs::action::FollowJointTrajectory;
 using GoalHandleFJT = rclcpp_action::ClientGoalHandle<FollowJointTrajectory>;
 
-class HexapodLocomotionNode : public rclcpp::Node {
+class HexapodForwardWalkNode : public rclcpp::Node {
 
 public:
-    explicit HexapodLocomotionNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
+    explicit HexapodForwardWalkNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
 
 private:
     std::shared_ptr<vx01_hexapod_locomotion::HexapodLocomotion> locomotion_;
@@ -42,7 +42,8 @@ private:
     bool   standby_done_;
     int    last_sent_block_;
     double block_period_;
-    std::vector<double> last_sent_angles_;  
+    std::vector<double> last_sent_angles_;
+
     void sendStandbyPose();
     void startWalking();
     void gaitUpdate();

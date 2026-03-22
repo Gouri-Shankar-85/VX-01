@@ -14,11 +14,11 @@ find_package(vx01_hexapod_locomotion REQUIRED)
 
 include_directories(include)
 
-add_executable(hexapod_locomotion_node
+add_executable(hexapod_forward_walk_node
   src/hexapod_locomotion_node.cpp
 )
 
-ament_target_dependencies(hexapod_locomotion_node
+ament_target_dependencies(hexapod_forward_walk_node
   rclcpp
   rclcpp_action
   control_msgs
@@ -26,7 +26,21 @@ ament_target_dependencies(hexapod_locomotion_node
   vx01_hexapod_locomotion
 )
 
-install(TARGETS hexapod_locomotion_node
+add_executable(hexapod_turn_node
+  src/hexapod_turn_node.cpp
+)
+
+ament_target_dependencies(hexapod_turn_node
+  rclcpp
+  rclcpp_action
+  control_msgs
+  trajectory_msgs
+  vx01_hexapod_locomotion
+)
+
+install(TARGETS
+  hexapod_forward_walk_node
+  hexapod_turn_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -13,12 +13,12 @@ def generate_launch_description():
         'config', 'hexapod_locomotion.yaml'
     )
 
-    locomotion_node = Node(
+    turn_node = Node(
         package='vx01_locomotion_control',
-        executable='hexapod_locomotion_node',
-        name='hexapod_locomotion_node',
+        executable='hexapod_turn_node',
+        name='hexapod_turn_node',
         parameters=[config, {'use_sim_time': False}],
         output='screen',
     )
 
-    return LaunchDescription([locomotion_node])
+    return LaunchDescription([turn_node])
