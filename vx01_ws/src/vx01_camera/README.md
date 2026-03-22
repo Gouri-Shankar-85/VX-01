@@ -10,36 +10,36 @@ ROS2 driver package for the YDLidar HP60C RGBD depth camera.
 vx01_camera/
 ├── CMakeLists.txt
 ├── configurationfiles
-│   ├── hp60cn_v2_00_20230704_configEncrypt.json
-│   ├── hp60c_v2_00_20230704_configEncrypt.json
-│   └── readme.md
+│   ├── hp60cn_v2_00_20230704_configEncrypt.json
+│   ├── hp60c_v2_00_20230704_configEncrypt.json
+│   └── readme.md
 ├── include
-│   ├── ascamera_node.h
-│   ├── Camera.h
-│   ├── CameraPublisher.h
-│   ├── CameraSrv.h
-│   ├── LogRedirectBuffer.h
-│   └── TfTreeFrameIdInfo.h
+│   ├── ascamera_node.h
+│   ├── Camera.h
+│   ├── CameraPublisher.h
+│   ├── CameraSrv.h
+│   ├── LogRedirectBuffer.h
+│   └── TfTreeFrameIdInfo.h
 ├── launch
-│   ├── ascamera.launch.py
-│   ├── hp60cn.launch.py
-│   └── vx01_camera.launch.py
+│   ├── ascamera.launch.py
+│   ├── hp60cn.launch.py
+│   └── vx01_camera.launch.py
 ├── libs
-│   ├── include
-│   │   ├── as_camera_sdk_api.h
-│   │   ├── as_camera_sdk_def.h
-│   │   ├── common.h
-│   │   └── Logger.h
-│   └── lib
-│       ├── aarch64-linux-gnu
-│       ├── arm-linux-gnueabihf
-│       └── x86_64-linux-gnu
+│   ├── include
+│   │   ├── as_camera_sdk_api.h
+│   │   ├── as_camera_sdk_def.h
+│   │   ├── common.h
+│   │   └── Logger.h
+│   └── lib
+│       ├── aarch64-linux-gnu
+│       ├── arm-linux-gnueabihf
+│       └── x86_64-linux-gnu
 ├── package.xml
 ├── README.md
 ├── scripts
-│   ├── angstrong-camera.rules
-│   ├── create_udev_rules.sh
-│   └── gettarget.sh
+│   ├── angstrong-camera.rules
+│   ├── create_udev_rules.sh
+│   └── gettarget.sh
 └── src
     ├── ascamera_node.cpp
     ├── Camera.cpp
@@ -85,10 +85,11 @@ ros2 launch vx01_camera vx01_camera.launch.py
 
 | Topic | Type |
 |-------|------|
-| `/vx01_camera/depth/image_raw` | sensor_msgs/Image |
-| `/vx01_camera/color/image_raw` | sensor_msgs/Image |
-| `/vx01_camera/depth/points` | sensor_msgs/PointCloud2 |
-| `/vx01_camera/camera_info` | sensor_msgs/CameraInfo |
+| `/vx01_camera/camera_publisher/depth0/image_raw` | `sensor_msgs/Image` |
+| `/vx01_camera/camera_publisher/depth0/camera_info` | `sensor_msgs/CameraInfo` |
+| `/vx01_camera/camera_publisher/depth0/points` | `sensor_msgs/PointCloud2` |
+| `/vx01_camera/camera_publisher/rgb0/image` | `sensor_msgs/Image` |
+| `/vx01_camera/camera_publisher/rgb0/camera_info` | `sensor_msgs/CameraInfo` |
 
 ---
 
@@ -98,7 +99,7 @@ ros2 launch vx01_camera vx01_camera.launch.py
 |-----------|-------|
 | Depth resolution | 640 x 480 |
 | RGB resolution | 640 x 480 |
-| Frame rate | 15 fps |
+| Frame rate | 30 fps |
 | Depth range | 0.2 - 4m |
 | Interface | USB 2.0 Type-C |
 
