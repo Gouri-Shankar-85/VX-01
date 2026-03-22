@@ -22,13 +22,12 @@ class TerrainClassifierNode(Node):
 
         topics = self._load_topics(config_path)
         self.bridge = CvBridge()
-        self.active = True
-
+        self.active = True  
         self.create_subscription(Image,        topics['camera_depth'], self._cb_depth,   10)
         self.create_subscription(MissionState, topics['mission_mode'], self._cb_mission, 10)
 
-        self.pub_terrain = self.create_publisher(Terrain,     topics['terrain_type'],     10)
-        self.pub_walk    = self.create_publisher(Walkability, topics['walkability_score'], 10)
+        self.pub_terrain = self.create_publisher(Terrain,     topics['terrain_type'],      10)
+        self.pub_walk    = self.create_publisher(Walkability, topics['walkability_score'],  10)
 
     def _load_topics(self, path: str) -> dict:
         with open(path) as f:
@@ -52,10 +51,10 @@ class TerrainClassifierNode(Node):
         self.pub_walk.publish(walk)
 
     def _classify(self, depth: np.ndarray) -> Terrain:
-        slope      = self._estimate_slope(depth)
-        gap_flag   = self._detect_gap(depth)
+        slope    = self._estimate_slope(depth)
+        gap_flag = self._detect_gap(depth)
 
-        t = Terrain()
+        t              = Terrain()
         t.slope        = float(slope)
         t.gap_detected = gap_flag
 
@@ -76,14 +75,14 @@ class TerrainClassifierNode(Node):
         valid = depth[~np.isnan(depth)]
         if valid.size < 100:
             return 0.0
-        h, w  = depth.shape
-        mid_y = h // 2
-        strip = depth[mid_y - 10: mid_y + 10, :]
-        row   = np.nanmean(strip, axis=0)
-        row   = row[~np.isnan(row)]
+        h, w   = depth.shape
+        mid_y  = h // 2
+        strip  = depth[mid_y - 10: mid_y + 10, :]
+        row    = np.nanmean(strip, axis=0)
+        row    = row[~np.isnan(row)]
         if row.size < 2:
             return 0.0
-        grad  = np.abs(np.gradient(row))
+        grad      = np.abs(np.gradient(row))
         slope_rad = np.arctan(np.nanmean(grad))
         return float(np.degrees(slope_rad))
 
@@ -99,17 +98,17 @@ class TerrainClassifierNode(Node):
 
     def _walkability(self, terrain: Terrain, depth: np.ndarray) -> Walkability:
         scores = {
-            'WALKABLE':  1.0,
-            'OBSTACLE':  0.4,
-            'DEBRIS':    0.3,
-            'STAIRS':    0.2,
-            'GAP':       0.0,
+            'WALKABLE': 1.0,
+            'OBSTACLE': 0.4,
+            'DEBRIS':   0.3,
+            'STAIRS':   0.2,
+            'GAP':      0.0,
         }
-        score = scores.get(terrain.terrain_type, 0.0)
+        score         = scores.get(terrain.terrain_type, 0.0)
         slope_penalty = min(terrain.slope / 90.0, 1.0) * 0.3
-        score = max(0.0, score - slope_penalty)
+        score         = max(0.0, score - slope_penalty)
 
-        w = Walkability()
+        w          = Walkability()
         w.score    = float(score)
         w.walkable = score >= 0.5
         return w
@@ -117,8 +116,12 @@ class TerrainClassifierNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    config = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'topics.yaml')
+    config = os.path.expanduser('~/vx-01/vx01_ws/src/vx01_perception/config/topics.yaml')
     node   = TerrainClassifierNode(config)
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
