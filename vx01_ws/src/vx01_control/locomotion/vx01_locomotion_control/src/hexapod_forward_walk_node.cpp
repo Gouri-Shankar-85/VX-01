@@ -182,6 +182,18 @@ void HexapodForwardWalkNode::gaitUpdate()
 
         if (locomotion_->isSwingPhase(i)) {
             RCLCPP_INFO(get_logger(), "Leg %d SWING:", i);
+
+            // Anchor point at t=0 — ensures controller starts from current pose,
+            // preventing the compressed-lift bug on legs 1,3,5.
+            {
+                double th1, th2, th3;
+                locomotion_->sampleSwingAtGlobalT(i, 0.0, th1, th2, th3);
+                trajectory_msgs::msg::JointTrajectoryPoint pt;
+                pt.positions       = {th1, th2, th3};
+                pt.time_from_start = rclcpp::Duration::from_seconds(0.0);
+                goal.trajectory.points.push_back(pt);
+            }
+
             for (int k = 1; k <= N; ++k) {
                 double global_t = static_cast<double>(k) / N;
                 double th1, th2, th3;
