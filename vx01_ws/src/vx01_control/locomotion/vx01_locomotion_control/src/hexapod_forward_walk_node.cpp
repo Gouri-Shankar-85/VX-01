@@ -1,4 +1,4 @@
-#include "vx01_locomotion_control/hexapod_locomotion_node.hpp"
+#include "vx01_locomotion_control/hexapod_forward_walk_node.hpp"
 #include "vx01_hexapod_locomotion/kinematics/inverse_kinematics.hpp"
 #include <chrono>
 #include <cmath>
