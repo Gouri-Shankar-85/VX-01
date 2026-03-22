@@ -15,7 +15,7 @@ find_package(vx01_hexapod_locomotion REQUIRED)
 include_directories(include)
 
 add_executable(hexapod_forward_walk_node
-  src/hexapod_locomotion_node.cpp
+  src/hexapod_forward_walk_node.cpp
 )
 
 ament_target_dependencies(hexapod_forward_walk_node
