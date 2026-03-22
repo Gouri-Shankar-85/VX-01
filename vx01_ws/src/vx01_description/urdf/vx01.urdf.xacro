@@ -30,7 +30,7 @@
     <!-- ── Sensors ── -->
     <xacro:include filename="$(find vx01_description)/urdf/sensors/depth_camera.xacro"/>
     <xacro:include filename="$(find vx01_description)/urdf/sensors/imu.xacro"/>
-    <xacro:include filename="$(find vx01_description)/urdf/sensors/tf_lidar.xacro"/>
+    <!-- <xacro:include filename="$(find vx01_description)/urdf/sensors/tf_lidar.xacro"/> -->
 
     <!-- ROS2_control -->
     <xacro:include filename="$(find vx01_description)/urdf/control/vx01.ros2_control.xacro"/>
