@@ -15,7 +15,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Kolkata
 
-# ── Basic system packages ────────────────────────────────────────────────────
+# ── Step 1: Base system tools (only packages in Ubuntu's default repo) ───────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gnupg2 \
@@ -31,9 +31,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     python3-pip \
     python3-setuptools \
-    python3-colcon-common-extensions \
-    python3-rosdep \
-    python3-vcstool \
     udev \
     libusb-1.0-0-dev \
     libudev-dev \
@@ -48,14 +45,23 @@ RUN locale-gen en_US en_US.UTF-8 && \
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 
-# ── Add ROS2 Humble apt repository ──────────────────────────────────────────
+# ── Step 2: Add ROS2 Humble apt repository ───────────────────────────────────
 # ROS2 Humble officially supports Ubuntu 22.04 (Jammy). This is why the FROM
 # must be ubuntu:22.04. On Ubuntu 24.04 there is no Humble apt repo.
+# python3-colcon-common-extensions, python3-rosdep, python3-vcstool all live
+# in the ROS2 repo — they MUST be installed AFTER this repo is added.
 RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
         -o /usr/share/keyrings/ros-archive-keyring.gpg && \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
         http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" \
         > /etc/apt/sources.list.d/ros2.list
+
+# ── Step 3: ROS2 build tools (from ROS2 repo — must come after Step 2) ───────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-colcon-common-extensions \
+    python3-rosdep \
+    python3-vcstool \
+    && rm -rf /var/lib/apt/lists/*
 
 # ── Install ROS2 Humble Desktop + common robotics packages ──────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
