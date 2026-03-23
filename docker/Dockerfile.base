@@ -107,15 +107,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-openni2-camera \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Pololu Mini Maestro library (built from source) ─────────────────────────
-# The SDK requires building from the repo root first, then UscCmd.
-# Works on both AMD64 and ARM64 — pure C with no arch-specific asm.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libudev-dev \
     pkg-config \
     && rm -rf /var/lib/apt/lists/* && \
     git clone --depth 1 https://github.com/pololu/pololu-usb-sdk.git /tmp/pololu-usb-sdk && \
     cd /tmp/pololu-usb-sdk && \
+    sed -i '/Sequencer/d' Maestro/module.mk && \
     make Maestro/UscCmd/UscCmd && \
     cp Maestro/UscCmd/UscCmd /usr/local/bin/maestro-cmd && \
     rm -rf /tmp/pololu-usb-sdk
