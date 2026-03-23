@@ -1,0 +1,33 @@
+name: Build ARM64 Docker Image
+
+on:
+  workflow_dispatch:        # manual trigger from GitHub UI
+  push:
+    branches: [main]
+    paths:
+      - 'docker/Dockerfile.base'
+      - 'docker/entrypoint.sh'
+
+jobs:
+  build-arm64:
+    runs-on: ubuntu-24.04-arm    # real ARM64 hardware — zero QEMU
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push ARM64 image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.base
+          platforms: linux/arm64
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/vx01-base:humble-arm64
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/vx01-base:buildcache-arm64
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/vx01-base:buildcache-arm64,mode=max
