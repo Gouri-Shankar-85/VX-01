@@ -1,12 +1,6 @@
 # =============================================================================
 # VX-01 Dockerfile.base
 # Hardware image — runs on both AMD64 (laptop) and ARM64 (Raspberry Pi 5)
-#
-# KEY CHANGE: Base is now ubuntu:22.04 explicitly.
-# The RDK X5 had Ubuntu 22.04 natively so the FROM wasn't needed before.
-# Raspberry Pi 5 ships with Ubuntu 24.04 — ROS2 Humble does NOT support 24.04,
-# so we pin the container to Ubuntu 22.04 regardless of what the host runs.
-# Docker containers are isolated from the host OS, so this works fine.
 # =============================================================================
 
 FROM ubuntu:22.04
@@ -108,7 +102,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # ── HP60C Depth Camera (UVC, no proprietary SDK) ────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-humble-libuvc-camera \
+    ros-humble-usb-cam \
     libopenni2-dev \
     ros-humble-openni2-camera \
     && rm -rf /var/lib/apt/lists/*
