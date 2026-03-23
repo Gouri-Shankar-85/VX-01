@@ -108,12 +108,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Pololu Mini Maestro library (built from source) ─────────────────────────
+# The SDK requires building from the repo root first, then UscCmd.
 # Works on both AMD64 and ARM64 — pure C with no arch-specific asm.
-RUN git clone --depth 1 https://github.com/pololu/pololu-usb-sdk.git /tmp/pololu-usb-sdk && \
-    cd /tmp/pololu-usb-sdk/Maestro/UscCmd && \
-    make && \
-    cp UscCmd /usr/local/bin/maestro-cmd && \
-    cd / && rm -rf /tmp/pololu-usb-sdk
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libudev-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/* && \
+    git clone --depth 1 https://github.com/pololu/pololu-usb-sdk.git /tmp/pololu-usb-sdk && \
+    cd /tmp/pololu-usb-sdk && \
+    make Maestro/UscCmd/UscCmd && \
+    cp Maestro/UscCmd/UscCmd /usr/local/bin/maestro-cmd && \
+    rm -rf /tmp/pololu-usb-sdk
 
 # Python binding for Maestro HID
 RUN pip3 install --no-cache-dir pyserial hidapi
