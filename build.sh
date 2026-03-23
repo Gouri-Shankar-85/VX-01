@@ -1,7 +1,5 @@
 #!/bin/bash
-# =============================================================================
 # VX-01 Build Script
-# =============================================================================
 
 set -e
 
@@ -24,7 +22,8 @@ Usage: ./build.sh COMMAND
   udev-install    Install device rules on this host (requires sudo, run once ever)
   build-base      Build hardware image for AMD64 (laptop testing)
   build-sim       Build simulation image for AMD64 (laptop only)
-  build-arm       Cross-compile hardware image for ARM64 (RDK X5) and push
+  build-arm       Cross-compile hardware image for ARM64 via QEMU (may segfault)
+  build-arm-ci    Trigger ARM64 build via GitHub Actions (recommended, no QEMU)
   push            Push AMD64 images to Docker Hub
   full            Do everything: udev + x11 + all builds + push
 
@@ -70,19 +69,62 @@ build_sim() {
 }
 
 build_arm() {
+
     [ "${REGISTRY}" = "yourdockerhub" ] && \
         die "Set DOCKER_REGISTRY in .env to your Docker Hub username first"
-    info "Cross-compiling for ARM64 (RDK X5)..."
+
+    info "Cross-compiling for ARM64 (RDK X5) via QEMU..."
+    warn "If this segfaults, run: ./build.sh build-arm-ci  (uses GitHub Actions)"
+
     docker buildx use vx01-builder 2>/dev/null || \
-        docker buildx create --name vx01-builder --use
+        docker buildx create --name vx01-builder \
+            --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=50000000 \
+            --use
     docker buildx inspect --bootstrap
-    docker buildx build \
-        --platform linux/arm64 \
-        -f docker/Dockerfile.base \
-        -t ${REGISTRY}/vx01-base:${TAG}-arm64 \
-        --push \
-        .
-    ok "ARM64 image pushed: ${REGISTRY}/vx01-base:${TAG}-arm64"
+
+    MAX_RETRIES=3
+    attempt=1
+    while [ $attempt -le $MAX_RETRIES ]; do
+        info "Build attempt ${attempt}/${MAX_RETRIES}..."
+        EXTRA_FLAGS=""
+        [ $attempt -gt 1 ] && EXTRA_FLAGS="--no-cache" && warn "Retrying with --no-cache"
+
+        if docker buildx build \
+            --platform linux/arm64 \
+            -f docker/Dockerfile.base \
+            -t ${REGISTRY}/vx01-base:${TAG}-arm64 \
+            --shm-size=512m \
+            --push \
+            ${EXTRA_FLAGS} \
+            .; then
+            ok "ARM64 image pushed: ${REGISTRY}/vx01-base:${TAG}-arm64"
+            return 0
+        fi
+
+        warn "Attempt ${attempt} failed."
+        attempt=$((attempt + 1))
+        [ $attempt -le $MAX_RETRIES ] && info "Waiting 10s before retry..." && sleep 10
+    done
+
+    die "All ${MAX_RETRIES} attempts failed. Run './build.sh build-arm-ci' to build via GitHub Actions instead."
+}
+
+build_arm_ci() {
+
+    [ "${REGISTRY}" = "yourdockerhub" ] && \
+        die "Set DOCKER_REGISTRY in .env to your Docker Hub username first"
+
+    # Check gh CLI is available
+    if ! command -v gh &>/dev/null; then
+        die "GitHub CLI (gh) not installed. Install: https://cli.github.com\n   Then run: gh auth login"
+    fi
+
+    info "Triggering ARM64 build on GitHub Actions (native ARM64, no QEMU)..."
+    gh workflow run build-arm.yml
+
+    ok "Build triggered. Monitor at: https://github.com/Gouri-Shankar-85/VX-01/actions"
+    info "Once complete, pull the image on your Pi 5:"
+    info "  docker pull ${REGISTRY}/vx01-base:${TAG}-arm64"
 }
 
 push_amd64() {
@@ -100,6 +142,7 @@ case "${1}" in
     build-base)    build_base ;;
     build-sim)     build_sim ;;
     build-arm)     build_arm ;;
+    build-arm-ci)  build_arm_ci ;;
     push)          push_amd64 ;;
     full)
         udev_install
