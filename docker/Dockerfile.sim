@@ -1,64 +1,48 @@
 # =============================================================================
-# VX-01 Simulation Image — (AMD64) Only
-# Extends the base image and adds Ignition Fortress + RViz2 + ROS-GZ bridge
-# Never built for ARM64 / RDK X5
+# VX-01 Dockerfile.sim
+# Simulation image (AMD64 laptop only) — extends Dockerfile.base
+# Adds: Ignition Fortress, ROS-GZ bridge, RViz2
+#
+# Same Ubuntu 22.04 pin as Dockerfile.base — Ignition Fortress also only
+# supports Ubuntu 22.04 officially.
 # =============================================================================
 
 FROM vx01-base:humble
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV QT_X11_NO_MITSHM=1
 
-# ─── Ignition Fortress ────────────────────────────────────────────────────────
-RUN wget https://packages.osrfoundation.org/gazebo.gpg \
-         -O /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg && \
+# ── Add Ignition / Gazebo Fortress apt repository ────────────────────────────
+RUN curl -sSL https://packages.osrfoundation.org/gazebo.gpg \
+        -o /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg && \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] \
-         http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" \
-         > /etc/apt/sources.list.d/gazebo-stable.list && \
-    apt-get update && apt-get install -y --no-install-recommends \
-        ignition-fortress \
-    && rm -rf /var/lib/apt/lists/*
+        http://packages.osrfoundation.org/gazebo/ubuntu-stable \
+        $(. /etc/os-release && echo $UBUNTU_CODENAME) main" \
+        > /etc/apt/sources.list.d/gazebo-stable.list
 
-# ─── ROS2 ↔ Ignition bridge ───────────────────────────────────────────────────
+# ── Install Ignition Fortress + ROS-GZ bridge ────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-humble-ros-gz \
-    ros-humble-ros-gz-bridge \
-    ros-humble-ros-gz-sim \
-    ros-humble-ros-gz-image \
-    ros-humble-ros-gz-interfaces \
+    ignition-fortress \
+    ros-humble-ros-ign-bridge \
+    ros-humble-ros-ign-gazebo \
+    ros-humble-ros-ign-interfaces \
     && rm -rf /var/lib/apt/lists/*
 
-# ─── Visualization ────────────────────────────────────────────────────────────
+# ── RViz2 and visualization extras ──────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-rviz2 \
     ros-humble-rviz-common \
     ros-humble-rviz-default-plugins \
-    ros-humble-rqt \
-    ros-humble-rqt-common-plugins \
-    ros-humble-rqt-robot-steering \
-    ros-humble-rqt-tf-tree \
-    ros-humble-rqt-graph \
-    ros-humble-foxglove-bridge \
     && rm -rf /var/lib/apt/lists/*
 
-# ─── Simulation controllers ───────────────────────────────────────────────────
+# ── X11 / GUI support ────────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-humble-gz-ros2-control \
-    ros-humble-joint-trajectory-controller \
-    ros-humble-position-controllers \
-    ros-humble-velocity-controllers \
-    ros-humble-effort-controllers \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    x11-apps \
+    mesa-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Rebuild workspace so sim packages are included
-WORKDIR /vx01_ws
-COPY vx01_ws/src ./src
-RUN bash -c "source /opt/ros/humble/setup.bash && \
-    colcon build \
-        --symlink-install \
-        --cmake-args -DCMAKE_BUILD_TYPE=Release \
-        --parallel-workers 4" \
-    || echo "Sim rebuild done"
+ENV QT_X11_NO_MITSHM=1
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bash"]

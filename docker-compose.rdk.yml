@@ -1,6 +1,10 @@
 # =============================================================================
-# VX-01 docker-compose — RDK X5
+# VX-01 docker-compose — Raspberry Pi 5
 # Run: docker compose -f docker-compose.rdk.yml up -d
+#
+# CHANGED FROM RDK X5 VERSION:
+#   - Volume path updated: /home/ubuntu/vx01/vx01_ws (Pi 5 user is 'ubuntu')
+#   - Image is built FROM ubuntu:22.04 — works on Pi 5's Ubuntu 24.04 host
 # =============================================================================
 
 name: vx01-rdk
@@ -8,6 +12,7 @@ name: vx01-rdk
 services:
 
   vx01-robot:
+    # Container is Ubuntu 22.04 + ROS2 Humble, host is Ubuntu 24.04 — correct.
     image: ${DOCKER_REGISTRY}/vx01-base:humble-arm64
     container_name: vx01-robot
     network_mode: host
@@ -22,7 +27,7 @@ services:
       - vx01_logs:/vx01_ws/log
       - /root/.ssh:/root/.ssh:ro
       - /root/.gitconfig:/root/.gitconfig:ro
-    # Stable symlinks — no /dev/ttyUSB0 guessing
+    # Stable symlinks — created by udev rules, never /dev/ttyUSB0 guessing
     devices:
       - /dev/ttyPIXHAWK:/dev/ttyPIXHAWK
       - /dev/ttyMAESTRO:/dev/ttyMAESTRO
