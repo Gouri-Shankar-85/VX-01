@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Battery, MapPin, Activity, Wifi, WifiOff } from "lucide-react";
 import ROSLIB from "roslib";
 
-const ROS_URL = import.meta.env.VITE_ROSBRIDGE_URL || "ws://localhost:9090";
+const ROS_URL = `ws://${window.location.hostname}:9090`;
 
 export default function Dashboard() {
   const [tab, setTab] = useState("dashboard");

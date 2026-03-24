@@ -1,5 +1,9 @@
 vx01_ws/build
 vx01_ws/install
 vx01_ws/log
+vx01_dashboard/frontend/node_modules
+vx01_dashboard/frontend/dist
 .git
 .gitignore
+.env
+README.md
