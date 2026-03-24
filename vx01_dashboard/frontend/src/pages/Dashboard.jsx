@@ -1,9 +1,26 @@
-import { useState } from "react";
-import { Battery, MapPin, Activity } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Battery, MapPin, Activity, Wifi, WifiOff } from "lucide-react";
+import ROSLIB from "roslib";
+
+const ROS_URL = import.meta.env.VITE_ROSBRIDGE_URL || "ws://localhost:9090";
 
 export default function Dashboard() {
   const [tab, setTab] = useState("dashboard");
   const [activeRobot, setActiveRobot] = useState("VX-01");
+  const [rosConnected, setRosConnected] = useState(false);
+
+  const [telemetry, setTelemetry] = useState({
+    battery: "--",
+    latitude: "--",
+    longitude: "--",
+    altitude: "--",
+    speed: "--",
+    cpu: "--",
+    mode: "--",
+  });
+
+  const [logs, setLogs] = useState([]);
+  const rosRef = useRef(null);
 
   const robots = [
     { name: "VX-01", status: "online" },
@@ -11,52 +28,149 @@ export default function Dashboard() {
     { name: "VX-03", status: "online" },
   ];
 
+  const addLog = (level, msg) => {
+    const ts = new Date().toLocaleTimeString();
+    setLogs((prev) => [...prev.slice(-49), { level, msg, ts }]);
+  };
+
+  useEffect(() => {
+    const ros = new ROSLIB.Ros({ url: ROS_URL });
+    rosRef.current = ros;
+
+    ros.on("connection", () => {
+      setRosConnected(true);
+      addLog("INFO", `Connected to rosbridge at ${ROS_URL}`);
+    });
+    ros.on("error", () => {
+      setRosConnected(false);
+      addLog("ERROR", "Rosbridge connection error");
+    });
+    ros.on("close", () => {
+      setRosConnected(false);
+      addLog("WARN", "Rosbridge disconnected — retrying...");
+    });
+
+    const battery = new ROSLIB.Topic({
+      ros,
+      name: "/mavros/battery",
+      messageType: "sensor_msgs/BatteryState",
+    });
+    battery.subscribe((msg) => {
+      setTelemetry((t) => ({
+        ...t,
+        battery: `${Math.round(msg.percentage * 100)}%`,
+      }));
+    });
+
+    const gps = new ROSLIB.Topic({
+      ros,
+      name: "/mavros/global_position/global",
+      messageType: "sensor_msgs/NavSatFix",
+    });
+    gps.subscribe((msg) => {
+      setTelemetry((t) => ({
+        ...t,
+        latitude: msg.latitude.toFixed(5),
+        longitude: msg.longitude.toFixed(5),
+        altitude: `${msg.altitude.toFixed(1)} m`,
+      }));
+    });
+
+    const velocity = new ROSLIB.Topic({
+      ros,
+      name: "/mavros/local_position/velocity_local",
+      messageType: "geometry_msgs/TwistStamped",
+    });
+    velocity.subscribe((msg) => {
+      const vx = msg.twist.linear.x;
+      const vy = msg.twist.linear.y;
+      setTelemetry((t) => ({
+        ...t,
+        speed: `${Math.sqrt(vx * vx + vy * vy).toFixed(1)} m/s`,
+      }));
+    });
+
+    const state = new ROSLIB.Topic({
+      ros,
+      name: "/mavros/state",
+      messageType: "mavros_msgs/State",
+    });
+    state.subscribe((msg) => {
+      setTelemetry((t) => ({ ...t, mode: msg.mode }));
+    });
+
+    const rosout = new ROSLIB.Topic({
+      ros,
+      name: "/rosout",
+      messageType: "rcl_interfaces/msg/Log",
+    });
+    rosout.subscribe((msg) => {
+      const levelMap = { 10: "DEBUG", 20: "INFO", 30: "WARN", 40: "ERROR", 50: "FATAL" };
+      addLog(levelMap[msg.level] || "INFO", msg.msg);
+    });
+
+    return () => {
+      battery.unsubscribe();
+      gps.unsubscribe();
+      velocity.unsubscribe();
+      state.unsubscribe();
+      rosout.unsubscribe();
+      ros.close();
+    };
+  }, []);
+
+  const sendCmd = (linear, angular) => {
+    if (!rosRef.current || !rosConnected) return;
+    const cmdVel = new ROSLIB.Topic({
+      ros: rosRef.current,
+      name: "/cmd_vel",
+      messageType: "geometry_msgs/Twist",
+    });
+    cmdVel.publish(
+      new ROSLIB.Message({
+        linear: { x: linear, y: 0, z: 0 },
+        angular: { x: 0, y: 0, z: angular },
+      })
+    );
+  };
+
+  const callService = (name, type, request = {}) => {
+    if (!rosRef.current || !rosConnected) return;
+    const svc = new ROSLIB.Service({ ros: rosRef.current, name, serviceType: type });
+    svc.callService(new ROSLIB.ServiceRequest(request), () => {});
+  };
+
+  const logColor = { INFO: "text-green-400", WARN: "text-yellow-400", ERROR: "text-red-500", FATAL: "text-red-700", DEBUG: "text-gray-400" };
+
   return (
     <div className="h-screen flex bg-gradient-to-br from-gray-100 to-blue-50">
 
-      {/* SIDEBAR */}
       <div className="w-64 bg-white shadow-xl p-5 flex flex-col justify-between">
-
         <div>
           <h1 className="text-2xl font-bold text-blue-600 mb-6">VELATRIX</h1>
 
-          {/* ROBOT LIST */}
           <div className="mb-6">
             <p className="text-gray-500 text-sm mb-2">Robots</p>
-
             {robots.map((robot, i) => (
               <div
                 key={i}
                 onClick={() => setActiveRobot(robot.name)}
                 className={`flex justify-between items-center p-3 rounded-lg mb-2 cursor-pointer transition ${
-                  activeRobot === robot.name
-                    ? "bg-blue-600 text-white"
-                    : "hover:bg-gray-100"
+                  activeRobot === robot.name ? "bg-blue-600 text-white" : "hover:bg-gray-100"
                 }`}
               >
                 <span>{robot.name}</span>
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    robot.status === "online"
-                      ? "bg-green-400"
-                      : "bg-red-500"
-                  }`}
-                ></span>
+                <span className={`h-2 w-2 rounded-full ${robot.status === "online" ? "bg-green-400" : "bg-red-500"}`} />
               </div>
             ))}
           </div>
 
-          {/* NAV */}
           <div className="space-y-2">
             {["dashboard", "control", "logs"].map((item) => (
               <button
                 key={item}
                 onClick={() => setTab(item)}
-                className={`w-full text-left p-3 rounded-lg capitalize ${
-                  tab === item
-                    ? "bg-blue-600 text-white"
-                    : "hover:bg-gray-200"
-                }`}
+                className={`w-full text-left p-3 rounded-lg capitalize ${tab === item ? "bg-blue-600 text-white" : "hover:bg-gray-200"}`}
               >
                 {item}
               </button>
@@ -64,43 +178,38 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* STATUS */}
-        <div className="bg-gray-100 p-3 rounded-lg text-sm">
+        <div className="bg-gray-100 p-3 rounded-lg text-sm space-y-1">
           <p className="font-semibold">{activeRobot}</p>
           <p className="text-green-600">● Active</p>
+          <div className={`flex items-center gap-1 text-xs ${rosConnected ? "text-green-600" : "text-red-500"}`}>
+            {rosConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
+            {rosConnected ? "ROS Connected" : "ROS Disconnected"}
+          </div>
         </div>
       </div>
 
-      {/* MAIN */}
       <div className="flex-1 p-6 overflow-y-auto">
 
-        {/* HEADER */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-blue-600">
-              {activeRobot} Control Panel
-            </h2>
+            <h2 className="text-2xl font-bold text-blue-600">{activeRobot} Control Panel</h2>
             <p className="text-gray-500">Search & Rescue System</p>
           </div>
-
           <div className="flex gap-3 text-sm">
             <div className="bg-white px-4 py-2 rounded shadow flex items-center gap-2">
-              <Battery size={16}/> 87%
+              <Battery size={16} /> {telemetry.battery}
             </div>
             <div className="bg-white px-4 py-2 rounded shadow flex items-center gap-2">
-              <Activity size={16}/> HEXAPOD
+              <Activity size={16} /> {telemetry.mode}
             </div>
             <div className="bg-white px-4 py-2 rounded shadow flex items-center gap-2">
-              <MapPin size={16}/> 8.55, 76.88
+              <MapPin size={16} /> {telemetry.latitude}, {telemetry.longitude}
             </div>
           </div>
         </div>
 
-        {/* ================= DASHBOARD ================= */}
         {tab === "dashboard" && (
           <div className="grid grid-cols-4 gap-6">
-
-            {/* CAMERA */}
             <div className="col-span-3 bg-white p-4 rounded-xl shadow-lg">
               <h3 className="font-semibold mb-2">Camera Feed</h3>
               <div className="h-80 bg-gray-900 rounded-lg flex items-center justify-center text-gray-400">
@@ -108,7 +217,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* MAP */}
             <div className="bg-white p-4 rounded-xl shadow-lg">
               <h3 className="font-semibold mb-2">Map</h3>
               <div className="h-80 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -116,124 +224,117 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* TELEMETRY */}
             <div className="col-span-4 grid grid-cols-5 gap-4">
               {[
-                ["Speed", "1.2 m/s"],
-                ["Altitude", "2.5 m"],
-                ["Temp", "32°C"],
-                ["CPU", "45%"],
-                ["Signal", "Strong"],
+                ["Speed", telemetry.speed],
+                ["Altitude", telemetry.altitude],
+                ["Battery", telemetry.battery],
+                ["Mode", telemetry.mode],
+                ["GPS", `${telemetry.latitude}, ${telemetry.longitude}`],
               ].map((item, i) => (
                 <div key={i} className="bg-white p-4 rounded-lg shadow text-center">
                   <p className="text-gray-500 text-sm">{item[0]}</p>
-                  <p className="text-xl font-bold text-blue-600">{item[1]}</p>
+                  <p className="text-xl font-bold text-blue-600 truncate">{item[1]}</p>
                 </div>
               ))}
-            </div>
-
-            {/* GRAPH */}
-            <div className="col-span-2 bg-white p-4 rounded-xl shadow-lg">
-              <h3 className="font-semibold mb-2">Mission Progress</h3>
-              <div className="h-48 bg-gray-100 rounded flex items-center justify-center">
-                Graph Area
-              </div>
-            </div>
-
-            {/* AI */}
-            <div className="col-span-2 bg-white p-4 rounded-xl shadow-lg">
-              <h3 className="font-semibold mb-2">AI Detection</h3>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between bg-gray-100 p-2 rounded">
-                  <span>Victim</span>
-                  <span className="text-green-600">Detected</span>
-                </div>
-                <div className="flex justify-between bg-gray-100 p-2 rounded">
-                  <span>Confidence</span>
-                  <span className="text-blue-600">92%</span>
-                </div>
-                <div className="flex justify-between bg-gray-100 p-2 rounded">
-                  <span>Status</span>
-                  <span className="text-red-500">Critical</span>
-                </div>
-              </div>
             </div>
           </div>
         )}
 
-        {/* ================= CONTROL ================= */}
         {tab === "control" && (
           <div className="grid grid-cols-3 gap-6">
-
-            {/* MANUAL */}
             <div className="bg-white p-6 rounded-xl shadow-lg">
               <h3 className="font-semibold mb-4">Manual Control</h3>
-
               <div className="grid grid-cols-3 gap-3 text-center">
-                <div></div>
-                <button className="bg-blue-600 text-white p-4 rounded-lg">↑</button>
-                <div></div>
-
-                <button className="bg-blue-600 text-white p-4 rounded-lg">←</button>
-                <button className="bg-red-600 text-white p-4 rounded-lg">STOP</button>
-                <button className="bg-blue-600 text-white p-4 rounded-lg">→</button>
-
-                <div></div>
-                <button className="bg-blue-600 text-white p-4 rounded-lg">↓</button>
-                <div></div>
+                <div />
+                <button onMouseDown={() => sendCmd(0.5, 0)} onMouseUp={() => sendCmd(0, 0)}
+                  className="bg-blue-600 text-white p-4 rounded-lg active:bg-blue-800">↑</button>
+                <div />
+                <button onMouseDown={() => sendCmd(0, 0.5)} onMouseUp={() => sendCmd(0, 0)}
+                  className="bg-blue-600 text-white p-4 rounded-lg active:bg-blue-800">←</button>
+                <button onClick={() => sendCmd(0, 0)}
+                  className="bg-red-600 text-white p-4 rounded-lg">STOP</button>
+                <button onMouseDown={() => sendCmd(0, -0.5)} onMouseUp={() => sendCmd(0, 0)}
+                  className="bg-blue-600 text-white p-4 rounded-lg active:bg-blue-800">→</button>
+                <div />
+                <button onMouseDown={() => sendCmd(-0.5, 0)} onMouseUp={() => sendCmd(0, 0)}
+                  className="bg-blue-600 text-white p-4 rounded-lg active:bg-blue-800">↓</button>
+                <div />
               </div>
+              {!rosConnected && (
+                <p className="text-red-500 text-xs text-center mt-3">ROS not connected — controls disabled</p>
+              )}
             </div>
 
-            {/* MISSION */}
             <div className="bg-white p-6 rounded-xl shadow-lg">
               <h3 className="font-semibold mb-4">Mission Control</h3>
-
               <div className="space-y-3">
-                <button className="w-full bg-green-600 text-white p-3 rounded-lg">
+                <button
+                  onClick={() => callService("/vx01/mission/start", "std_srvs/Trigger")}
+                  className="w-full bg-green-600 text-white p-3 rounded-lg disabled:opacity-50"
+                  disabled={!rosConnected}
+                >
                   Start Mission
                 </button>
-                <button className="w-full bg-yellow-500 text-white p-3 rounded-lg">
+                <button
+                  onClick={() => callService("/mavros/cmd/return_to_launch", "mavros_msgs/CommandBool", { value: true })}
+                  className="w-full bg-yellow-500 text-white p-3 rounded-lg disabled:opacity-50"
+                  disabled={!rosConnected}
+                >
                   Return Home
                 </button>
-                <button className="w-full bg-red-600 text-white p-3 rounded-lg">
+                <button
+                  onClick={() => { sendCmd(0, 0); callService("/vx01/mission/abort", "std_srvs/Trigger"); }}
+                  className="w-full bg-red-600 text-white p-3 rounded-lg"
+                >
                   Emergency Stop
                 </button>
               </div>
             </div>
 
-            {/* STATUS PANEL */}
             <div className="bg-white p-6 rounded-xl shadow-lg">
               <h3 className="font-semibold mb-4">System Status</h3>
-
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Battery</span>
-                  <span className="text-green-600">87%</span>
+                  <span className="text-green-600">{telemetry.battery}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Motors</span>
-                  <span>OK</span>
+                  <span>Speed</span>
+                  <span>{telemetry.speed}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Navigation</span>
-                  <span>Active</span>
+                  <span>Altitude</span>
+                  <span>{telemetry.altitude}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Mode</span>
+                  <span>{telemetry.mode}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>ROS Bridge</span>
+                  <span className={rosConnected ? "text-green-600" : "text-red-500"}>
+                    {rosConnected ? "Connected" : "Disconnected"}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* ================= LOGS ================= */}
         {tab === "logs" && (
-          <div className="bg-black text-green-400 p-6 rounded-xl shadow-lg font-mono text-sm">
-            <p className="text-gray-400 mb-2">SYSTEM LOGS</p>
-            <p>[INFO] System initialized</p>
-            <p className="text-yellow-400">[WARN] Weak GPS</p>
-            <p className="text-red-500">[ERROR] Motor delay</p>
+          <div className="bg-black text-green-400 p-6 rounded-xl shadow-lg font-mono text-sm h-96 overflow-y-auto">
+            <p className="text-gray-400 mb-2">SYSTEM LOGS — {ROS_URL}</p>
+            {logs.length === 0 && <p className="text-gray-500">Waiting for logs...</p>}
+            {logs.map((l, i) => (
+              <p key={i}>
+                <span className="text-gray-500">[{l.ts}]</span>{" "}
+                <span className={logColor[l.level] || "text-green-400"}>[{l.level}]</span>{" "}
+                {l.msg}
+              </p>
+            ))}
           </div>
         )}
-
       </div>
     </div>
   );

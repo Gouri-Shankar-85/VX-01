@@ -1,7 +1,7 @@
 name: Build ARM64 Docker Image
 
 on:
-  workflow_dispatch:        # manual trigger from GitHub UI
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx  
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub

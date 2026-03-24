@@ -1,18 +1,8 @@
-# =============================================================================
-# VX-01 docker-compose — Raspberry Pi 5
-# Run: docker compose -f docker-compose.rdk.yml up -d
-#
-# CHANGED FROM RDK X5 VERSION:
-#   - Volume path updated: /home/ubuntu/vx01/vx01_ws (Pi 5 user is 'ubuntu')
-#   - Image is built FROM ubuntu:22.04 — works on Pi 5's Ubuntu 24.04 host
-# =============================================================================
-
 name: vx01-rdk
 
 services:
 
   vx01-robot:
-    # Container is Ubuntu 22.04 + ROS2 Humble, host is Ubuntu 24.04 — correct.
     image: ${DOCKER_REGISTRY}/vx01-base:humble-arm64
     container_name: vx01-robot
     network_mode: host
@@ -21,13 +11,13 @@ services:
     restart: unless-stopped
     environment:
       - ROS_DOMAIN_ID=0
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
     volumes:
       - /dev:/dev
       - ./vx01_ws:/vx01_ws
       - vx01_logs:/vx01_ws/log
-      - /root/.ssh:/root/.ssh:ro
-      - /root/.gitconfig:/root/.gitconfig:ro
-    # Stable symlinks — created by udev rules, never /dev/ttyUSB0 guessing
+      - /home/pi/.ssh:/root/.ssh:ro
+      - /home/pi/.gitconfig:/root/.gitconfig:ro
     devices:
       - /dev/ttyPIXHAWK:/dev/ttyPIXHAWK
       - /dev/ttyMAESTRO:/dev/ttyMAESTRO
@@ -35,7 +25,6 @@ services:
       - /dev/ttyIMU:/dev/ttyIMU
       - /dev/video0:/dev/video0
       - /dev/video1:/dev/video1
-      - /dev/bus/usb:/dev/bus/usb
     command: tail -f /dev/null
 
   vx01-mavros:
@@ -47,9 +36,30 @@ services:
     restart: unless-stopped
     environment:
       - ROS_DOMAIN_ID=0
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
     devices:
       - /dev/ttyPIXHAWK:/dev/ttyPIXHAWK
     command: tail -f /dev/null
+
+  vx01-rosbridge:
+    image: ${DOCKER_REGISTRY}/vx01-base:humble-arm64
+    container_name: vx01-rosbridge
+    network_mode: host
+    ipc: host
+    restart: unless-stopped
+    environment:
+      - ROS_DOMAIN_ID=0
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    command: >
+      bash -c "source /opt/ros/humble/setup.bash &&
+               ros2 launch rosbridge_server rosbridge_websocket_launch.xml port:=9090"
+
+  vx01-dashboard:
+    image: ${DOCKER_REGISTRY}/vx01-dashboard:latest
+    container_name: vx01-dashboard
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
 
 volumes:
   vx01_logs:
