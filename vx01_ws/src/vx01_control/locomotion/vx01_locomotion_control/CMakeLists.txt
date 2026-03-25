@@ -20,29 +20,28 @@ find_package(vx01_msgs REQUIRED)
 
 include_directories(include)
 
-# ── Forward walk node (lifecycle) ──────────────────────────────────────────
 add_executable(hexapod_forward_walk_node
   src/hexapod_forward_walk_node.cpp
 )
 ament_target_dependencies(hexapod_forward_walk_node
-  rclcpp rclcpp_action rclcpp_lifecycle lifecycle_msgs
-  control_msgs trajectory_msgs
+  rclcpp
+  rclcpp_action
+  control_msgs
+  trajectory_msgs
   vx01_hexapod_locomotion
 )
-target_link_libraries(hexapod_forward_walk_node pthread)
 
-# ── Turn node (lifecycle) ───────────────────────────────────────────────────
 add_executable(hexapod_turn_node
   src/hexapod_turn_node.cpp
 )
 ament_target_dependencies(hexapod_turn_node
-  rclcpp rclcpp_action rclcpp_lifecycle lifecycle_msgs
-  control_msgs trajectory_msgs
+  rclcpp
+  rclcpp_action
+  control_msgs
+  trajectory_msgs
   vx01_hexapod_locomotion
 )
-target_link_libraries(hexapod_turn_node pthread)
 
-# ── Approach node ───────────────────────────────────────────────────────────
 add_executable(hexapod_approach_node
   src/hexapod_approach_node.cpp
 )
