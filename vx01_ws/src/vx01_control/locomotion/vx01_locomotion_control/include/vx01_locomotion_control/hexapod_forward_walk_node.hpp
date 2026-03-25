@@ -35,10 +35,14 @@ private:
     std::vector<rclcpp_action::Client<FollowJointTrajectory>::SharedPtr> action_clients_;
     std::vector<std::vector<std::string>> joint_names_;
     std::vector<std::string> controller_names_;
+
+    // gait_timer_ is created on the executor thread via startup_check_timer_
     rclcpp::TimerBase::SharedPtr gait_timer_;
+    // polls standby_done_ from the executor thread, then creates gait_timer_
+    rclcpp::TimerBase::SharedPtr startup_check_timer_;
 
     // Startup runs in its own thread so on_activate() returns immediately
-    std::thread  startup_thread_;
+    std::thread       startup_thread_;
     std::atomic<bool> standby_done_{false};
     std::atomic<bool> stop_requested_{false};
 

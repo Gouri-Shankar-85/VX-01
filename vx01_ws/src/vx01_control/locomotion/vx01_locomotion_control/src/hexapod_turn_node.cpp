@@ -141,7 +141,34 @@ CallbackReturn HexapodTurnNode::on_activate(const rclcpp_lifecycle::State&)
     last_sent_block_ = -1;
     last_sent_angles_.assign(18, 0.0);
 
+    // Launch blocking startup work in a background thread so on_activate()
+    // returns immediately and the executor stays free to process callbacks.
     startup_thread_ = std::thread(&HexapodTurnNode::startupSequence, this);
+
+    // Poll standby_done_ every 200 ms ON THE EXECUTOR THREAD.
+    // Once startup is complete, create the gait timer here — this is the
+    // fix for the original bug where create_wall_timer() was called from
+    // startup_thread_, which is not safe and caused the timer to never fire.
+    startup_check_timer_ = create_wall_timer(200ms, [this]() {
+        if (stop_requested_) {
+            startup_check_timer_->cancel();
+            startup_check_timer_.reset();
+            return;
+        }
+        if (!standby_done_) return;
+
+        // Cancel the polling timer
+        startup_check_timer_->cancel();
+        startup_check_timer_.reset();
+
+        // Create gait timer safely on the executor thread
+        const auto period_ms = static_cast<int>(1000.0 / update_rate_);
+        gait_timer_ = create_wall_timer(
+            std::chrono::milliseconds(period_ms),
+            std::bind(&HexapodTurnNode::gaitUpdate, this));
+
+        RCLCPP_INFO(get_logger(), "Turn gait timer started on executor thread.");
+    });
 
     RCLCPP_INFO(get_logger(), "Activate called — startup running in background.");
     return CallbackReturn::SUCCESS;
@@ -164,13 +191,10 @@ void HexapodTurnNode::startupSequence()
     std::this_thread::sleep_for(2200ms);
     if (stop_requested_) return;
 
+    // Signal the executor-thread polling timer to create gait_timer_.
+    // Do NOT call create_wall_timer() here — this is a background thread.
     standby_done_ = true;
-    RCLCPP_INFO(get_logger(), "Turn gait started.");
-
-    double period_ms = 1000.0 / update_rate_;
-    gait_timer_ = create_wall_timer(
-        std::chrono::milliseconds(static_cast<int>(period_ms)),
-        std::bind(&HexapodTurnNode::gaitUpdate, this));
+    RCLCPP_INFO(get_logger(), "Startup complete — signalling executor thread.");
 }
 
 CallbackReturn HexapodTurnNode::on_deactivate(const rclcpp_lifecycle::State&)
@@ -180,7 +204,9 @@ CallbackReturn HexapodTurnNode::on_deactivate(const rclcpp_lifecycle::State&)
     stop_requested_ = true;
     if (startup_thread_.joinable()) startup_thread_.join();
 
-    if (gait_timer_) { gait_timer_->cancel(); gait_timer_.reset(); }
+    if (startup_check_timer_) { startup_check_timer_->cancel(); startup_check_timer_.reset(); }
+    if (gait_timer_)          { gait_timer_->cancel();          gait_timer_.reset(); }
+
     standby_done_ = false;
     locomotion_->stop();
     sendStandbyPose();
@@ -201,7 +227,8 @@ CallbackReturn HexapodTurnNode::on_shutdown(const rclcpp_lifecycle::State&)
 {
     stop_requested_ = true;
     if (startup_thread_.joinable()) startup_thread_.join();
-    if (gait_timer_) { gait_timer_->cancel(); gait_timer_.reset(); }
+    if (startup_check_timer_) { startup_check_timer_->cancel(); startup_check_timer_.reset(); }
+    if (gait_timer_)          { gait_timer_->cancel();          gait_timer_.reset(); }
     locomotion_.reset();
     return CallbackReturn::SUCCESS;
 }
