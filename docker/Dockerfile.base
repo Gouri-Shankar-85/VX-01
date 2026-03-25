@@ -89,7 +89,6 @@ RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc && \
 RUN usermod -aG dialout root \
  && usermod -aG video root \
  && usermod -aG plugdev root \
- && usermod -aG gpio root \
  && usermod -aG i2c root \
  && usermod -aG spi root
 
