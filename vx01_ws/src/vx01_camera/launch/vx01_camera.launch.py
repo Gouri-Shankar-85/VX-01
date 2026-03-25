@@ -14,7 +14,7 @@ def generate_launch_description():
         parameters=[
             {"usb_bus_no": -1},
             {"usb_path": "null"},
-            {"confiPath": "./vx01_camera/configurationfiles"},
+            {"confiPath": "/vx01_ws/src/vx01_camera/configurationfiles"},
             {"color_pcl": False},
             {"pub_tfTree": False},
             {"depth_width": 640},
