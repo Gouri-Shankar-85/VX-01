@@ -9,10 +9,16 @@ namespace vx01_locomotion_control {
 
 HexapodTurnNode::HexapodTurnNode(const rclcpp::NodeOptions& options)
 : rclcpp_lifecycle::LifecycleNode("hexapod_turn_node", options),
-  turn_direction_(1), standby_done_(false), last_sent_block_(-1),
+  turn_direction_(1), last_sent_block_(-1),
   block_period_(0.0), last_sent_angles_(18, 0.0)
 {
     declareParameters();
+}
+
+HexapodTurnNode::~HexapodTurnNode()
+{
+    stop_requested_ = true;
+    if (startup_thread_.joinable()) startup_thread_.join();
 }
 
 void HexapodTurnNode::declareParameters()
@@ -125,40 +131,60 @@ CallbackReturn HexapodTurnNode::on_configure(const rclcpp_lifecycle::State&)
 
 CallbackReturn HexapodTurnNode::on_activate(const rclcpp_lifecycle::State&)
 {
-    RCLCPP_INFO(get_logger(), "Activating — turn_direction=%+d", turn_direction_);
-
-    // Re-read turn_direction at activation time so approach node can set it
-    // via parameter before activating
+    // Re-read turn_direction at activation time — approach node sets it before activating
     turn_direction_ = get_parameter("turn_direction").as_int();
     turn_direction_ = (turn_direction_ >= 0) ? +1 : -1;
-
-    rclcpp::sleep_for(2s);
+    RCLCPP_INFO(get_logger(), "Activating — turn_direction=%+d", turn_direction_);
 
     standby_done_    = false;
+    stop_requested_  = false;
     last_sent_block_ = -1;
     last_sent_angles_.assign(18, 0.0);
 
+    startup_thread_ = std::thread(&HexapodTurnNode::startupSequence, this);
+
+    RCLCPP_INFO(get_logger(), "Activate called — startup running in background.");
+    return CallbackReturn::SUCCESS;
+}
+
+void HexapodTurnNode::startupSequence()
+{
+    RCLCPP_INFO(get_logger(), "Startup: waiting 2s for controllers...");
+    std::this_thread::sleep_for(2s);
+    if (stop_requested_) return;
+
     sendStandbyPose();
-    rclcpp::sleep_for(std::chrono::milliseconds(
-        static_cast<int>((standby_duration_ + 0.5) * 1000)));
+
+    auto wait_ms = static_cast<int>((standby_duration_ + 0.5) * 1000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(wait_ms));
+    if (stop_requested_) return;
+
     startTurning();
+
+    std::this_thread::sleep_for(2200ms);
+    if (stop_requested_) return;
+
+    standby_done_ = true;
+    RCLCPP_INFO(get_logger(), "Turn gait started.");
 
     double period_ms = 1000.0 / update_rate_;
     gait_timer_ = create_wall_timer(
         std::chrono::milliseconds(static_cast<int>(period_ms)),
         std::bind(&HexapodTurnNode::gaitUpdate, this));
-
-    RCLCPP_INFO(get_logger(), "Active — turning.");
-    return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn HexapodTurnNode::on_deactivate(const rclcpp_lifecycle::State&)
 {
     RCLCPP_INFO(get_logger(), "Deactivating — stopping turn.");
+
+    stop_requested_ = true;
+    if (startup_thread_.joinable()) startup_thread_.join();
+
     if (gait_timer_) { gait_timer_->cancel(); gait_timer_.reset(); }
     standby_done_ = false;
     locomotion_->stop();
     sendStandbyPose();
+
     RCLCPP_INFO(get_logger(), "Deactivated.");
     return CallbackReturn::SUCCESS;
 }
@@ -173,6 +199,8 @@ CallbackReturn HexapodTurnNode::on_cleanup(const rclcpp_lifecycle::State&)
 
 CallbackReturn HexapodTurnNode::on_shutdown(const rclcpp_lifecycle::State&)
 {
+    stop_requested_ = true;
+    if (startup_thread_.joinable()) startup_thread_.join();
     if (gait_timer_) { gait_timer_->cancel(); gait_timer_.reset(); }
     locomotion_.reset();
     return CallbackReturn::SUCCESS;
@@ -180,12 +208,14 @@ CallbackReturn HexapodTurnNode::on_shutdown(const rclcpp_lifecycle::State&)
 
 void HexapodTurnNode::sendStandbyPose()
 {
+    RCLCPP_INFO(get_logger(), "Moving to standby pose...");
     for (int i = 0; i < 6; ++i)
         sendLegTrajectory(i, standby_coxa_, standby_femur_, standby_tibia_, standby_duration_);
 }
 
 void HexapodTurnNode::startTurning()
 {
+    RCLCPP_INFO(get_logger(), "Moving to turn start position...");
     locomotion_->walk();
 
     for (int i = 0; i < 6; ++i) {
@@ -200,9 +230,6 @@ void HexapodTurnNode::startTurning()
         last_sent_angles_[i*3+2] = th3;
         sendLegTrajectory(i, th1, th2, th3, 2.0);
     }
-
-    rclcpp::sleep_for(2200ms);
-    standby_done_ = true;
 }
 
 void HexapodTurnNode::gaitUpdate()

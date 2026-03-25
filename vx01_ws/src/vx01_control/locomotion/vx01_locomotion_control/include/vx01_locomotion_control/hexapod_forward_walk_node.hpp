@@ -11,6 +11,8 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <thread>
+#include <atomic>
 
 namespace vx01_locomotion_control {
 
@@ -20,12 +22,13 @@ using CallbackReturn        = rclcpp_lifecycle::node_interfaces::LifecycleNodeIn
 class HexapodForwardWalkNode : public rclcpp_lifecycle::LifecycleNode {
 public:
     explicit HexapodForwardWalkNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
+    ~HexapodForwardWalkNode();
 
-    CallbackReturn on_configure(const rclcpp_lifecycle::State&) override;
-    CallbackReturn on_activate(const rclcpp_lifecycle::State&)  override;
+    CallbackReturn on_configure(const rclcpp_lifecycle::State&)  override;
+    CallbackReturn on_activate(const rclcpp_lifecycle::State&)   override;
     CallbackReturn on_deactivate(const rclcpp_lifecycle::State&) override;
-    CallbackReturn on_cleanup(const rclcpp_lifecycle::State&)   override;
-    CallbackReturn on_shutdown(const rclcpp_lifecycle::State&)  override;
+    CallbackReturn on_cleanup(const rclcpp_lifecycle::State&)    override;
+    CallbackReturn on_shutdown(const rclcpp_lifecycle::State&)   override;
 
 private:
     std::shared_ptr<vx01_hexapod_locomotion::HexapodLocomotion> locomotion_;
@@ -34,6 +37,11 @@ private:
     std::vector<std::string> controller_names_;
     rclcpp::TimerBase::SharedPtr gait_timer_;
 
+    // Startup runs in its own thread so on_activate() returns immediately
+    std::thread  startup_thread_;
+    std::atomic<bool> standby_done_{false};
+    std::atomic<bool> stop_requested_{false};
+
     double L1_, L2_, L3_;
     double body_radius_, beta_angle_;
     double home_x_, home_y_, home_z_;
@@ -41,12 +49,12 @@ private:
     double standby_coxa_, standby_femur_, standby_tibia_;
     double standby_duration_, update_rate_, block_period_;
 
-    bool   standby_done_;
     int    last_sent_block_;
     std::vector<double> last_sent_angles_;
 
     void declareParameters();
     void loadParameters();
+    void startupSequence();        // runs in startup_thread_
     void sendStandbyPose();
     void startWalking();
     void gaitUpdate();

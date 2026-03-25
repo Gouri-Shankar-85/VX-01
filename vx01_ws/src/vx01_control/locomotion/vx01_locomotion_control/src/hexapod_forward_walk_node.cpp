@@ -9,10 +9,16 @@ namespace vx01_locomotion_control {
 
 HexapodForwardWalkNode::HexapodForwardWalkNode(const rclcpp::NodeOptions& options)
 : rclcpp_lifecycle::LifecycleNode("hexapod_forward_walk_node", options),
-  standby_done_(false), last_sent_block_(-1), block_period_(0.0),
+  last_sent_block_(-1), block_period_(0.0),
   last_sent_angles_(18, 0.0)
 {
     declareParameters();
+}
+
+HexapodForwardWalkNode::~HexapodForwardWalkNode()
+{
+    stop_requested_ = true;
+    if (startup_thread_.joinable()) startup_thread_.join();
 }
 
 void HexapodForwardWalkNode::declareParameters()
@@ -66,7 +72,6 @@ CallbackReturn HexapodForwardWalkNode::on_configure(const rclcpp_lifecycle::Stat
     RCLCPP_INFO(get_logger(), "Configuring...");
     loadParameters();
 
-    // Clamp step height if needed
     {
         const double r2       = home_x_ - L1_;
         const double z_apex   = home_z_ + step_height_;
@@ -85,7 +90,6 @@ CallbackReturn HexapodForwardWalkNode::on_configure(const rclcpp_lifecycle::Stat
         home_x_, home_y_, home_z_,
         step_length_, step_height_, step_period_);
 
-    // Compute stance angles from IK at home position
     {
         vx01_hexapod_locomotion::kinematics::InverseKinematics ik(L1_, L2_, L3_);
         double th1=0.0, th2=0.0, th3=0.0;
@@ -93,8 +97,7 @@ CallbackReturn HexapodForwardWalkNode::on_configure(const rclcpp_lifecycle::Stat
             locomotion_->setStancePose(th2, th3);
             standby_femur_ = th2;
             standby_tibia_ = th3;
-            RCLCPP_INFO(get_logger(),
-                "Stance IK: femur=%.4f rad  tibia=%.4f rad", th2, th3);
+            RCLCPP_INFO(get_logger(), "Stance IK: femur=%.4f rad  tibia=%.4f rad", th2, th3);
         } else {
             RCLCPP_WARN(get_logger(), "IK failed at home — using YAML standby angles.");
             locomotion_->setStancePose(standby_femur_, standby_tibia_);
@@ -123,32 +126,54 @@ CallbackReturn HexapodForwardWalkNode::on_configure(const rclcpp_lifecycle::Stat
 
 CallbackReturn HexapodForwardWalkNode::on_activate(const rclcpp_lifecycle::State&)
 {
-    RCLCPP_INFO(get_logger(), "Activating — waiting for controllers...");
-    rclcpp::sleep_for(2s);
-
+    // Return immediately — startup sequence runs in its own thread
+    // so the executor stays free to process action client responses
     standby_done_    = false;
+    stop_requested_  = false;
     last_sent_block_ = -1;
     last_sent_angles_.assign(18, 0.0);
 
+    startup_thread_ = std::thread(&HexapodForwardWalkNode::startupSequence, this);
+
+    RCLCPP_INFO(get_logger(), "Activate called — startup running in background.");
+    return CallbackReturn::SUCCESS;
+}
+
+void HexapodForwardWalkNode::startupSequence()
+{
+    RCLCPP_INFO(get_logger(), "Startup: waiting 2s for controllers...");
+    std::this_thread::sleep_for(2s);
+    if (stop_requested_) return;
+
     sendStandbyPose();
-    auto standby_wait = static_cast<int>((standby_duration_ + 0.5) * 1000);
-    rclcpp::sleep_for(std::chrono::milliseconds(standby_wait));
+
+    auto wait_ms = static_cast<int>((standby_duration_ + 0.5) * 1000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(wait_ms));
+    if (stop_requested_) return;
+
     startWalking();
 
+    std::this_thread::sleep_for(2200ms);
+    if (stop_requested_) return;
+
+    standby_done_ = true;
+    RCLCPP_INFO(get_logger(), "Tripod gait started.");
+
+    // Start gait timer from the correct thread using timer callback
     double period_ms = 1000.0 / update_rate_;
     gait_timer_ = create_wall_timer(
         std::chrono::milliseconds(static_cast<int>(period_ms)),
         std::bind(&HexapodForwardWalkNode::gaitUpdate, this));
-
-    RCLCPP_INFO(get_logger(), "Active — walking.");
-    return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn HexapodForwardWalkNode::on_deactivate(const rclcpp_lifecycle::State&)
 {
     RCLCPP_INFO(get_logger(), "Deactivating — stopping gait.");
-    if (gait_timer_) { gait_timer_->cancel(); gait_timer_.reset(); }
 
+    stop_requested_ = true;
+    if (startup_thread_.joinable()) startup_thread_.join();
+
+    if (gait_timer_) { gait_timer_->cancel(); gait_timer_.reset(); }
     standby_done_ = false;
     locomotion_->stop();
     sendStandbyPose();
@@ -168,6 +193,8 @@ CallbackReturn HexapodForwardWalkNode::on_cleanup(const rclcpp_lifecycle::State&
 
 CallbackReturn HexapodForwardWalkNode::on_shutdown(const rclcpp_lifecycle::State&)
 {
+    stop_requested_ = true;
+    if (startup_thread_.joinable()) startup_thread_.join();
     if (gait_timer_) { gait_timer_->cancel(); gait_timer_.reset(); }
     locomotion_.reset();
     RCLCPP_INFO(get_logger(), "Shutdown.");
@@ -183,6 +210,7 @@ void HexapodForwardWalkNode::sendStandbyPose()
 
 void HexapodForwardWalkNode::startWalking()
 {
+    RCLCPP_INFO(get_logger(), "Moving to gait start position...");
     locomotion_->walk();
     locomotion_->setVelocity(1.0, 0.0, 0.0);
 
@@ -198,10 +226,6 @@ void HexapodForwardWalkNode::startWalking()
         last_sent_angles_[i*3+2] = th3;
         sendLegTrajectory(i, th1, th2, th3, 2.0);
     }
-
-    rclcpp::sleep_for(2200ms);
-    standby_done_ = true;
-    RCLCPP_INFO(get_logger(), "Tripod gait started.");
 }
 
 void HexapodForwardWalkNode::gaitUpdate()

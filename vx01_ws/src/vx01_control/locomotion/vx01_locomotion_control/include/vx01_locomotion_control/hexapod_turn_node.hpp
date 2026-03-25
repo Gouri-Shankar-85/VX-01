@@ -11,6 +11,8 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <thread>
+#include <atomic>
 
 namespace vx01_locomotion_control {
 
@@ -20,6 +22,7 @@ using CallbackReturn        = rclcpp_lifecycle::node_interfaces::LifecycleNodeIn
 class HexapodTurnNode : public rclcpp_lifecycle::LifecycleNode {
 public:
     explicit HexapodTurnNode(const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
+    ~HexapodTurnNode();
 
     CallbackReturn on_configure(const rclcpp_lifecycle::State&)  override;
     CallbackReturn on_activate(const rclcpp_lifecycle::State&)   override;
@@ -34,6 +37,10 @@ private:
     std::vector<std::string> controller_names_;
     rclcpp::TimerBase::SharedPtr gait_timer_;
 
+    std::thread  startup_thread_;
+    std::atomic<bool> standby_done_{false};
+    std::atomic<bool> stop_requested_{false};
+
     double L1_, L2_, L3_;
     double body_radius_, beta_angle_;
     double home_x_, home_y_, home_z_;
@@ -43,12 +50,12 @@ private:
     int    turn_direction_;
     std::vector<double> leg_angles_;
 
-    bool   standby_done_;
     int    last_sent_block_;
     std::vector<double> last_sent_angles_;
 
     void declareParameters();
     void loadParameters();
+    void startupSequence();
     void sendStandbyPose();
     void startTurning();
     void gaitUpdate();
