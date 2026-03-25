@@ -3,7 +3,7 @@
 
 <xacro:macro name="vx01_ros2_control" params="
     use_sim:=true
-    serial_port:=/dev/ttyACM0
+    serial_port:=/dev/ttyACM1
     baud_rate:=115200
     pwm_frequency:=50
     gpio_chip:=gpiochip0
