@@ -30,12 +30,12 @@ tripod_walk_node:
 
     # Joint names per leg (order: coxa, femur, tibia)
     leg_joint_names:
-      - ["coxa_leg0_joint", "femur_leg0_joint", "tibia_leg0_joint"]
-      - ["coxa_leg1_joint", "femur_leg1_joint", "tibia_leg1_joint"]
-      - ["coxa_leg2_joint", "femur_leg2_joint", "tibia_leg2_joint"]
-      - ["coxa_leg3_joint", "femur_leg3_joint", "tibia_leg3_joint"]
-      - ["coxa_leg4_joint", "femur_leg4_joint", "tibia_leg4_joint"]
-      - ["coxa_leg5_joint", "femur_leg5_joint", "tibia_leg5_joint"]
+      "0": ["coxa_leg0_joint", "femur_leg0_joint", "tibia_leg0_joint"]
+      "1": ["coxa_leg1_joint", "femur_leg1_joint", "tibia_leg1_joint"]
+      "2": ["coxa_leg2_joint", "femur_leg2_joint", "tibia_leg2_joint"]
+      "3": ["coxa_leg3_joint", "femur_leg3_joint", "tibia_leg3_joint"]
+      "4": ["coxa_leg4_joint", "femur_leg4_joint", "tibia_leg4_joint"]
+      "5": ["coxa_leg5_joint", "femur_leg5_joint", "tibia_leg5_joint"]
 
     # Controller action server names
     leg_controller_names:
