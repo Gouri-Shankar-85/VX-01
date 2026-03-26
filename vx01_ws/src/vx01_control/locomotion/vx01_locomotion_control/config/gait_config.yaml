@@ -1,0 +1,66 @@
+# vx01_locomotion_control gait_config.yaml
+
+tripod_walk_node:
+  ros__parameters:
+    use_sim_time: false
+
+    # Robot kinematics (mm)
+    L1: 60.55
+    L2: 73.84
+    L3: 112.16
+    body_radius: 105.66       # distance from body centre to coxa pivot (mm)
+    beta_angle: 0.7854        # leg mounting angular spacing (rad) — pi/4 between adjacent legs
+
+    # Home foot position in leg-local frame (mm)
+    home_x: 130.0             # reach from coxa pivot along leg-local X
+    home_y: 0.0               # lateral offset at neutral
+    home_z: -80.0             # height below coxa pivot (negative = down)
+
+    # Gait parameters
+    step_length: 40.0         # full stride length (mm)
+    step_height: 25.0         # foot lift height (mm)
+    step_period: 1.2          # full 6-block gait cycle period (s)
+
+    # Velocity scaling
+    max_linear_vel: 0.15      # m/s
+    max_angular_vel: 0.5      # rad/s
+
+    # Trajectory waypoints per phase block
+    trajectory_waypoints: 8
+
+    # Joint names per leg (order: coxa, femur, tibia)
+    leg_joint_names:
+      - ["coxa_leg0_joint", "femur_leg0_joint", "tibia_leg0_joint"]
+      - ["coxa_leg1_joint", "femur_leg1_joint", "tibia_leg1_joint"]
+      - ["coxa_leg2_joint", "femur_leg2_joint", "tibia_leg2_joint"]
+      - ["coxa_leg3_joint", "femur_leg3_joint", "tibia_leg3_joint"]
+      - ["coxa_leg4_joint", "femur_leg4_joint", "tibia_leg4_joint"]
+      - ["coxa_leg5_joint", "femur_leg5_joint", "tibia_leg5_joint"]
+
+    # Controller action server names
+    leg_controller_names:
+      - "leg_0_controller"
+      - "leg_1_controller"
+      - "leg_2_controller"
+      - "leg_3_controller"
+      - "leg_4_controller"
+      - "leg_5_controller"
+
+    # TF frame names
+    base_frame: "base_link"
+    coxa_frames:
+      - "coxa_link_0"
+      - "coxa_link_1"
+      - "coxa_link_2"
+      - "coxa_link_3"
+      - "coxa_link_4"
+      - "coxa_link_5"
+
+
+teleop_node:
+  ros__parameters:
+    use_sim_time: false
+    linear_step: 0.02         # m/s increment per key press
+    angular_step: 0.1         # rad/s increment per key press
+    max_linear_vel: 0.15
+    max_angular_vel: 0.5
