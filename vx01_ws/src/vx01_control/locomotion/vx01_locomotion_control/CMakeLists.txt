@@ -51,10 +51,35 @@ ament_target_dependencies(hexapod_approach_node
   vx01_msgs
 )
 
+add_executable(hexapod_gait_node
+  src/hexapod_gait_node.cpp
+)
+ament_target_dependencies(hexapod_gait_node
+  rclcpp
+  rclcpp_action
+  tf2_ros
+  tf2_geometry_msgs
+  geometry_msgs
+  control_msgs
+  trajectory_msgs
+  vx01_hexapod_locomotion
+)
+
+# Teleop node
+add_executable(hexapod_teleop_node
+  src/hexapod_teleop_node.cpp
+)
+ament_target_dependencies(hexapod_teleop_node
+  rclcpp
+  geometry_msgs
+)
+
 install(TARGETS
   hexapod_forward_walk_node
   hexapod_turn_node
   hexapod_approach_node
+  hexapod_gait_node
+  hexapod_teleop_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

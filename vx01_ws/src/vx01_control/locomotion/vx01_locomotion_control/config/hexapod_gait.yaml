@@ -1,0 +1,36 @@
+hexapod_gait_node:
+  ros__parameters:
+    use_sim_time: false
+
+    # Leg link lengths (mm)
+    L1: 60.55
+    L2: 73.84
+    L3: 112.16
+
+    # Home foot position in coxa_link frame (mm)
+    # home_reach: distance along coxa X axis to foot at rest
+    # home_z:     foot height relative to coxa pivot (negative = below)
+    home_reach: 227.689
+    home_z:     -61.379
+
+    # Gait parameters
+    step_length:  60.0    # total stride length (mm)
+    step_height:  30.0    # foot lift height above ground (mm)
+    step_period:   2.0    # full cycle period (s): one full cycle = 2 blocks
+
+    standby_duration: 3.0
+    update_rate:     50.0
+
+    leg_controllers:
+      - leg_0_controller
+      - leg_1_controller
+      - leg_2_controller
+      - leg_3_controller
+      - leg_4_controller
+      - leg_5_controller
+
+hexapod_teleop_node:
+  ros__parameters:
+    use_sim_time: false
+    linear_scale:  1.0   # normalised: 1.0 = full step_length stride
+    angular_scale: 1.0   # normalised: 1.0 = full rotational stride
