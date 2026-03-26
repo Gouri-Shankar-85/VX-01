@@ -46,8 +46,12 @@ add_executable(hexapod_approach_node
   src/hexapod_approach_node.cpp
 )
 ament_target_dependencies(hexapod_approach_node
-  rclcpp rclcpp_lifecycle lifecycle_msgs
-  geometry_msgs tf2_ros tf2_geometry_msgs
+  rclcpp 
+  rclcpp_lifecycle 
+  lifecycle_msgs
+  geometry_msgs 
+  tf2_ros 
+  tf2_geometry_msgs
   vx01_msgs
 )
 
@@ -65,7 +69,6 @@ ament_target_dependencies(hexapod_gait_node
   vx01_hexapod_locomotion
 )
 
-# Teleop node
 add_executable(hexapod_teleop_node
   src/hexapod_teleop_node.cpp
 )

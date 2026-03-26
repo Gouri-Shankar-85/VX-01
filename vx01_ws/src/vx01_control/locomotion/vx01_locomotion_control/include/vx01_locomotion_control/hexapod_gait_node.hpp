@@ -86,7 +86,7 @@ private:
     void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
 
     bool footBaseToCoxa(int leg, const std::array<double, 3> & foot_base,
-                        std::array<double, 3> & foot_coxa) const;
+                        std::array<double, 3> & foot_coxa) ;
 
     bool solveIK(double x, double y, double z,
                  double & t1, double & t2, double & t3) const;

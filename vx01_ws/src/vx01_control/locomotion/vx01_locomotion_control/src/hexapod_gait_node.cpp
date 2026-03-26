@@ -1,4 +1,4 @@
-#include "hexapod_gait_node.hpp"
+#include "vx01_locomotion_control/hexapod_gait_node.hpp"
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <geometry_msgs/msg/point_stamped.hpp>
@@ -196,7 +196,7 @@ bool HexapodGaitNode::solveIK(double x, double y, double z,
 
 bool HexapodGaitNode::footBaseToCoxa(int leg,
                                       const std::array<double, 3> & foot_base,
-                                      std::array<double, 3> & foot_coxa) const
+                                      std::array<double, 3> & foot_coxa) 
 {
     geometry_msgs::msg::PointStamped pt_base, pt_coxa;
     pt_base.header.frame_id = "base_link";
@@ -216,8 +216,14 @@ bool HexapodGaitNode::footBaseToCoxa(int leg,
         };
         return true;
     } catch (const tf2::TransformException & ex) {
-        RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000,
-                             "TF2 leg %d: %s", leg, ex.what());
+        auto clock = this->get_clock();
+
+        RCLCPP_WARN_THROTTLE(
+            this->get_logger(),
+            *clock,
+            1000,
+            "message"
+        );
         return false;
     }
 }
