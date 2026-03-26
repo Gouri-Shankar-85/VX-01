@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-ros-ign-bridge \
     ros-humble-ros-ign-gazebo \
     ros-humble-ros-ign-interfaces \
+    ros-humble-ign-ros2-control \
     ros-humble-rviz2 \
     ros-humble-rviz-common \
     ros-humble-rviz-default-plugins \
