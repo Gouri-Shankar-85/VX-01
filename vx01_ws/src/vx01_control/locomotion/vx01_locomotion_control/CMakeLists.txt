@@ -81,7 +81,16 @@ ament_target_dependencies(hexapod_teleop_node
 add_executable(tripod_walk_node
   src/tripod_walk_node.cpp
 )
-ament_target_dependencies(tripod_walk_node ${DEPS})
+ament_target_dependencies(tripod_walk_node 
+  rclcpp
+  rclcpp_action
+  geometry_msgs
+  trajectory_msgs
+  control_msgs
+  tf2_ros
+  tf2_geometry_msgs
+  vx01_hexapod_locomotion
+)
 
 # ── teleop_node ───────────────────────────────────────────────────────────────
 add_executable(teleop_node
