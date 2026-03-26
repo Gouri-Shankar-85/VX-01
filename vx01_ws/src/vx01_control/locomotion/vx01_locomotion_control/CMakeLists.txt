@@ -81,30 +81,16 @@ ament_target_dependencies(hexapod_teleop_node
 add_executable(tripod_walk_node
   src/tripod_walk_node.cpp
 )
-target_include_directories(tripod_walk_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
 ament_target_dependencies(tripod_walk_node ${DEPS})
 
 # ── teleop_node ───────────────────────────────────────────────────────────────
 add_executable(teleop_node
   src/teleop_node.cpp
 )
-target_include_directories(teleop_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
 ament_target_dependencies(teleop_node
   rclcpp
   geometry_msgs
 )
-
-# ── Install ───────────────────────────────────────────────────────────────────
-install(TARGETS tripod_walk_node teleop_node
-  DESTINATION lib/${PROJECT_NAME}
-)
-
 
 install(TARGETS
   hexapod_forward_walk_node
