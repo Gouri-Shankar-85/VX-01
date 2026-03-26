@@ -14,8 +14,8 @@ hexapod_gait_node:
     home_z:     -61.379
 
     # Gait parameters
-    step_length:  200.0    # total stride length (mm)
-    step_height:  50.0    # foot lift height above ground (mm)
+    step_length:  60.0    # total stride length (mm)
+    step_height:  30.0    # foot lift height above ground (mm)
     step_period:   2.0    # full cycle period (s): one full cycle = 2 blocks
 
     standby_duration: 3.0
