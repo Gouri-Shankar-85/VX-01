@@ -11,6 +11,7 @@
 #include <trajectory_msgs/msg/joint_trajectory_point.hpp>
 
 #include "vx01_hexapod_locomotion/hexapod_locomotion.hpp"
+#include "vx01_hexapod_locomotion/kinematics/inverse_kinematics.hpp"
 
 #include <vector>
 #include <string>
@@ -40,16 +41,21 @@ private:
     void gaitCycleTimer();
     void executeGaitBlock();
     void sendStandUpTrajectory();
-
     void sendLegTrajectory(int leg_id, bool is_swing, double block_duration);
+
+    // Per-leg stride amplitude in leg-local Y for current cmd_vel
+    double legStrideY(int leg_id) const;
+
+    bool computeIK(double lx, double ly, double lz,
+                   double& t1, double& t2, double& t3) const;
+
+    std::array<double, 3> swingWaypoint(int leg_id, double t) const;
+    std::array<double, 3> stanceWaypoint(int leg_id, double t) const;
 
     trajectory_msgs::msg::JointTrajectory buildSwingTrajectory(
         int leg_id, double block_duration);
     trajectory_msgs::msg::JointTrajectory buildStanceTrajectory(
         int leg_id, double block_duration);
-
-    std::array<double, 3> computeSwingWaypoint(int leg_id, double global_t);
-    std::array<double, 3> computeStanceWaypoint(int leg_id, double global_t);
 
     std::shared_ptr<vx01_hexapod_locomotion::HexapodLocomotion> locomotion_;
 
@@ -74,10 +80,11 @@ private:
     int    n_waypoints_;
     std::string base_frame_;
     std::array<std::string, 6> coxa_frames_;
+    std::array<double, 6>      leg_angles_;
 
     double cmd_vx_{0.0}, cmd_vy_{0.0}, cmd_omega_{0.0};
     bool   walking_{false};
-    std::array<bool, 6>   goal_active_{};
+    std::array<bool, 6>    goal_active_{};
     std::array<double, 18> current_joint_state_{};
     bool   joint_state_received_{false};
 };

@@ -51,7 +51,7 @@ void TripodWalkNode::declareParameters()
     declare_parameter("home_x",              223.03);
     declare_parameter("home_y",                0.0);
     declare_parameter("home_z",              -72.82);
-    declare_parameter("step_length",           30.0);
+    declare_parameter("step_length",           40.0);
     declare_parameter("step_height",           20.0);
     declare_parameter("step_period",            3.0);
     declare_parameter("stand_duration",         3.0);
@@ -105,6 +105,9 @@ void TripodWalkNode::loadParameters()
         joint_names_[i]      = get_parameter(
             "leg_joint_names." + std::to_string(i)).as_string_array();
     }
+
+    const double b = beta_angle_;
+    leg_angles_ = {0.0, b, 2.0*b, M_PI, -2.0*b, -b};
 
     for (int i = 0; i < 18; ++i) current_joint_state_[i] = 0.0;
 }
@@ -162,6 +165,158 @@ void TripodWalkNode::jointStateCallback(const sensor_msgs::msg::JointState::Shar
         }
     }
     joint_state_received_ = true;
+}
+
+// Compute per-leg stride amplitude in leg-local Y for given cmd_vel.
+// model: leg_x = home_x (constant reach)
+//        leg_y sweeps from -stride_y to +stride_y during swing
+//        stride_y = projection of cmd_vel onto leg-local Y axis * step_length_/2
+double TripodWalkNode::legStrideY(int leg_id) const
+{
+    const double a       = leg_angles_[leg_id];
+    const double r_x     = std::cos(a) * (home_x_ - body_radius_);
+    const double r_y     = std::sin(a) * (home_x_ - body_radius_);
+    const double lin_proj = cmd_vx_ * (-std::sin(a)) + cmd_vy_ * (std::cos(a));
+    const double rot_proj = cmd_omega_ * (r_y * std::sin(a) + r_x * std::cos(a));
+    const double scale    = (max_linear_vel_ > 1e-9)
+                            ? std::min(1.0, (std::hypot(cmd_vx_, cmd_vy_) +
+                                std::abs(cmd_omega_) * (home_x_ - body_radius_) / 1000.0)
+                                / max_linear_vel_)
+                            : 0.0;
+    return (lin_proj + rot_proj / (home_x_ - body_radius_)) * (step_length_ / 2.0);
+}
+
+// IK for a given (leg_x, leg_y, leg_z) in leg-local frame.
+// Returns false if unreachable.
+bool TripodWalkNode::computeIK(double lx, double ly, double lz,
+                                double& t1, double& t2, double& t3) const
+{
+    kinematics::InverseKinematics ik(L1_, L2_, L3_);
+    return ik.compute(lx, ly, lz, t1, t2, t3);
+}
+
+// Swing waypoint at normalised t in [0,1] over the full swing arc:
+//   leg_y: from -stride_y  to  +stride_y  (Bezier quadratic via 0)
+//   leg_z: home_z + step_height * 4*t*(1-t)  (parabolic lift)
+//   leg_x: home_x constant
+std::array<double, 3> TripodWalkNode::swingWaypoint(int leg_id, double t) const
+{
+    t = std::clamp(t, 0.0, 1.0);
+    const double stride_y  = legStrideY(leg_id);
+    const double u         = 1.0 - t;
+    const double leg_y     = u * u * (-stride_y) + 2.0 * u * t * 0.0 + t * t * stride_y;
+    const double lift      = step_height_ * 4.0 * t * (1.0 - t);
+    const double leg_z     = home_z_ + lift;
+
+    double t1 = 0.0, t2 = 0.0, t3 = 0.0;
+    if (!computeIK(home_x_, leg_y, leg_z, t1, t2, t3)) {
+        t1 = current_joint_state_[leg_id*3+0];
+        t2 = current_joint_state_[leg_id*3+1];
+        t3 = current_joint_state_[leg_id*3+2];
+    }
+    return {t1, t2, t3};
+}
+
+// Stance/drag waypoint at normalised t in [0,1]:
+//   leg_y slides from +stride_y to -stride_y (opposite direction of swing)
+//   leg_z = home_z constant
+//   leg_x = home_x constant
+std::array<double, 3> TripodWalkNode::stanceWaypoint(int leg_id, double t) const
+{
+    t = std::clamp(t, 0.0, 1.0);
+    const double stride_y = legStrideY(leg_id);
+    const double leg_y    = stride_y * (1.0 - 2.0 * t);
+
+    double t1 = 0.0, t2 = 0.0, t3 = 0.0;
+    if (!computeIK(home_x_, leg_y, home_z_, t1, t2, t3)) {
+        t1 = current_joint_state_[leg_id*3+0];
+        t2 = current_joint_state_[leg_id*3+1];
+        t3 = current_joint_state_[leg_id*3+2];
+    }
+    return {t1, t2, t3};
+}
+
+trajectory_msgs::msg::JointTrajectory
+TripodWalkNode::buildSwingTrajectory(int leg_id, double block_duration)
+{
+    trajectory_msgs::msg::JointTrajectory traj;
+    traj.joint_names = joint_names_[leg_id];
+
+    const int block       = locomotion_->getGaitBlock();
+    const int swing_start = (leg_id == 0 || leg_id == 2 || leg_id == 4) ? 0 : 3;
+    const int swing_sub   = block - swing_start;
+
+    for (int wp = 0; wp <= n_waypoints_; ++wp) {
+        const double local_t  = static_cast<double>(wp) / n_waypoints_;
+        const double global_t = (static_cast<double>(swing_sub) + local_t) / 3.0;
+
+        auto angles = swingWaypoint(leg_id, global_t);
+
+        trajectory_msgs::msg::JointTrajectoryPoint pt;
+        pt.positions  = {angles[0], angles[1], angles[2]};
+        pt.velocities = {0.0, 0.0, 0.0};
+        pt.time_from_start = rclcpp::Duration::from_seconds(local_t * block_duration);
+        traj.points.push_back(pt);
+    }
+    return traj;
+}
+
+trajectory_msgs::msg::JointTrajectory
+TripodWalkNode::buildStanceTrajectory(int leg_id, double block_duration)
+{
+    trajectory_msgs::msg::JointTrajectory traj;
+    traj.joint_names = joint_names_[leg_id];
+
+    const int block      = locomotion_->getGaitBlock();
+    const int drag_start = (leg_id == 0 || leg_id == 2 || leg_id == 4) ? 3 : 0;
+    const int drag_sub   = block - drag_start;
+
+    for (int wp = 0; wp <= n_waypoints_; ++wp) {
+        const double local_t  = static_cast<double>(wp) / n_waypoints_;
+        const double global_t = (static_cast<double>(drag_sub) + local_t) / 3.0;
+
+        auto angles = stanceWaypoint(leg_id, global_t);
+
+        trajectory_msgs::msg::JointTrajectoryPoint pt;
+        pt.positions  = {angles[0], angles[1], angles[2]};
+        pt.velocities = {0.0, 0.0, 0.0};
+        pt.time_from_start = rclcpp::Duration::from_seconds(local_t * block_duration);
+        traj.points.push_back(pt);
+    }
+    return traj;
+}
+
+void TripodWalkNode::sendLegTrajectory(int leg_id, bool is_swing, double block_duration)
+{
+    auto traj = is_swing
+        ? buildSwingTrajectory(leg_id, block_duration)
+        : buildStanceTrajectory(leg_id, block_duration);
+
+    traj.header.stamp    = now();
+    traj.header.frame_id = base_frame_;
+
+    auto goal = FollowJointTrajectory::Goal();
+    goal.trajectory          = traj;
+    goal.goal_time_tolerance = rclcpp::Duration::from_seconds(0.5);
+
+    goal_active_[leg_id] = true;
+
+    auto send_opts = rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions();
+
+    send_opts.result_callback =
+        [this, leg_id](const GoalHandleFJT::WrappedResult & result) {
+            goal_active_[leg_id] = false;
+            if (result.code != rclcpp_action::ResultCode::SUCCEEDED) {
+                RCLCPP_WARN(get_logger(), "Leg %d trajectory did not succeed (code=%d)",
+                            leg_id, static_cast<int>(result.code));
+            }
+        };
+
+    send_opts.feedback_callback =
+        [](GoalHandleFJT::SharedPtr,
+           const std::shared_ptr<const FollowJointTrajectory::Feedback>) {};
+
+    action_clients_[leg_id]->async_send_goal(goal, send_opts);
 }
 
 void TripodWalkNode::sendStandUpTrajectory()
@@ -265,103 +420,6 @@ void TripodWalkNode::executeGaitBlock()
         if (goal_active_[leg]) continue;
         sendLegTrajectory(leg, locomotion_->isSwingPhase(leg), block_duration);
     }
-}
-
-std::array<double, 3> TripodWalkNode::computeSwingWaypoint(int leg_id, double global_t)
-{
-    double th1, th2, th3;
-    locomotion_->sampleSwingAtGlobalT(leg_id, global_t, th1, th2, th3);
-    return {th1, th2, th3};
-}
-
-std::array<double, 3> TripodWalkNode::computeStanceWaypoint(int leg_id, double global_t)
-{
-    double th1, th2, th3;
-    locomotion_->sampleDragAtGlobalT(leg_id, global_t, th1, th2, th3);
-    return {th1, th2, th3};
-}
-
-trajectory_msgs::msg::JointTrajectory
-TripodWalkNode::buildSwingTrajectory(int leg_id, double block_duration)
-{
-    trajectory_msgs::msg::JointTrajectory traj;
-    traj.joint_names = joint_names_[leg_id];
-
-    const int block       = locomotion_->getGaitBlock();
-    const int swing_start = (leg_id == 0 || leg_id == 2 || leg_id == 4) ? 0 : 3;
-    const int swing_sub   = block - swing_start;
-
-    for (int wp = 0; wp <= n_waypoints_; ++wp) {
-        const double local_t  = static_cast<double>(wp) / n_waypoints_;
-        const double global_t = (static_cast<double>(swing_sub) + local_t) / 3.0;
-
-        auto angles = computeSwingWaypoint(leg_id, global_t);
-
-        trajectory_msgs::msg::JointTrajectoryPoint pt;
-        pt.positions  = {angles[0], angles[1], angles[2]};
-        pt.velocities = {0.0, 0.0, 0.0};
-        pt.time_from_start = rclcpp::Duration::from_seconds(local_t * block_duration);
-        traj.points.push_back(pt);
-    }
-    return traj;
-}
-
-trajectory_msgs::msg::JointTrajectory
-TripodWalkNode::buildStanceTrajectory(int leg_id, double block_duration)
-{
-    trajectory_msgs::msg::JointTrajectory traj;
-    traj.joint_names = joint_names_[leg_id];
-
-    const int block      = locomotion_->getGaitBlock();
-    const int drag_start = (leg_id == 0 || leg_id == 2 || leg_id == 4) ? 3 : 0;
-    const int drag_sub   = block - drag_start;
-
-    for (int wp = 0; wp <= n_waypoints_; ++wp) {
-        const double local_t  = static_cast<double>(wp) / n_waypoints_;
-        const double global_t = (static_cast<double>(drag_sub) + local_t) / 3.0;
-
-        auto angles = computeStanceWaypoint(leg_id, global_t);
-
-        trajectory_msgs::msg::JointTrajectoryPoint pt;
-        pt.positions  = {angles[0], angles[1], angles[2]};
-        pt.velocities = {0.0, 0.0, 0.0};
-        pt.time_from_start = rclcpp::Duration::from_seconds(local_t * block_duration);
-        traj.points.push_back(pt);
-    }
-    return traj;
-}
-
-void TripodWalkNode::sendLegTrajectory(int leg_id, bool is_swing, double block_duration)
-{
-    auto traj = is_swing
-        ? buildSwingTrajectory(leg_id, block_duration)
-        : buildStanceTrajectory(leg_id, block_duration);
-
-    traj.header.stamp    = now();
-    traj.header.frame_id = base_frame_;
-
-    auto goal = FollowJointTrajectory::Goal();
-    goal.trajectory          = traj;
-    goal.goal_time_tolerance = rclcpp::Duration::from_seconds(0.5);
-
-    goal_active_[leg_id] = true;
-
-    auto send_opts = rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions();
-
-    send_opts.result_callback =
-        [this, leg_id](const GoalHandleFJT::WrappedResult & result) {
-            goal_active_[leg_id] = false;
-            if (result.code != rclcpp_action::ResultCode::SUCCEEDED) {
-                RCLCPP_WARN(get_logger(), "Leg %d trajectory did not succeed (code=%d)",
-                            leg_id, static_cast<int>(result.code));
-            }
-        };
-
-    send_opts.feedback_callback =
-        [](GoalHandleFJT::SharedPtr,
-           const std::shared_ptr<const FollowJointTrajectory::Feedback>) {};
-
-    action_clients_[leg_id]->async_send_goal(goal, send_opts);
 }
 
 }  // namespace vx01_locomotion_control
