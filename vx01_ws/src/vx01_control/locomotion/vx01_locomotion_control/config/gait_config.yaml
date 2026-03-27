@@ -2,7 +2,7 @@
 
 tripod_walk_node:
   ros__parameters:
-    use_sim_time: false
+    use_sim_time: true
 
     # Robot kinematics (mm)
     L1: 60.55
@@ -14,12 +14,13 @@ tripod_walk_node:
     # Home foot position in leg-local frame (mm)
     home_x: 130.0             # reach from coxa pivot along leg-local X
     home_y: 0.0               # lateral offset at neutral
-    home_z: -80.0             # height below coxa pivot (negative = down)
+    home_z: 80.0              # depth below coxa pivot (POSITIVE = downward in IK frame)
 
     # Gait parameters
-    step_length: 40.0         # full stride length (mm)
-    step_height: 25.0         # foot lift height (mm)
-    step_period: 1.2          # full 6-block gait cycle period (s)
+    step_length: 30.0         # full stride length (mm) — keep small for stability
+    step_height: 20.0         # foot lift height (mm)
+    step_period: 3.0          # full 6-block gait cycle period (s) — 0.5s per block
+    stand_duration: 2.0       # time (s) to smoothly move from spawn pose to home stance
 
     # Velocity scaling
     max_linear_vel: 0.15      # m/s
@@ -59,7 +60,7 @@ tripod_walk_node:
 
 teleop_node:
   ros__parameters:
-    use_sim_time: false
+    use_sim_time: true
     linear_step: 0.02         # m/s increment per key press
     angular_step: 0.1         # rad/s increment per key press
     max_linear_vel: 0.15

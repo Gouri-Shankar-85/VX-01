@@ -1,7 +1,6 @@
 #include "vx01_locomotion_control/tripod_walk_node.hpp"
 
-#include <geometry_msgs/msg/transform_stamped.hpp>
-#include <tf2/LinearMath/Quaternion.h>
+#include <sensor_msgs/msg/joint_state.hpp>
 #include <builtin_interfaces/msg/duration.hpp>
 
 #include <chrono>
@@ -21,37 +20,45 @@ TripodWalkNode::TripodWalkNode(const rclcpp::NodeOptions & options)
     initLocomotion();
     initTF();
     initActionClients();
+    initJointStateSubscriber();
 
     cmd_vel_sub_ = create_subscription<geometry_msgs::msg::Twist>(
         "/cmd_vel", 10,
         std::bind(&TripodWalkNode::cmdVelCallback, this, std::placeholders::_1));
 
     const double block_period = step_period_ / 6.0;
-    gait_timer_ = create_wall_timer(
-        std::chrono::duration<double>(block_period),
+    gait_timer_ = rclcpp::create_timer(
+        this, get_clock(),
+        rclcpp::Duration::from_seconds(block_period),
         std::bind(&TripodWalkNode::gaitCycleTimer, this));
+    gait_timer_->cancel();
 
-    locomotion_->stand();
-    RCLCPP_INFO(get_logger(), "TripodWalkNode ready — standing. Send /cmd_vel to walk.");
+    stand_up_timer_ = rclcpp::create_timer(
+        this, get_clock(),
+        rclcpp::Duration::from_seconds(2.0),
+        [this]() { stand_up_timer_->cancel(); sendStandUpTrajectory(); });
+
+    RCLCPP_INFO(get_logger(), "TripodWalkNode ready — moving to stand pose in 2s.");
 }
 
 void TripodWalkNode::declareParameters()
 {
-    declare_parameter("L1",                  60.55);
-    declare_parameter("L2",                  73.84);
-    declare_parameter("L3",                 112.16);
-    declare_parameter("body_radius",         105.66);
-    declare_parameter("beta_angle",          M_PI / 4.0);
-    declare_parameter("home_x",             130.0);
-    declare_parameter("home_y",               0.0);
-    declare_parameter("home_z",             -80.0);
-    declare_parameter("step_length",         40.0);
-    declare_parameter("step_height",         25.0);
-    declare_parameter("step_period",          1.2);
-    declare_parameter("max_linear_vel",       0.15);
-    declare_parameter("max_angular_vel",      0.5);
-    declare_parameter("trajectory_waypoints", 8);
-    declare_parameter("base_frame",          "base_link");
+    declare_parameter("L1",                   60.55);
+    declare_parameter("L2",                   73.84);
+    declare_parameter("L3",                  112.16);
+    declare_parameter("body_radius",          105.66);
+    declare_parameter("beta_angle",           M_PI / 4.0);
+    declare_parameter("home_x",              130.0);
+    declare_parameter("home_y",                0.0);
+    declare_parameter("home_z",               80.0);
+    declare_parameter("step_length",           30.0);
+    declare_parameter("step_height",           20.0);
+    declare_parameter("step_period",            3.0);
+    declare_parameter("stand_duration",         2.0);
+    declare_parameter("max_linear_vel",         0.15);
+    declare_parameter("max_angular_vel",        0.5);
+    declare_parameter("trajectory_waypoints",   8);
+    declare_parameter("base_frame",            "base_link");
 
     declare_parameter("leg_controller_names", std::vector<std::string>{
         "leg_0_controller","leg_1_controller","leg_2_controller",
@@ -72,21 +79,22 @@ void TripodWalkNode::declareParameters()
 
 void TripodWalkNode::loadParameters()
 {
-    L1_             = get_parameter("L1").as_double();
-    L2_             = get_parameter("L2").as_double();
-    L3_             = get_parameter("L3").as_double();
-    body_radius_    = get_parameter("body_radius").as_double();
-    beta_angle_     = get_parameter("beta_angle").as_double();
-    home_x_         = get_parameter("home_x").as_double();
-    home_y_         = get_parameter("home_y").as_double();
-    home_z_         = get_parameter("home_z").as_double();
-    step_length_    = get_parameter("step_length").as_double();
-    step_height_    = get_parameter("step_height").as_double();
-    step_period_    = get_parameter("step_period").as_double();
-    max_linear_vel_ = get_parameter("max_linear_vel").as_double();
-    max_angular_vel_= get_parameter("max_angular_vel").as_double();
-    n_waypoints_    = get_parameter("trajectory_waypoints").as_int();
-    base_frame_     = get_parameter("base_frame").as_string();
+    L1_              = get_parameter("L1").as_double();
+    L2_              = get_parameter("L2").as_double();
+    L3_              = get_parameter("L3").as_double();
+    body_radius_     = get_parameter("body_radius").as_double();
+    beta_angle_      = get_parameter("beta_angle").as_double();
+    home_x_          = get_parameter("home_x").as_double();
+    home_y_          = get_parameter("home_y").as_double();
+    home_z_          = get_parameter("home_z").as_double();
+    step_length_     = get_parameter("step_length").as_double();
+    step_height_     = get_parameter("step_height").as_double();
+    step_period_     = get_parameter("step_period").as_double();
+    stand_duration_  = get_parameter("stand_duration").as_double();
+    max_linear_vel_  = get_parameter("max_linear_vel").as_double();
+    max_angular_vel_ = get_parameter("max_angular_vel").as_double();
+    n_waypoints_     = get_parameter("trajectory_waypoints").as_int();
+    base_frame_      = get_parameter("base_frame").as_string();
 
     auto ctrl_names = get_parameter("leg_controller_names").as_string_array();
     auto cxframes   = get_parameter("coxa_frames").as_string_array();
@@ -97,6 +105,8 @@ void TripodWalkNode::loadParameters()
         joint_names_[i]      = get_parameter(
             "leg_joint_names." + std::to_string(i)).as_string_array();
     }
+
+    for (int i = 0; i < 18; ++i) current_joint_state_[i] = 0.0;
 }
 
 void TripodWalkNode::initLocomotion()
@@ -106,13 +116,13 @@ void TripodWalkNode::initLocomotion()
         body_radius_, beta_angle_,
         home_x_, home_y_, home_z_,
         step_length_, step_height_, step_period_);
+    locomotion_->stand();
 }
 
 void TripodWalkNode::initTF()
 {
-    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
-    tf_buffer_      = std::make_shared<tf2_ros::Buffer>(get_clock());
-    tf_listener_    = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    tf_buffer_   = std::make_shared<tf2_ros::Buffer>(get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 }
 
 void TripodWalkNode::initActionClients()
@@ -133,9 +143,94 @@ void TripodWalkNode::initActionClients()
     RCLCPP_INFO(get_logger(), "All action servers connected.");
 }
 
+void TripodWalkNode::initJointStateSubscriber()
+{
+    joint_state_sub_ = create_subscription<sensor_msgs::msg::JointState>(
+        "/joint_states", 10,
+        std::bind(&TripodWalkNode::jointStateCallback, this, std::placeholders::_1));
+}
+
+void TripodWalkNode::jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg)
+{
+    for (size_t k = 0; k < msg->name.size(); ++k) {
+        for (int leg = 0; leg < 6; ++leg) {
+            for (int j = 0; j < 3; ++j) {
+                if (msg->name[k] == joint_names_[leg][j]) {
+                    current_joint_state_[leg * 3 + j] = msg->position[k];
+                }
+            }
+        }
+    }
+    joint_state_received_ = true;
+}
+
+void TripodWalkNode::sendStandUpTrajectory()
+{
+    if (!joint_state_received_) {
+        RCLCPP_WARN(get_logger(), "No joint states yet — retrying stand-up in 1s.");
+        stand_up_timer_ = rclcpp::create_timer(
+            this, get_clock(), rclcpp::Duration::from_seconds(1.0),
+            [this]() { stand_up_timer_->cancel(); sendStandUpTrajectory(); });
+        return;
+    }
+
+    locomotion_->stand();
+    const auto home_angles = locomotion_->getJointAngles();
+
+    RCLCPP_INFO(get_logger(), "Sending stand-up trajectory (%.1fs).", stand_duration_);
+
+    auto stand_done = std::make_shared<int>(0);
+
+    for (int leg = 0; leg < 6; ++leg) {
+        trajectory_msgs::msg::JointTrajectory traj;
+        traj.header.stamp    = now();
+        traj.header.frame_id = base_frame_;
+        traj.joint_names     = joint_names_[leg];
+
+        trajectory_msgs::msg::JointTrajectoryPoint p0, p1;
+
+        p0.positions  = {current_joint_state_[leg*3+0],
+                         current_joint_state_[leg*3+1],
+                         current_joint_state_[leg*3+2]};
+        p0.velocities = {0.0, 0.0, 0.0};
+        p0.time_from_start = rclcpp::Duration::from_seconds(0.0);
+
+        p1.positions  = {home_angles[leg*3+0],
+                         home_angles[leg*3+1],
+                         home_angles[leg*3+2]};
+        p1.velocities = {0.0, 0.0, 0.0};
+        p1.time_from_start = rclcpp::Duration::from_seconds(stand_duration_);
+
+        traj.points = {p0, p1};
+
+        auto goal = FollowJointTrajectory::Goal();
+        goal.trajectory          = traj;
+        goal.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
+
+        goal_active_[leg] = true;
+        auto send_opts    = rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions();
+
+        send_opts.result_callback =
+            [this, leg, stand_done](const GoalHandleFJT::WrappedResult & result) {
+                goal_active_[leg] = false;
+                if (result.code != rclcpp_action::ResultCode::SUCCEEDED) {
+                    RCLCPP_WARN(get_logger(), "Stand-up leg %d failed (code=%d)",
+                                leg, static_cast<int>(result.code));
+                }
+                (*stand_done)++;
+                if (*stand_done == 6) {
+                    RCLCPP_INFO(get_logger(), "Stand pose reached. Ready to walk.");
+                    gait_timer_->reset();
+                }
+            };
+
+        action_clients_[leg]->async_send_goal(goal, send_opts);
+    }
+}
+
 void TripodWalkNode::cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
-    const double speed = std::hypot(msg->linear.x, msg->linear.y);
+    const double speed    = std::hypot(msg->linear.x, msg->linear.y);
     const bool any_motion = speed > 1e-3 || std::abs(msg->angular.z) > 1e-3;
 
     cmd_vx_    = std::clamp(msg->linear.x,  -max_linear_vel_,  max_linear_vel_);
@@ -158,10 +253,7 @@ void TripodWalkNode::cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr m
 
 void TripodWalkNode::gaitCycleTimer()
 {
-    broadcastLegFrames();
-
     if (!walking_) return;
-
     executeGaitBlock();
     locomotion_->update(step_period_ / 6.0);
 }
@@ -169,42 +261,23 @@ void TripodWalkNode::gaitCycleTimer()
 void TripodWalkNode::executeGaitBlock()
 {
     const double block_duration = step_period_ / 6.0;
-
     for (int leg = 0; leg < 6; ++leg) {
         if (goal_active_[leg]) continue;
-
-        bool is_swing = locomotion_->isSwingPhase(leg);
-        sendLegTrajectory(leg, is_swing, block_duration);
+        sendLegTrajectory(leg, locomotion_->isSwingPhase(leg), block_duration);
     }
 }
 
-void TripodWalkNode::scaledFootTarget(int leg_id, double& foot_x, double& foot_y) const
-{
-    const double speed  = std::hypot(cmd_vx_, cmd_vy_);
-    const double scale  = (max_linear_vel_ > 1e-9) ? (speed / max_linear_vel_) : 0.0;
-    const double dir    = std::atan2(cmd_vy_, cmd_vx_);
-
-    const double& rot_ang = locomotion_->isSwingPhase(leg_id) ? dir : dir;
-
-    foot_x = home_x_ + scale * step_length_ * 0.5 * std::cos(rot_ang - locomotion_->isSwingPhase(leg_id));
-    foot_y = home_y_ + scale * step_length_ * 0.5 * std::sin(rot_ang);
-
-    (void)leg_id;
-    foot_x = home_x_;
-    foot_y = home_y_;
-}
-
-std::array<double, 3> TripodWalkNode::computeSwingWaypoint(int leg_id, double t_norm)
+std::array<double, 3> TripodWalkNode::computeSwingWaypoint(int leg_id, double global_t)
 {
     double th1, th2, th3;
-    locomotion_->sampleSwingAtGlobalT(leg_id, t_norm, th1, th2, th3);
+    locomotion_->sampleSwingAtGlobalT(leg_id, global_t, th1, th2, th3);
     return {th1, th2, th3};
 }
 
-std::array<double, 3> TripodWalkNode::computeStanceWaypoint(int leg_id, double t_norm)
+std::array<double, 3> TripodWalkNode::computeStanceWaypoint(int leg_id, double global_t)
 {
     double th1, th2, th3;
-    locomotion_->sampleDragAtGlobalT(leg_id, t_norm, th1, th2, th3);
+    locomotion_->sampleDragAtGlobalT(leg_id, global_t, th1, th2, th3);
     return {th1, th2, th3};
 }
 
@@ -214,7 +287,7 @@ TripodWalkNode::buildSwingTrajectory(int leg_id, double block_duration)
     trajectory_msgs::msg::JointTrajectory traj;
     traj.joint_names = joint_names_[leg_id];
 
-    const int block = locomotion_->getGaitBlock();
+    const int block       = locomotion_->getGaitBlock();
     const int swing_start = (leg_id == 0 || leg_id == 2 || leg_id == 4) ? 0 : 3;
     const int swing_sub   = block - swing_start;
 
@@ -227,9 +300,7 @@ TripodWalkNode::buildSwingTrajectory(int leg_id, double block_duration)
         trajectory_msgs::msg::JointTrajectoryPoint pt;
         pt.positions  = {angles[0], angles[1], angles[2]};
         pt.velocities = {0.0, 0.0, 0.0};
-
-        const double time_sec = local_t * block_duration;
-        pt.time_from_start = rclcpp::Duration::from_seconds(time_sec);
+        pt.time_from_start = rclcpp::Duration::from_seconds(local_t * block_duration);
         traj.points.push_back(pt);
     }
     return traj;
@@ -254,9 +325,7 @@ TripodWalkNode::buildStanceTrajectory(int leg_id, double block_duration)
         trajectory_msgs::msg::JointTrajectoryPoint pt;
         pt.positions  = {angles[0], angles[1], angles[2]};
         pt.velocities = {0.0, 0.0, 0.0};
-
-        const double time_sec = local_t * block_duration;
-        pt.time_from_start = rclcpp::Duration::from_seconds(time_sec);
+        pt.time_from_start = rclcpp::Duration::from_seconds(local_t * block_duration);
         traj.points.push_back(pt);
     }
     return traj;
@@ -272,8 +341,7 @@ void TripodWalkNode::sendLegTrajectory(int leg_id, bool is_swing, double block_d
     traj.header.frame_id = base_frame_;
 
     auto goal = FollowJointTrajectory::Goal();
-    goal.trajectory = traj;
-
+    goal.trajectory          = traj;
     goal.goal_time_tolerance = rclcpp::Duration::from_seconds(0.5);
 
     goal_active_[leg_id] = true;
@@ -294,47 +362,6 @@ void TripodWalkNode::sendLegTrajectory(int leg_id, bool is_swing, double block_d
            const std::shared_ptr<const FollowJointTrajectory::Feedback>) {};
 
     action_clients_[leg_id]->async_send_goal(goal, send_opts);
-}
-
-void TripodWalkNode::broadcastLegFrames()
-{
-    const auto now_stamp = get_clock()->now();
-
-    const double b = beta_angle_;
-    const std::array<double, 6> leg_angles = {0.0, b, 2.0*b, M_PI, -2.0*b, -b};
-
-    const std::array<double, 6> coxa_x = {
-        -0.0013383,  0.1215,   0.1215,
-        -0.0013383, -0.12417, -0.12417};
-    const std::array<double, 6> coxa_y = {
-        -0.10566, -0.062844,  0.062824,
-         0.10564,  0.062824, -0.062844};
-    const std::array<double, 6> coxa_z = {
-         0.0696,  0.0696,  0.0696,
-         0.0696,  0.0696,  0.0696};
-    const std::array<double, 6> coxa_yaw = {
-        -M_PI_2, -M_PI_4,  M_PI_4,
-         M_PI_2,  2.392,  -2.3562};
-
-    for (int i = 0; i < 6; ++i) {
-        geometry_msgs::msg::TransformStamped tf_msg;
-        tf_msg.header.stamp    = now_stamp;
-        tf_msg.header.frame_id = base_frame_;
-        tf_msg.child_frame_id  = coxa_frames_[i];
-
-        tf_msg.transform.translation.x = coxa_x[i];
-        tf_msg.transform.translation.y = coxa_y[i];
-        tf_msg.transform.translation.z = coxa_z[i];
-
-        tf2::Quaternion q;
-        q.setRPY(0.0, 0.0, coxa_yaw[i]);
-        tf_msg.transform.rotation.x = q.x();
-        tf_msg.transform.rotation.y = q.y();
-        tf_msg.transform.rotation.z = q.z();
-        tf_msg.transform.rotation.w = q.w();
-
-        tf_broadcaster_->sendTransform(tf_msg);
-    }
 }
 
 }  // namespace vx01_locomotion_control

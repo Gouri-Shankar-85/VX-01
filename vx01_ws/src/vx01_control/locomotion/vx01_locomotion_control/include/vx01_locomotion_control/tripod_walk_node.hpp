@@ -3,7 +3,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <geometry_msgs/msg/twist.hpp>
-#include <tf2_ros/transform_broadcaster.h>
+#include <sensor_msgs/msg/joint_state.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <control_msgs/action/follow_joint_trajectory.hpp>
@@ -11,7 +11,6 @@
 #include <trajectory_msgs/msg/joint_trajectory_point.hpp>
 
 #include "vx01_hexapod_locomotion/hexapod_locomotion.hpp"
-#include "vx01_hexapod_locomotion/control/leg_controller.hpp"
 
 #include <vector>
 #include <string>
@@ -33,10 +32,14 @@ private:
     void initLocomotion();
     void initActionClients();
     void initTF();
+    void initJointStateSubscriber();
+
+    void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg);
     void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
 
     void gaitCycleTimer();
     void executeGaitBlock();
+    void sendStandUpTrajectory();
 
     void sendLegTrajectory(int leg_id, bool is_swing, double block_duration);
 
@@ -45,29 +48,28 @@ private:
     trajectory_msgs::msg::JointTrajectory buildStanceTrajectory(
         int leg_id, double block_duration);
 
-    void broadcastLegFrames();
-    void scaledFootTarget(int leg_id, double& foot_x, double& foot_y) const;
-
-    std::array<double, 3> computeSwingWaypoint(int leg_id, double t_norm);
-    std::array<double, 3> computeStanceWaypoint(int leg_id, double t_norm);
+    std::array<double, 3> computeSwingWaypoint(int leg_id, double global_t);
+    std::array<double, 3> computeStanceWaypoint(int leg_id, double global_t);
 
     std::shared_ptr<vx01_hexapod_locomotion::HexapodLocomotion> locomotion_;
 
-    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
+    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr    cmd_vel_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub_;
     rclcpp::TimerBase::SharedPtr gait_timer_;
+    rclcpp::TimerBase::SharedPtr stand_up_timer_;
 
     std::array<rclcpp_action::Client<FollowJointTrajectory>::SharedPtr, 6> action_clients_;
     std::array<std::vector<std::string>, 6> joint_names_;
-    std::array<std::string, 6>             controller_names_;
+    std::array<std::string, 6>              controller_names_;
 
-    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-    std::shared_ptr<tf2_ros::Buffer>               tf_buffer_;
-    std::shared_ptr<tf2_ros::TransformListener>    tf_listener_;
+    std::shared_ptr<tf2_ros::Buffer>            tf_buffer_;
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
     double L1_, L2_, L3_;
     double body_radius_, beta_angle_;
     double home_x_, home_y_, home_z_;
     double step_length_, step_height_, step_period_;
+    double stand_duration_;
     double max_linear_vel_, max_angular_vel_;
     int    n_waypoints_;
     std::string base_frame_;
@@ -75,8 +77,9 @@ private:
 
     double cmd_vx_{0.0}, cmd_vy_{0.0}, cmd_omega_{0.0};
     bool   walking_{false};
-    int    current_block_{0};
-    std::array<bool, 6> goal_active_{};
+    std::array<bool, 6>   goal_active_{};
+    std::array<double, 18> current_joint_state_{};
+    bool   joint_state_received_{false};
 };
 
 }  // namespace vx01_locomotion_control
