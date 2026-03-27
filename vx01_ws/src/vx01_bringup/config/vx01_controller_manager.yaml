@@ -30,13 +30,11 @@ controller_manager:
       type: joint_trajectory_controller/JointTrajectoryController
 
 
-# ── Joint State Broadcaster ────────────────────────────────────────────────
 joint_state_broadcaster:
   ros__parameters:
     use_sim_time: true
 
 
-# ── Leg 0 Controller ───────────────────────────────────────────────────────
 leg_0_controller:
   ros__parameters:
     use_sim_time: true
@@ -48,7 +46,6 @@ leg_0_controller:
       - position
     state_interfaces:
       - position
-      
     state_publish_rate: 50.0
     action_monitor_rate: 20.0
     allow_partial_joints_goal: false
@@ -56,12 +53,11 @@ leg_0_controller:
     constraints:
       stopped_velocity_tolerance: 0.1
       goal_time: 0.0
-      coxa_leg0_joint:  { trajectory: 1.0, goal: 0.8 }
-      femur_leg0_joint: { trajectory: 1.0, goal: 0.8 }
-      tibia_leg0_joint: { trajectory: 1.0, goal: 0.8 }
+      coxa_leg0_joint:  { trajectory: 1.5, goal: 0.8 }
+      femur_leg0_joint: { trajectory: 1.5, goal: 0.8 }
+      tibia_leg0_joint: { trajectory: 1.5, goal: 0.8 }
 
 
-# ── Leg 1 Controller ───────────────────────────────────────────────────────
 leg_1_controller:
   ros__parameters:
     use_sim_time: true
@@ -73,7 +69,6 @@ leg_1_controller:
       - position
     state_interfaces:
       - position
-      
     state_publish_rate: 50.0
     action_monitor_rate: 20.0
     allow_partial_joints_goal: false
@@ -81,12 +76,11 @@ leg_1_controller:
     constraints:
       stopped_velocity_tolerance: 0.1
       goal_time: 0.0
-      coxa_leg1_joint:  { trajectory: 1.0, goal: 0.8 }
-      femur_leg1_joint: { trajectory: 1.0, goal: 0.8 }
-      tibia_leg1_joint: { trajectory: 1.0, goal: 0.8 }
+      coxa_leg1_joint:  { trajectory: 1.5, goal: 0.8 }
+      femur_leg1_joint: { trajectory: 1.5, goal: 0.8 }
+      tibia_leg1_joint: { trajectory: 1.5, goal: 0.8 }
 
 
-# ── Leg 2 Controller ───────────────────────────────────────────────────────
 leg_2_controller:
   ros__parameters:
     use_sim_time: true
@@ -98,7 +92,6 @@ leg_2_controller:
       - position
     state_interfaces:
       - position
-      
     state_publish_rate: 50.0
     action_monitor_rate: 20.0
     allow_partial_joints_goal: false
@@ -106,12 +99,11 @@ leg_2_controller:
     constraints:
       stopped_velocity_tolerance: 0.1
       goal_time: 0.0
-      coxa_leg2_joint:  { trajectory: 1.0, goal: 0.8 }
-      femur_leg2_joint: { trajectory: 1.0, goal: 0.8 }
-      tibia_leg2_joint: { trajectory: 1.0, goal: 0.8 }
+      coxa_leg2_joint:  { trajectory: 1.5, goal: 0.8 }
+      femur_leg2_joint: { trajectory: 1.5, goal: 0.8 }
+      tibia_leg2_joint: { trajectory: 1.5, goal: 0.8 }
 
 
-# ── Leg 3 Controller ───────────────────────────────────────────────────────
 leg_3_controller:
   ros__parameters:
     use_sim_time: true
@@ -123,7 +115,6 @@ leg_3_controller:
       - position
     state_interfaces:
       - position
-      
     state_publish_rate: 50.0
     action_monitor_rate: 20.0
     allow_partial_joints_goal: false
@@ -131,12 +122,11 @@ leg_3_controller:
     constraints:
       stopped_velocity_tolerance: 0.1
       goal_time: 0.0
-      coxa_leg3_joint:  { trajectory: 1.0, goal: 0.8 }
-      femur_leg3_joint: { trajectory: 1.0, goal: 0.8 }
-      tibia_leg3_joint: { trajectory: 1.0, goal: 0.8 }
+      coxa_leg3_joint:  { trajectory: 1.5, goal: 0.8 }
+      femur_leg3_joint: { trajectory: 1.5, goal: 0.8 }
+      tibia_leg3_joint: { trajectory: 1.5, goal: 0.8 }
 
 
-# ── Leg 4 Controller ───────────────────────────────────────────────────────
 leg_4_controller:
   ros__parameters:
     use_sim_time: true
@@ -148,7 +138,6 @@ leg_4_controller:
       - position
     state_interfaces:
       - position
-      
     state_publish_rate: 50.0
     action_monitor_rate: 20.0
     allow_partial_joints_goal: false
@@ -156,12 +145,11 @@ leg_4_controller:
     constraints:
       stopped_velocity_tolerance: 0.1
       goal_time: 0.0
-      coxa_leg4_joint:  { trajectory: 1.0, goal: 0.8 }
-      femur_leg4_joint: { trajectory: 1.0, goal: 0.8 }
-      tibia_leg4_joint: { trajectory: 1.0, goal: 0.8 }
+      coxa_leg4_joint:  { trajectory: 1.5, goal: 0.8 }
+      femur_leg4_joint: { trajectory: 1.5, goal: 0.8 }
+      tibia_leg4_joint: { trajectory: 1.5, goal: 0.8 }
 
 
-# ── Leg 5 Controller ───────────────────────────────────────────────────────
 leg_5_controller:
   ros__parameters:
     use_sim_time: true
@@ -173,7 +161,6 @@ leg_5_controller:
       - position
     state_interfaces:
       - position
-      
     state_publish_rate: 50.0
     action_monitor_rate: 20.0
     allow_partial_joints_goal: false
@@ -181,12 +168,11 @@ leg_5_controller:
     constraints:
       stopped_velocity_tolerance: 0.1
       goal_time: 0.0
-      coxa_leg5_joint:  { trajectory: 1.0, goal: 0.8 }
-      femur_leg5_joint: { trajectory: 1.0, goal: 0.8 }
-      tibia_leg5_joint: { trajectory: 1.0, goal: 0.8 }
+      coxa_leg5_joint:  { trajectory: 1.5, goal: 0.8 }
+      femur_leg5_joint: { trajectory: 1.5, goal: 0.8 }
+      tibia_leg5_joint: { trajectory: 1.5, goal: 0.8 }
 
 
-# ── Drone Arm Controller ───────────────────────────────────────────────────
 drone_arm_controller:
   ros__parameters:
     use_sim_time: true

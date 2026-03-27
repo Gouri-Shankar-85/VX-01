@@ -48,9 +48,9 @@ void TripodWalkNode::declareParameters()
     declare_parameter("L3",                  112.16);
     declare_parameter("body_radius",          105.66);
     declare_parameter("beta_angle",           M_PI / 4.0);
-    declare_parameter("home_x",              130.0);
+    declare_parameter("home_x",              223.03);
     declare_parameter("home_y",                0.0);
-    declare_parameter("home_z",               80.0);
+    declare_parameter("home_z",              -72.82);
     declare_parameter("step_length",           30.0);
     declare_parameter("step_height",           20.0);
     declare_parameter("step_period",            3.0);

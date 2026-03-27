@@ -1,13 +1,4 @@
 # vx01_locomotion_control gait_config.yaml
-#
-# NOTE: If stand-up fails with "State tolerance violation" on any leg,
-# increase trajectory tolerance in vx01_controller_manager.yaml:
-#   constraints:
-#     stopped_velocity_tolerance: 0.1
-#     goal_time: 0.0
-#     coxa_legN_joint:  { trajectory: 1.5, goal: 0.1 }   # was 1.0
-#     femur_legN_joint: { trajectory: 1.5, goal: 0.1 }
-#     tibia_legN_joint: { trajectory: 1.5, goal: 0.1 }
 
 tripod_walk_node:
   ros__parameters:
@@ -17,19 +8,18 @@ tripod_walk_node:
     L1: 60.55
     L2: 73.84
     L3: 112.16
-    body_radius: 105.66       # distance from body centre to coxa pivot (mm)
-    beta_angle: 0.7854        # leg mounting angular spacing (rad) — pi/4 between adjacent legs
+    body_radius: 105.66      
+    beta_angle: 0.7854        
 
-    # Home foot position in leg-local frame (mm)
-    home_x: 130.0             # reach from coxa pivot along leg-local X
-    home_y: 0.0               # lateral offset at neutral
-    home_z: 80.0              # depth below coxa pivot (POSITIVE = downward in IK frame)
+    home_x: 223.03
+    home_y: 0.0
+    home_z: -72.82
 
     # Gait parameters
-    step_length: 30.0         # full stride length (mm) — keep small for stability
-    step_height: 20.0         # foot lift height (mm)
-    step_period: 3.0          # full 6-block gait cycle period (s) — 0.5s per block
-    stand_duration: 3.0       # time (s) to smoothly move from spawn pose to home stance
+    step_length: 40.0         
+    step_height: 20.0         
+    step_period: 3.0          
+    stand_duration: 3.0      
 
     # Velocity scaling
     max_linear_vel: 0.15      # m/s
