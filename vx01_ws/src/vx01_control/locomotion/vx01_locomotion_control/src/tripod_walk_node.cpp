@@ -54,7 +54,7 @@ void TripodWalkNode::declareParameters()
     declare_parameter("step_length",           30.0);
     declare_parameter("step_height",           20.0);
     declare_parameter("step_period",            3.0);
-    declare_parameter("stand_duration",         2.0);
+    declare_parameter("stand_duration",         3.0);
     declare_parameter("max_linear_vel",         0.15);
     declare_parameter("max_angular_vel",        0.5);
     declare_parameter("trajectory_waypoints",   8);
@@ -205,7 +205,7 @@ void TripodWalkNode::sendStandUpTrajectory()
 
         auto goal = FollowJointTrajectory::Goal();
         goal.trajectory          = traj;
-        goal.goal_time_tolerance = rclcpp::Duration::from_seconds(1.0);
+        goal.goal_time_tolerance = rclcpp::Duration::from_seconds(2.0);
 
         goal_active_[leg] = true;
         auto send_opts    = rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions();
