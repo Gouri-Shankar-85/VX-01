@@ -234,26 +234,46 @@ export default function Dashboard() {
 
   const forceArm = () => {
     if (!rosRef.current || !rosConnected) return;
-    // Step 1: Set ARMING_CHECK=0
     const paramSet = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/param/set", serviceType: "mavros_msgs/srv/ParamSet" });
+    const modeSvc  = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode",  serviceType: "mavros_msgs/srv/SetMode" });
+    const armSvc   = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
+
+    // Step 1: Bypass all arming checks
     paramSet.callService(new ROSLIB.ServiceRequest({ param_id: "ARMING_CHECK", value: { integer: 0, real: 0.0 } }), () => {
-      addLog("WARN", "ARMING_CHECK bypassed");
-      // Step 2: Set GUIDED mode
-      setTimeout(() => {
-        const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode", serviceType: "mavros_msgs/srv/SetMode" });
-        modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "GUIDED" }), () => {
-          addLog("INFO", "Mode: GUIDED");
-          // Step 3: Arm
-          setTimeout(() => {
-            const armSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
-            armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), (res) => {
-              addLog(res && res.success ? "INFO" : "WARN", res && res.success ? "Armed successfully" : "Arm failed — try again");
-            });
-          }, 500);
-        });
-      }, 300);
+      addLog("WARN", "ARMING_CHECK=0 set");
+
+      // Step 2: Also disable EKF failsafe (stops drone from disarming on EKF errors)
+      paramSet.callService(new ROSLIB.ServiceRequest({ param_id: "FS_EKF_ACTION", value: { integer: 0, real: 0.0 } }), () => {
+        addLog("INFO", "EKF failsafe disabled");
+
+        // Step 3: STABILIZE mode — does NOT require position estimate
+        setTimeout(() => {
+          modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "STABILIZE" }), () => {
+            addLog("INFO", "Mode: STABILIZE");
+
+            // Step 4: ARM in STABILIZE (always works without GPS)
+            setTimeout(() => {
+              armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), (res) => {
+                if (res && res.success) {
+                  addLog("INFO", "Armed in STABILIZE ✓");
+
+                  // Step 5: Switch to GUIDED for velocity control (after armed)
+                  setTimeout(() => {
+                    modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "GUIDED" }), () => {
+                      addLog("INFO", "Mode: GUIDED — ready for velocity commands");
+                    });
+                  }, 1000);
+                } else {
+                  addLog("ERROR", "Arm failed. Check FCU logs.");
+                }
+              });
+            }, 500);
+          });
+        }, 300);
+      });
     });
   };
+
 
   const backendLaunch = async (command_id, command_string) => {
     try {
