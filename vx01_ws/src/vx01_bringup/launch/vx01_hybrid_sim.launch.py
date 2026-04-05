@@ -18,7 +18,7 @@ def generate_launch_description():
         )
     )
 
-    # Launch ArduPilot SITL binary directly
+    # Launch ArduPilot SITL binary directly with native UDP output
     sitl_layer = ExecuteProcess(
         cmd=[
             '/ardupilot/build/sitl/bin/arducopter', 
@@ -28,25 +28,14 @@ def generate_launch_description():
             '--slave', '0', 
             '--defaults', '/ardupilot/Tools/autotest/default_params/copter.parm,/ardupilot/Tools/autotest/default_params/gazebo-iris.parm', 
             '--sim-address=127.0.0.1', 
-            '-I0'
+            '-I0',
+            '-A', 'udp:127.0.0.1:14550'
         ],
         cwd='/ardupilot/ArduCopter',
         output='screen'
     )
 
-    # MAVProxy router to handle connection backpressure
-    mavproxy_layer = ExecuteProcess(
-        cmd=[
-            'mavproxy.py',
-            '--master=tcp:127.0.0.1:5760',
-            '--out=udp:127.0.0.1:14550',
-            '--daemon',
-            '--nowait'
-        ],
-        output='screen'
-    )
-
-    # Launch MAVROS connecting to MAVProxy
+    # Launch MAVROS connecting directly to ArduCopter native UDP
     mavros_node = Node(
         package='mavros',
         executable='mavros_node',
@@ -77,10 +66,6 @@ def generate_launch_description():
     return LaunchDescription([
         sim_launch,
         sitl_layer,
-        TimerAction(
-            period=5.0,
-            actions=[mavproxy_layer]
-        ),
         TimerAction(
             period=10.0,
             actions=[mavros_node, mode_manager, aerial_controller]
