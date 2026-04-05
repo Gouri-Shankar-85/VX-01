@@ -8,6 +8,7 @@ export default function Dashboard() {
   const [tab, setTab] = useState("dashboard");
   const [activeRobot, setActiveRobot] = useState("VX-01");
   const [rosConnected, setRosConnected] = useState(false);
+  const [robotActive, setRobotActive] = useState(false);
 
   const [telemetry, setTelemetry] = useState({
     battery: "--",
@@ -17,15 +18,19 @@ export default function Dashboard() {
     speed: "--",
     cpu: "--",
     mode: "--",
+    mission_phase: "--",
+    victims: 0,
+    terrain: "--",
+    walkability: "--",
+    robot_mode: "--",
   });
 
   const [logs, setLogs] = useState([]);
   const rosRef = useRef(null);
+  const robotTimeoutRef = useRef(null);
 
   const robots = [
-    { name: "VX-01", status: "online" },
-    { name: "VX-02", status: "offline" },
-    { name: "VX-03", status: "online" },
+    { name: "VX-01", status: robotActive ? "online" : "offline" },
   ];
 
   const addLog = (level, msg) => {
@@ -43,10 +48,13 @@ export default function Dashboard() {
     });
     ros.on("error", () => {
       setRosConnected(false);
+      setRobotActive(false);
       addLog("ERROR", "Rosbridge connection error");
     });
     ros.on("close", () => {
       setRosConnected(false);
+      setRobotActive(false);
+      if (robotTimeoutRef.current) clearTimeout(robotTimeoutRef.current);
       addLog("WARN", "Rosbridge disconnected — retrying...");
     });
 
@@ -96,7 +104,55 @@ export default function Dashboard() {
       messageType: "mavros_msgs/State",
     });
     state.subscribe((msg) => {
+      setRobotActive(true);
+      if (robotTimeoutRef.current) clearTimeout(robotTimeoutRef.current);
+      robotTimeoutRef.current = setTimeout(() => setRobotActive(false), 2000);
       setTelemetry((t) => ({ ...t, mode: msg.mode }));
+    });
+
+    const missionState = new ROSLIB.Topic({
+      ros,
+      name: "/mission_state",
+      messageType: "vx01_msgs/msg/MissionState",
+    });
+    missionState.subscribe((msg) => {
+      setTelemetry((t) => ({ ...t, mission_phase: msg.mission_phase }));
+    });
+
+    const victimDet = new ROSLIB.Topic({
+      ros,
+      name: "/victim_detections",
+      messageType: "vx01_msgs/msg/VictimArray",
+    });
+    victimDet.subscribe((msg) => {
+      setTelemetry((t) => ({ ...t, victims: msg.victims.length }));
+    });
+
+    const terrainType = new ROSLIB.Topic({
+      ros,
+      name: "/terrain_type",
+      messageType: "vx01_msgs/msg/Terrain",
+    });
+    terrainType.subscribe((msg) => {
+      setTelemetry((t) => ({ ...t, terrain: msg.terrain_type }));
+    });
+
+    const walkScore = new ROSLIB.Topic({
+      ros,
+      name: "/walkability_score",
+      messageType: "vx01_msgs/msg/Walkability",
+    });
+    walkScore.subscribe((msg) => {
+      setTelemetry((t) => ({ ...t, walkability: `${(msg.score * 100).toFixed(0)}%` }));
+    });
+
+    const robotModeTopic = new ROSLIB.Topic({
+      ros,
+      name: "/robot_mode",
+      messageType: "vx01_msgs/msg/RobotMode",
+    });
+    robotModeTopic.subscribe((msg) => {
+      setTelemetry((t) => ({ ...t, robot_mode: msg.mode }));
     });
 
     const rosout = new ROSLIB.Topic({
@@ -114,24 +170,40 @@ export default function Dashboard() {
       gps.unsubscribe();
       velocity.unsubscribe();
       state.unsubscribe();
+      missionState.unsubscribe();
+      victimDet.unsubscribe();
+      terrainType.unsubscribe();
+      walkScore.unsubscribe();
+      robotModeTopic.unsubscribe();
       rosout.unsubscribe();
       ros.close();
+      if (robotTimeoutRef.current) clearTimeout(robotTimeoutRef.current);
     };
   }, []);
 
-  const sendCmd = (linear, angular) => {
+  const sendCmd = (lx, ly, az) => {
     if (!rosRef.current || !rosConnected) return;
     const cmdVel = new ROSLIB.Topic({
       ros: rosRef.current,
       name: "/cmd_vel",
-      messageType: "geometry_msgs/Twist",
+      messageType: "geometry_msgs/msg/Twist",
     });
     cmdVel.publish(
       new ROSLIB.Message({
-        linear: { x: linear, y: 0, z: 0 },
-        angular: { x: 0, y: 0, z: angular },
+        linear: { x: lx, y: ly, z: 0 },
+        angular: { x: 0, y: 0, z: az },
       })
     );
+  };
+
+  const sendOperatorCmd = (cmd) => {
+    if (!rosRef.current || !rosConnected) return;
+    const cmdTopic = new ROSLIB.Topic({
+      ros: rosRef.current,
+      name: "/operator_command",
+      messageType: "std_msgs/msg/String",
+    });
+    cmdTopic.publish(new ROSLIB.Message({ data: cmd }));
   };
 
   const callService = (name, type, request = {}) => {
@@ -180,7 +252,9 @@ export default function Dashboard() {
 
         <div className="bg-gray-100 p-3 rounded-lg text-sm space-y-1">
           <p className="font-semibold">{activeRobot}</p>
-          <p className="text-green-600">● Active</p>
+          <p className={robotActive ? "text-green-600" : "text-red-500"}>
+            {robotActive ? "● Active" : "● Offline"}
+          </p>
           <div className={`flex items-center gap-1 text-xs ${rosConnected ? "text-green-600" : "text-red-500"}`}>
             {rosConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
             {rosConnected ? "ROS Connected" : "ROS Disconnected"}
@@ -228,9 +302,14 @@ export default function Dashboard() {
               {[
                 ["Speed", telemetry.speed],
                 ["Altitude", telemetry.altitude],
+                ["Mission Phase", telemetry.mission_phase],
+                ["Robot Mode", telemetry.robot_mode],
+                ["GPS", `${telemetry.latitude}, ${telemetry.longitude}`],
                 ["Battery", telemetry.battery],
                 ["Mode", telemetry.mode],
-                ["GPS", `${telemetry.latitude}, ${telemetry.longitude}`],
+                ["Terrain", telemetry.terrain],
+                ["Walkability", telemetry.walkability],
+                ["Victims", telemetry.victims],
               ].map((item, i) => (
                 <div key={i} className="bg-white p-4 rounded-lg shadow text-center">
                   <p className="text-gray-500 text-sm">{item[0]}</p>
@@ -246,19 +325,23 @@ export default function Dashboard() {
             <div className="bg-white p-6 rounded-xl shadow-lg">
               <h3 className="font-semibold mb-4">Manual Control</h3>
               <div className="grid grid-cols-3 gap-3 text-center">
+                <button onMouseDown={() => sendCmd(0, 0.5, 0)} onMouseUp={() => sendCmd(0, 0, 0)}
+                  className="bg-blue-600 text-white p-4 rounded-lg active:bg-blue-800 text-sm">↰</button>
+                <button onMouseDown={() => sendCmd(0.5, 0, 0)} onMouseUp={() => sendCmd(0, 0, 0)}
+                  className="bg-blue-600 text-white p-4 rounded-lg active:bg-blue-800 font-bold">↑</button>
+                <button onMouseDown={() => sendCmd(0, -0.5, 0)} onMouseUp={() => sendCmd(0, 0, 0)}
+                  className="bg-blue-600 text-white p-4 rounded-lg active:bg-blue-800 text-sm">↱</button>
+
+                <button onMouseDown={() => sendCmd(0, 0, 0.5)} onMouseUp={() => sendCmd(0, 0, 0)}
+                  className="bg-blue-600 text-white p-4 rounded-lg active:bg-blue-800 font-bold">⟲</button>
+                <button onClick={() => sendCmd(0, 0, 0)}
+                  className="bg-red-600 text-white p-4 rounded-lg font-bold">STOP</button>
+                <button onMouseDown={() => sendCmd(0, 0, -0.5)} onMouseUp={() => sendCmd(0, 0, 0)}
+                  className="bg-blue-600 text-white p-4 rounded-lg active:bg-blue-800 font-bold">⟳</button>
+
                 <div />
-                <button onMouseDown={() => sendCmd(0.5, 0)} onMouseUp={() => sendCmd(0, 0)}
-                  className="bg-blue-600 text-white p-4 rounded-lg active:bg-blue-800">↑</button>
-                <div />
-                <button onMouseDown={() => sendCmd(0, 0.5)} onMouseUp={() => sendCmd(0, 0)}
-                  className="bg-blue-600 text-white p-4 rounded-lg active:bg-blue-800">←</button>
-                <button onClick={() => sendCmd(0, 0)}
-                  className="bg-red-600 text-white p-4 rounded-lg">STOP</button>
-                <button onMouseDown={() => sendCmd(0, -0.5)} onMouseUp={() => sendCmd(0, 0)}
-                  className="bg-blue-600 text-white p-4 rounded-lg active:bg-blue-800">→</button>
-                <div />
-                <button onMouseDown={() => sendCmd(-0.5, 0)} onMouseUp={() => sendCmd(0, 0)}
-                  className="bg-blue-600 text-white p-4 rounded-lg active:bg-blue-800">↓</button>
+                <button onMouseDown={() => sendCmd(-0.5, 0, 0)} onMouseUp={() => sendCmd(0, 0, 0)}
+                  className="bg-blue-600 text-white p-4 rounded-lg active:bg-blue-800 font-bold">↓</button>
                 <div />
               </div>
               {!rosConnected && (
@@ -270,24 +353,30 @@ export default function Dashboard() {
               <h3 className="font-semibold mb-4">Mission Control</h3>
               <div className="space-y-3">
                 <button
-                  onClick={() => callService("/vx01/mission/start", "std_srvs/Trigger")}
-                  className="w-full bg-green-600 text-white p-3 rounded-lg disabled:opacity-50"
+                  onClick={() => sendOperatorCmd("START")}
+                  className="w-full bg-green-600 text-white p-3 rounded-lg disabled:opacity-50 hover:bg-green-700"
                   disabled={!rosConnected}
                 >
                   Start Mission
                 </button>
                 <button
                   onClick={() => callService("/mavros/cmd/return_to_launch", "mavros_msgs/CommandBool", { value: true })}
-                  className="w-full bg-yellow-500 text-white p-3 rounded-lg disabled:opacity-50"
+                  className="w-full bg-yellow-500 text-white p-3 rounded-lg disabled:opacity-50 hover:bg-yellow-600"
                   disabled={!rosConnected}
                 >
                   Return Home
                 </button>
                 <button
-                  onClick={() => { sendCmd(0, 0); callService("/vx01/mission/abort", "std_srvs/Trigger"); }}
-                  className="w-full bg-red-600 text-white p-3 rounded-lg"
+                  onClick={() => { sendCmd(0, 0, 0); sendOperatorCmd("ABORT"); }}
+                  className="w-full bg-red-600 text-white p-3 rounded-lg hover:bg-red-700"
                 >
                   Emergency Stop
+                </button>
+                <button
+                  onClick={() => sendOperatorCmd("RESET")}
+                  className="w-full bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700 mt-2"
+                >
+                  Reset Mission
                 </button>
               </div>
             </div>
@@ -297,23 +386,27 @@ export default function Dashboard() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Battery</span>
-                  <span className="text-green-600">{telemetry.battery}</span>
+                  <span className="text-green-600 font-bold">{telemetry.battery}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Speed</span>
-                  <span>{telemetry.speed}</span>
+                  <span>Mission Phase</span>
+                  <span className="font-bold">{telemetry.mission_phase}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Altitude</span>
-                  <span>{telemetry.altitude}</span>
+                  <span>Terrain</span>
+                  <span className="font-bold">{telemetry.terrain}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Mode</span>
-                  <span>{telemetry.mode}</span>
+                  <span>Walk Score</span>
+                  <span className="font-bold">{telemetry.walkability}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Victims</span>
+                  <span className="font-bold">{telemetry.victims}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>ROS Bridge</span>
-                  <span className={rosConnected ? "text-green-600" : "text-red-500"}>
+                  <span className={rosConnected ? "text-green-600 font-bold" : "text-red-500 font-bold"}>
                     {rosConnected ? "Connected" : "Disconnected"}
                   </span>
                 </div>

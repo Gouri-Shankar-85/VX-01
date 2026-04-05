@@ -47,6 +47,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-teleop-twist-keyboard \
     ros-humble-ros2-control \
     ros-humble-ros2-controllers \
+    ros-humble-hardware-interface \
     ros-humble-rosbridge-server \
     ros-humble-rosbridge-suite \
     ros-humble-tf2-web-republisher \
@@ -74,6 +75,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-usb-cam \
     libopenni2-dev \
     ros-humble-openni2-camera \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    xterm \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --no-cache-dir pyserial hidapi
