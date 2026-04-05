@@ -28,8 +28,7 @@ def generate_launch_description():
             '--slave', '0', 
             '--defaults', '/ardupilot/Tools/autotest/default_params/copter.parm,/ardupilot/Tools/autotest/default_params/gazebo-iris.parm', 
             '--sim-address=127.0.0.1', 
-            '-I0',
-            '-A', 'udp:127.0.0.1:14550'
+            '-I0'
         ],
         cwd='/ardupilot/ArduCopter',
         output='screen'
@@ -41,7 +40,7 @@ def generate_launch_description():
         executable='mavros_node',
         output='screen',
         parameters=[
-            {'fcu_url': 'udp://127.0.0.1:14550@'},
+            {'fcu_url': 'tcp://127.0.0.1:5760'},
             {'gcs_url': ''},
             {'target_system_id': 1},
             {'target_component_id': 1},
