@@ -17,6 +17,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-rviz2 \
     ros-humble-rviz-common \
     ros-humble-rviz-default-plugins \
+    ros-humble-rtabmap-ros \
+    ros-humble-rtabmap-launch \
+    ros-humble-web-video-server \
+    ros-humble-robot-localization \
     libgl1-mesa-glx \
     libglib2.0-0 \
     x11-apps \

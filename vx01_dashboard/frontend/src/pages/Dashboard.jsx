@@ -302,7 +302,7 @@ export default function Dashboard() {
               <div className="h-80 bg-gray-900 rounded-lg flex items-center justify-center text-gray-400 overflow-hidden">
                 {rosConnected ? (
                   <img
-                    src={`http://${window.location.hostname}:8080/stream?topic=/depth_camera/color/image_raw&type=ros_compressed&width=640&height=480`}
+                    src={`http://${window.location.hostname}:8080/stream?topic=/depth_camera/color/image_raw&width=640&height=480`}
                     className="w-full h-full object-cover"
                     alt="Camera Feed"
                     onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }}
@@ -383,19 +383,19 @@ export default function Dashboard() {
                 </button>
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => backendLaunch("map", "ros2 launch vx01_simulation vx01_mapping.launch.py")}
+                    onClick={() => backendLaunch("map", "ros2 launch vx01_simulation vx01_mapping.launch.py use_sim_time:=true")}
                     className="w-full bg-purple-600 text-white p-2 text-sm rounded hover:bg-purple-700"
                   >
                     Start Mapping
                   </button>
                   <button
-                    onClick={() => backendLaunch("walk", "ros2 launch vx01_locomotion_control walk.launch.py")}
+                    onClick={() => backendLaunch("walk", "ros2 launch vx01_locomotion_control walk.launch.py use_sim_time:=true")}
                     className="w-full bg-green-600 text-white p-2 text-sm rounded hover:bg-green-700"
                   >
                     Start Hexapod Walk
                   </button>
                   <button
-                    onClick={() => backendLaunch("auto", "python3 /vx01_ws/src/vx01_bringup/scripts/mission_coordinator.py")}
+                    onClick={() => backendLaunch("auto", "python3 /vx01_ws/src/vx01_bringup/scripts/mission_coordinator.py --ros-args -p use_sim_time:=true")}
                     className="w-full col-span-2 bg-indigo-600 text-white p-2 text-sm rounded hover:bg-indigo-700"
                   >
                     Start Full Mission Autonomy
