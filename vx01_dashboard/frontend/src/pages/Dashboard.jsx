@@ -104,9 +104,9 @@ export default function Dashboard() {
       messageType: "mavros_msgs/State",
     });
     state.subscribe((msg) => {
-      setRobotActive(true);
+      setRobotActive(msg.connected);
       if (robotTimeoutRef.current) clearTimeout(robotTimeoutRef.current);
-      robotTimeoutRef.current = setTimeout(() => setRobotActive(false), 2000);
+      robotTimeoutRef.current = setTimeout(() => setRobotActive(false), 10000);
       setTelemetry((t) => ({ ...t, mode: msg.mode }));
     });
 
