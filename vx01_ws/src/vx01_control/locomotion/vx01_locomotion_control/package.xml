@@ -20,7 +20,7 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>builtin_interfaces</depend>
   <depend>vx01_hexapod_locomotion</depend>
- 
+  <depend>vx01_msgs</depend>
   <exec_depend>xterm</exec_depend>
 
   <export>
