@@ -18,25 +18,29 @@ def generate_launch_description():
         )
     )
 
-    # Launch ArduPilot SITL
+    # Launch ArduPilot SITL binary directly
     sitl_layer = ExecuteProcess(
         cmd=[
-            'sim_vehicle.py', 
-            '-v', 'ArduCopter', 
-            '-f', 'gazebo-iris', 
-            '--out', '127.0.0.1:14550',
-            '--no-rebuild'
+            '/ardupilot/build/sitl/bin/arducopter', 
+            '-S', 
+            '--model', 'gazebo-iris', 
+            '--speedup', '1', 
+            '--slave', '0', 
+            '--defaults', '/ardupilot/Tools/autotest/default_params/copter.parm,/ardupilot/Tools/autotest/default_params/gazebo-iris.parm', 
+            '--sim-address=127.0.0.1', 
+            '-I0'
         ],
+        cwd='/ardupilot/ArduCopter',
         output='screen'
     )
 
-    # Launch MAVROS connecting to SITL
+    # Launch MAVROS connecting directly to SITL TCP port
     mavros_node = Node(
         package='mavros',
         executable='mavros_node',
         output='screen',
         parameters=[
-            {'fcu_url': 'udp://127.0.0.1:14550@14555'},
+            {'fcu_url': 'tcp://127.0.0.1:5760'},
             {'gcs_url': ''},
             {'target_system_id': 1},
             {'target_component_id': 1},
