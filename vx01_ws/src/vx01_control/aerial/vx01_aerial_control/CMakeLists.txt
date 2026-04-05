@@ -7,6 +7,17 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(vx01_msgs REQUIRED)
+
+add_executable(aerial_controller_node src/aerial_controller_node.cpp)
+ament_target_dependencies(aerial_controller_node rclcpp geometry_msgs vx01_msgs)
+
+install(TARGETS
+  aerial_controller_node
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
