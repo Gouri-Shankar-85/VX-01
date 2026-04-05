@@ -118,8 +118,15 @@ void TripodWalkNode::loadParameters()
             "leg_joint_names." + std::to_string(i)).as_string_array();
     }
 
-    const double b = beta_angle_;
-    leg_angles_ = {0.0, b, 2.0*b, M_PI, -2.0*b, -b};
+    // URDF coxa joint rpy Z values (MUST match urdf/hexapod/leg_N.xacro):
+    // Leg 0: -1.5708  Leg 1: -0.7854  Leg 2: +0.7854
+    // Leg 3: +1.5708  Leg 4: +2.3920  Leg 5: -2.3562
+    leg_angles_ = {-M_PI_2,        // leg 0:  -90°
+                   -M_PI_4,        // leg 1:  -45°
+                    M_PI_4,        // leg 2:  +45°
+                    M_PI_2,        // leg 3:  +90°
+                    2.3920,        // leg 4: +137°
+                   -2.3562};       // leg 5: -135°
 
     for (int i = 0; i < 18; ++i) current_joint_state_[i] = 0.0;
 }
