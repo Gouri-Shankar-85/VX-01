@@ -53,7 +53,7 @@
                 <parameters>$(find vx01_bringup)/config/vx01_controller_manager.yaml</parameters>
             </plugin>
             
-            <plugin filename="libArduPilotPlugin.so" name="ardupilot_gazebo::ArduPilotPlugin">
+            <plugin filename="libArduPilotPlugin.so" name="ArduPilotPlugin">
               <fdm_addr>127.0.0.1</fdm_addr>
               <fdm_port_in>9002</fdm_port_in>
               <fdm_port_out>9003</fdm_port_out>

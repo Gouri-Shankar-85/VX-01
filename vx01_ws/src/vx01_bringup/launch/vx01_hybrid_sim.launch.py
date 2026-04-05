@@ -23,7 +23,7 @@ def generate_launch_description():
         cmd=[
             '/ardupilot/build/sitl/bin/arducopter', 
             '-S', 
-            '--model', 'gazebo-iris', 
+            '--model', 'JSON', 
             '--speedup', '1', 
             '--slave', '0', 
             '--defaults', '/ardupilot/Tools/autotest/default_params/copter.parm,/ardupilot/Tools/autotest/default_params/gazebo-iris.parm', 
