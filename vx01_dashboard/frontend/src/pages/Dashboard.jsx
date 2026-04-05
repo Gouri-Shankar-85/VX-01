@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Battery, MapPin, Activity, Wifi, WifiOff, Map, Target, Settings, Terminal, Crosshair, AlertTriangle } from "lucide-react";
+import { Battery, MapPin, Activity, Wifi, WifiOff, Map, Target, Settings, Terminal, Crosshair, AlertTriangle, StopCircle } from "lucide-react";
 import ROSLIB from "roslib";
 
 const ROS_URL = `ws://${window.location.hostname}:9090`;
@@ -9,6 +9,7 @@ export default function Dashboard() {
   const [activeRobot, setActiveRobot] = useState("VX-01");
   const [rosConnected, setRosConnected] = useState(false);
   const [robotActive, setRobotActive] = useState(false);
+  const [speedMultiplier, setSpeedMultiplier] = useState(1.0);
 
   const [telemetry, setTelemetry] = useState({
     battery: "--",
@@ -27,8 +28,10 @@ export default function Dashboard() {
 
   const [victimData, setVictimData] = useState([]);
   const [logs, setLogs] = useState([]);
+  
   const rosRef = useRef(null);
-  const robotTimeoutRef = useRef(null);
+  const droneIntervalRef = useRef(null);
+  const currentCmdRef = useRef({ lx: 0, ly: 0, lz: 0, az: 0 });
 
   const robots = [
     { name: "VX-01", status: robotActive ? "online" : "offline" },
@@ -46,12 +49,19 @@ export default function Dashboard() {
     ros.on("connection", () => {
       setRosConnected(true);
       addLog("INFO", `Uplink established at ${ROS_URL}`);
+      
+      // Force MAVROS to stream Data
+      const svc = new ROSLIB.Service({ ros, name: "/mavros/set_stream_rate", serviceType: "mavros_msgs/srv/StreamRate" });
+      svc.callService(new ROSLIB.ServiceRequest({ stream_id: 0, message_rate: 10, on_off: true }), () => {
+        addLog("INFO", "Telemetry stream explicitly requested.");
+      });
     });
+
     ros.on("error", () => {
       setRosConnected(false);
       setRobotActive(false);
-      addLog("ERROR", "Uplink Error");
     });
+
     ros.on("close", () => {
       setRosConnected(false);
       setRobotActive(false);
@@ -64,10 +74,7 @@ export default function Dashboard() {
       messageType: "sensor_msgs/BatteryState",
     });
     battery.subscribe((msg) => {
-      setTelemetry((t) => ({
-        ...t,
-        battery: `${Math.round(msg.percentage * 100)}%`,
-      }));
+      setTelemetry((t) => ({ ...t, battery: `${Math.round(msg.percentage * 100)}%` }));
     });
 
     const gps = new ROSLIB.Topic({
@@ -92,10 +99,7 @@ export default function Dashboard() {
     velocity.subscribe((msg) => {
       const vx = msg.twist.linear.x;
       const vy = msg.twist.linear.y;
-      setTelemetry((t) => ({
-        ...t,
-        speed: `${Math.sqrt(vx * vx + vy * vy).toFixed(1)} m/s`,
-      }));
+      setTelemetry((t) => ({ ...t, speed: `${Math.sqrt(vx * vx + vy * vy).toFixed(1)} m/s` }));
     });
 
     const state = new ROSLIB.Topic({
@@ -124,7 +128,6 @@ export default function Dashboard() {
     });
     victimDet.subscribe((msg) => {
       setTelemetry((t) => ({ ...t, victims: msg.victims.length }));
-      
       setVictimData((prev) => {
         const currentMap = new Map(prev.map(v => [v.id, v]));
         msg.victims.forEach(v => currentMap.set(v.id, v));
@@ -159,16 +162,6 @@ export default function Dashboard() {
       setTelemetry((t) => ({ ...t, robot_mode: msg.mode }));
     });
 
-    const rosout = new ROSLIB.Topic({
-      ros,
-      name: "/rosout",
-      messageType: "rcl_interfaces/msg/Log",
-    });
-    rosout.subscribe((msg) => {
-      const levelMap = { 10: "DEBUG", 20: "INFO", 30: "WARN", 40: "ERROR", 50: "FATAL" };
-      addLog(levelMap[msg.level] || "INFO", msg.msg);
-    });
-
     return () => {
       battery.unsubscribe();
       gps.unsubscribe();
@@ -179,54 +172,75 @@ export default function Dashboard() {
       terrainType.unsubscribe();
       walkScore.unsubscribe();
       robotModeTopic.unsubscribe();
-      rosout.unsubscribe();
       ros.close();
+      if (droneIntervalRef.current) clearInterval(droneIntervalRef.current);
     };
   }, []);
 
-  const sendCmd = (lx, ly, lz, az) => {
+  const sendHexapodCmd = (lx, ly, az) => {
     if (!rosRef.current || !rosConnected) return;
-    const cmdVel = new ROSLIB.Topic({
-      ros: rosRef.current,
-      name: "/cmd_vel",
-      messageType: "geometry_msgs/msg/Twist",
-    });
-    cmdVel.publish(
-      new ROSLIB.Message({
-        linear: { x: lx, y: ly, z: lz },
-        angular: { x: 0, y: 0, z: az },
-      })
-    );
+    const cmdVel = new ROSLIB.Topic({ ros: rosRef.current, name: "/cmd_vel", messageType: "geometry_msgs/msg/Twist" });
+    cmdVel.publish(new ROSLIB.Message({
+      linear: { x: lx * speedMultiplier, y: ly * speedMultiplier, z: 0 },
+      angular: { x: 0, y: 0, z: az * speedMultiplier },
+    }));
   };
 
-  const sendOperatorCmd = (cmd) => {
-    if (!rosRef.current || !rosConnected) return;
-    const cmdTopic = new ROSLIB.Topic({
-      ros: rosRef.current,
-      name: "/operator_command",
-      messageType: "std_msgs/msg/String",
-    });
-    cmdTopic.publish(new ROSLIB.Message({ data: cmd }));
+  const stopHexapod = () => {
+    sendHexapodCmd(0, 0, 0);
   };
 
-  const callService = (name, type, request = {}) => {
+  const startDroneCmd = (lx, ly, lz, az) => {
     if (!rosRef.current || !rosConnected) return;
-    const svc = new ROSLIB.Service({ ros: rosRef.current, name, serviceType: type });
-    svc.callService(new ROSLIB.ServiceRequest(request), () => {});
+    if (droneIntervalRef.current) clearInterval(droneIntervalRef.current);
+    
+    currentCmdRef.current = { lx: lx * speedMultiplier, ly: ly * speedMultiplier, lz: lz * speedMultiplier, az: az * speedMultiplier };
+    
+    const droneVel = new ROSLIB.Topic({ ros: rosRef.current, name: "/mavros/setpoint_velocity/cmd_vel_unstamped", messageType: "geometry_msgs/msg/Twist" });
+    
+    droneVel.publish(new ROSLIB.Message({
+      linear: { x: currentCmdRef.current.lx, y: currentCmdRef.current.ly, z: currentCmdRef.current.lz },
+      angular: { x: 0, y: 0, z: currentCmdRef.current.az },
+    }));
+
+    droneIntervalRef.current = setInterval(() => {
+      droneVel.publish(new ROSLIB.Message({
+        linear: { x: currentCmdRef.current.lx, y: currentCmdRef.current.ly, z: currentCmdRef.current.lz },
+        angular: { x: 0, y: 0, z: currentCmdRef.current.az },
+      }));
+    }, 100);
+  };
+
+  const stopDrone = () => {
+    if (droneIntervalRef.current) clearInterval(droneIntervalRef.current);
+    if (!rosRef.current || !rosConnected) return;
+    const droneVel = new ROSLIB.Topic({ ros: rosRef.current, name: "/mavros/setpoint_velocity/cmd_vel_unstamped", messageType: "geometry_msgs/msg/Twist" });
+    droneVel.publish(new ROSLIB.Message({ linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0 } }));
+  };
+
+  const forceArm = () => {
+    if (!rosRef.current || !rosConnected) return;
+    const paramSet = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/param/set", serviceType: "mavros_msgs/srv/ParamSet" });
+    paramSet.callService(new ROSLIB.ServiceRequest({ param_id: "ARMING_CHECK", value: { integer: 0, real: 0.0 } }), () => {
+      addLog("WARN", "Bypassed arming checks");
+      setTimeout(() => {
+        const armSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
+        armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), () => addLog("INFO", "Force Arm successful"));
+      }, 500);
+    });
   };
 
   const backendLaunch = async (command_id, command_string) => {
     try {
       const res = await fetch(`http://${window.location.hostname}:3001/api/launch`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ command_id, command_string })
       });
       const data = await res.json();
       if (!res.ok) addLog("ERROR", data.error || "Failed to launch process");
       else addLog("INFO", data.message);
     } catch (err) {
-      addLog("ERROR", "Backend unreachable. Is server.js running?");
+      addLog("ERROR", "Backend unreachable");
     }
   };
 
@@ -244,10 +258,7 @@ export default function Dashboard() {
           <div className="mb-8">
             <p className="text-gray-500 text-xs font-bold tracking-widest uppercase mb-3 text-center">Active Assets</p>
             {robots.map((robot, i) => (
-              <div
-                key={i}
-                className="flex justify-between items-center bg-gray-800 border border-gray-700 p-3 rounded-lg cursor-default"
-              >
+              <div key={i} className="flex justify-between items-center bg-gray-800 border border-gray-700 p-3 rounded-lg cursor-default">
                 <div className="flex items-center gap-3">
                   <span className={`h-2.5 w-2.5 rounded-full shadow-lg ${robot.status === "online" ? "bg-emerald-400 shadow-emerald-400/50" : "bg-rose-500 shadow-rose-500/50"}`} />
                   <span className="font-bold tracking-wide">{robot.name}</span>
@@ -310,28 +321,24 @@ export default function Dashboard() {
 
           <div className="flex gap-4">
             <div className="bg-gray-800 border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3">
-              <Battery size={16} className={parseInt(telemetry.battery) < 20 ? "text-rose-500" : "text-emerald-400"} /> 
+              <Battery size={16} className={telemetry.battery === "--" ? "text-gray-500" : parseInt(telemetry.battery) < 20 ? "text-rose-500" : "text-emerald-400"} /> 
               <span className="font-mono font-bold">{telemetry.battery}</span>
             </div>
             <div className="bg-gray-800 border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3">
-              <Activity size={16} className="text-blue-400" />
+              <Activity size={16} className={telemetry.altitude === "--" ? "text-gray-500" : "text-blue-400"} />
               <span className="font-mono font-bold">{telemetry.altitude}</span>
             </div>
             <div className="bg-gray-800 border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3">
-              <MapPin size={16} className="text-indigo-400" />
+              <MapPin size={16} className={telemetry.latitude === "--" ? "text-gray-500" : "text-indigo-400"} />
               <span className="font-mono">{telemetry.latitude}, {telemetry.longitude}</span>
             </div>
           </div>
         </div>
 
-        {/* Tab Contents */}
         <div className="flex-1 overflow-y-auto p-6 bg-gray-950">
           
-          {/* Mission Control Tab */}
           {tab === "mission" && (
             <div className="grid grid-cols-12 gap-6 h-full">
-              
-              {/* Primary Video Feed */}
               <div className="col-span-8 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl flex flex-col overflow-hidden">
                 <div className="bg-gray-800 px-4 py-2 border-b border-gray-700 flex justify-between items-center text-sm font-mono text-gray-400">
                   <div className="flex items-center gap-2"><Target size={14}/> RGB OPTICAL ARRAY</div>
@@ -353,7 +360,6 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Sidebar Stats & Launch */}
               <div className="col-span-4 flex flex-col gap-6">
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-2xl">
                   <h3 className="font-mono text-gray-400 text-sm mb-4 border-b border-gray-800 pb-2">ENVIRONMENTAL ANALYSIS</h3>
@@ -383,7 +389,7 @@ export default function Dashboard() {
                       2. INITIALIZE VISUAL SLAM
                     </button>
                     <button onClick={() => backendLaunch("walk", "ros2 launch vx01_locomotion_control walk.launch.py use_sim_time:=true")} className="w-full bg-teal-600/20 text-teal-400 border border-teal-600/50 p-3 rounded hover:bg-teal-600/40 transition">
-                      3. ENGAGE HEXAPOD KINEMATICS
+                      3. START HEXAPOD KINEMATICS
                     </button>
                     <div className="pt-4 border-t border-gray-800 mt-4">
                       <button onClick={() => backendLaunch("auto", "python3 /vx01_ws/src/vx01_bringup/scripts/mission_coordinator.py --ros-args -p use_sim_time:=true")} className="w-full bg-rose-600 text-white font-bold tracking-widest p-4 rounded hover:bg-rose-500 transition shadow-lg shadow-rose-900/50">
@@ -393,11 +399,9 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
-
             </div>
           )}
 
-          {/* Victim Database Tab */}
           {tab === "victims" && (
             <div className="h-full flex flex-col">
               <div className="flex justify-between items-end border-b border-gray-800 pb-4 mb-6">
@@ -422,7 +426,7 @@ export default function Dashboard() {
                         <span className="text-emerald-400 font-bold">{(v.confidence * 100).toFixed(1)}% MATCH</span>
                       </div>
                       <div className="h-48 bg-black flex items-center justify-center relative group">
-                        {v.image_base64 ? (
+                        {v.image_base64 && v.image_base64 !== "" ? (
                           <img src={`data:image/jpeg;base64,${v.image_base64}`} alt={`Detection ${v.id}`} className="max-h-full max-w-full object-contain" />
                         ) : (
                           <span className="text-red-500 font-mono text-xs border border-red-500 p-1">IMAGE FRAGMENT CORRUPT</span>
@@ -443,7 +447,7 @@ export default function Dashboard() {
                           <span className="text-gray-300">{v.position.point.y.toFixed(2)} m</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Estimated Depth:</span>
+                          <span className="text-gray-500">Depth (Z):</span>
                           <span className="text-gray-300">{v.position.point.z.toFixed(2)} m</span>
                         </div>
                       </div>
@@ -454,80 +458,98 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Manual Teleop Deck Tab */}
           {tab === "teleop" && (
-            <div className="grid grid-cols-2 gap-8 max-w-5xl mx-auto h-full items-start">
+            <div className="flex flex-col gap-8 max-w-5xl mx-auto h-full">
               
-              {/* Ground Mode (Hexapod) */}
-              <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6">
-                <h3 className="font-black text-xl mb-2 text-blue-500 border-b border-gray-800 pb-4">GROUND MODE</h3>
-                <p className="text-gray-500 font-mono text-xs mb-8">Hexapod 3-DOF Kinematics</p>
-                
-                <div className="grid grid-cols-3 gap-4 text-center max-w-xs mx-auto font-mono text-xl">
-                  <button onMouseDown={() => sendCmd(0, 0.5, 0, 0)} onMouseUp={() => sendCmd(0, 0, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-gray-700 active:bg-blue-600 active:text-white transition shadow-inner">↰</button>
-                  <button onMouseDown={() => sendCmd(0.5, 0, 0, 0)} onMouseUp={() => sendCmd(0, 0, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl border border-gray-700 hover:bg-gray-700 active:bg-blue-600 active:text-white transition shadow-inner">↑</button>
-                  <button onMouseDown={() => sendCmd(0, -0.5, 0, 0)} onMouseUp={() => sendCmd(0, 0, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-gray-700 active:bg-blue-600 active:text-white transition shadow-inner">↱</button>
-
-                  <button onMouseDown={() => sendCmd(0, 0, 0, 0.5)} onMouseUp={() => sendCmd(0, 0, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-gray-700 active:bg-blue-600 active:text-white transition shadow-inner">⟲</button>
-                  <button onClick={() => sendCmd(0, 0, 0, 0)} className="bg-rose-900/50 text-rose-500 font-bold p-6 rounded-xl border border-rose-900 hover:bg-rose-700 hover:text-white transition shadow-[0_0_15px_rgba(225,29,72,0.3)]">STOP</button>
-                  <button onMouseDown={() => sendCmd(0, 0, 0, -0.5)} onMouseUp={() => sendCmd(0, 0, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-gray-700 active:bg-blue-600 active:text-white transition shadow-inner">⟳</button>
-
-                  <div></div>
-                  <button onMouseDown={() => sendCmd(-0.5, 0, 0, 0)} onMouseUp={() => sendCmd(0, 0, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl border border-gray-700 hover:bg-gray-700 active:bg-blue-600 active:text-white transition shadow-inner">↓</button>
-                  <div></div>
+              <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6 mb-4">
+                <h3 className="font-bold text-gray-300 mb-3 font-mono">THROTTLE MULTIPLIER (SPEED OVERRIDE)</h3>
+                <div className="flex items-center gap-6">
+                  <input 
+                    type="range" min="0.1" max="3.0" step="0.1" 
+                    value={speedMultiplier} 
+                    onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
+                    className="flex-1 accent-blue-500 bg-gray-800 h-2 rounded-lg cursor-pointer"
+                  />
+                  <div className="text-2xl font-black text-white w-20 text-right">{speedMultiplier.toFixed(1)}x</div>
                 </div>
               </div>
 
-              {/* Aerial Mode (Drone) */}
-              <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6">
-                <h3 className="font-black text-xl mb-2 text-indigo-400 border-b border-gray-800 pb-4">AERIAL MODE</h3>
-                <p className="text-gray-500 font-mono text-xs mb-8">Quadrotor 6-DOF Dynamics</p>
+              <div className="grid grid-cols-2 gap-8 items-start">
                 
-                <div className="grid grid-cols-2 gap-8 font-mono text-sm">
-                  {/* Left Stick (Altitude / Yaw) */}
-                  <div className="flex flex-col items-center">
-                    <p className="text-gray-500 mb-4 whitespace-nowrap">THROTTLE & YAW</p>
-                    <div className="grid grid-cols-3 gap-2">
-                       <div></div>
-                       <button onMouseDown={() => sendCmd(0, 0, 0.5, 0)} onMouseUp={() => sendCmd(0, 0, 0, 0)} className="bg-gray-800 text-white p-5 rounded-lg active:bg-indigo-600">UP</button>
-                       <div></div>
-                       <button onMouseDown={() => sendCmd(0, 0, 0, 0.5)} onMouseUp={() => sendCmd(0, 0, 0, 0)} className="bg-gray-800 text-white p-5 rounded-lg active:bg-indigo-600">⟲</button>
-                       <div className="bg-gray-950 rounded-full border border-gray-800 m-1"></div>
-                       <button onMouseDown={() => sendCmd(0, 0, 0, -0.5)} onMouseUp={() => sendCmd(0, 0, 0, 0)} className="bg-gray-800 text-white p-5 rounded-lg active:bg-indigo-600">⟳</button>
-                       <div></div>
-                       <button onMouseDown={() => sendCmd(0, 0, -0.5, 0)} onMouseUp={() => sendCmd(0, 0, 0, 0)} className="bg-gray-800 text-white p-5 rounded-lg active:bg-indigo-600">DN</button>
-                       <div></div>
-                    </div>
-                  </div>
+                {/* Hexapod Control */}
+                <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6">
+                  <h3 className="font-black text-xl mb-2 text-blue-500 border-b border-gray-800 pb-4">GROUND MODE</h3>
+                  <p className="text-gray-500 font-mono text-xs mb-8">Click Direction To Cruise, Click Stop To Halt</p>
+                  
+                  <div className="grid grid-cols-3 gap-4 text-center max-w-xs mx-auto font-mono text-xl">
+                    <button onClick={() => sendHexapodCmd(0, 0.5, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">↰</button>
+                    <button onClick={() => sendHexapodCmd(0.5, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl border border-gray-700 hover:bg-white hover:text-black transition shadow-inner">↑</button>
+                    <button onClick={() => sendHexapodCmd(0, -0.5, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">↱</button>
 
-                  {/* Right Stick (Pitch / Roll) */}
-                  <div className="flex flex-col items-center">
-                    <p className="text-gray-500 mb-4 whitespace-nowrap">PITCH & ROLL</p>
-                    <div className="grid grid-cols-3 gap-2">
-                       <div></div>
-                       <button onMouseDown={() => sendCmd(1.0, 0, 0, 0)} onMouseUp={() => sendCmd(0, 0, 0, 0)} className="bg-gray-800 text-white p-5 rounded-lg active:bg-indigo-600">FWD</button>
-                       <div></div>
-                       <button onMouseDown={() => sendCmd(0, 0.5, 0, 0)} onMouseUp={() => sendCmd(0, 0, 0, 0)} className="bg-gray-800 text-white p-5 rounded-lg active:bg-indigo-600">LT</button>
-                       <div className="bg-gray-950 rounded-full border border-gray-800 m-1"></div>
-                       <button onMouseDown={() => sendCmd(0, -0.5, 0, 0)} onMouseUp={() => sendCmd(0, 0, 0, 0)} className="bg-gray-800 text-white p-5 rounded-lg active:bg-indigo-600">RT</button>
-                       <div></div>
-                       <button onMouseDown={() => sendCmd(-1.0, 0, 0, 0)} onMouseUp={() => sendCmd(0, 0, 0, 0)} className="bg-gray-800 text-white p-5 rounded-lg active:bg-indigo-600">BCK</button>
-                       <div></div>
-                    </div>
+                    <button onClick={() => sendHexapodCmd(0, 0, 0.5)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">⟲</button>
+                    <button onClick={stopHexapod} className="bg-rose-900 text-white font-bold p-6 rounded-xl border border-rose-700 hover:bg-rose-600 transition flex items-center justify-center shadow-lg"><StopCircle size={28}/></button>
+                    <button onClick={() => sendHexapodCmd(0, 0, -0.5)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">⟳</button>
+
+                    <div></div>
+                    <button onClick={() => sendHexapodCmd(-0.5, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl border border-gray-700 hover:bg-white hover:text-black transition shadow-inner">↓</button>
+                    <div></div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-8 font-mono text-sm">
-                  <button onClick={() => callService("/mavros/cmd/arming", "mavros_msgs/srv/CommandBool", { value: true })} className="bg-red-900/40 border border-red-800 text-red-500 p-3 rounded hover:bg-red-800 hover:text-white transition">ARM MOTORS</button>
-                  <button onClick={() => callService("/mavros/set_mode", "mavros_msgs/srv/SetMode", { custom_mode: "GUIDED" })} className="bg-blue-900/40 border border-blue-800 text-blue-500 p-3 rounded hover:bg-blue-800 hover:text-white transition">GUIDED MODE</button>
-                  <button onClick={() => callService("/mavros/cmd/takeoff", "mavros_msgs/srv/CommandTOL", { altitude: 5.0 })} className="bg-emerald-900/40 border border-emerald-800 text-emerald-500 p-3 rounded hover:bg-emerald-800 hover:text-white transition col-span-2">EXECUTE TAKEOFF (5.0m)</button>
+                {/* Drone Control */}
+                <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6">
+                  <h3 className="font-black text-xl mb-2 text-indigo-400 border-b border-gray-800 pb-4">AERIAL MODE</h3>
+                  <p className="text-gray-500 font-mono text-xs mb-8">Click Direction To Cruise, Click Stop To Hover</p>
+                  
+                  <div className="grid grid-cols-2 gap-8 font-mono text-sm max-w-sm mx-auto">
+                    <div className="flex flex-col items-center">
+                      <p className="text-gray-500 mb-4 whitespace-nowrap">THROTTLE/YAW</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div></div>
+                        <button onClick={() => startDroneCmd(0, 0, 0.5, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">UP</button>
+                        <div></div>
+                        <button onClick={() => startDroneCmd(0, 0, 0, 0.5)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">⟲</button>
+                        <button onClick={stopDrone} className="bg-rose-900 text-white p-4 rounded hover:bg-rose-600 transition flex justify-center"><StopCircle size={20}/></button>
+                        <button onClick={() => startDroneCmd(0, 0, 0, -0.5)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">⟳</button>
+                        <div></div>
+                        <button onClick={() => startDroneCmd(0, 0, -0.5, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">DN</button>
+                        <div></div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center">
+                      <p className="text-gray-500 mb-4 whitespace-nowrap">PITCH/ROLL</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div></div>
+                        <button onClick={() => startDroneCmd(1.0, 0, 0, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">FWD</button>
+                        <div></div>
+                        <button onClick={() => startDroneCmd(0, 0.5, 0, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">LF</button>
+                        <button onClick={stopDrone} className="bg-rose-900 text-white p-4 rounded hover:bg-rose-600 transition flex justify-center"><StopCircle size={20}/></button>
+                        <button onClick={() => startDroneCmd(0, -0.5, 0, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">RT</button>
+                        <div></div>
+                        <button onClick={() => startDroneCmd(-1.0, 0, 0, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">BCK</button>
+                        <div></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 font-mono text-sm max-w-sm mx-auto">
+                    <button onClick={forceArm} className="bg-red-900/40 border border-red-800 text-red-500 p-3 rounded hover:bg-red-800 hover:text-white transition">FORCE ARM / BYPASS</button>
+                    <button onClick={() => {
+                        const armSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
+                        armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), () => addLog("INFO", "Normal Arming"));
+                      }} className="bg-emerald-900/40 border border-emerald-800 text-emerald-500 p-3 rounded hover:bg-emerald-800 hover:text-white transition">ARM (NORMAL)</button>
+                    <button onClick={() => {
+                        const svc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/takeoff", serviceType: "mavros_msgs/srv/CommandTOL" });
+                        svc.callService(new ROSLIB.ServiceRequest({ altitude: 5.0 }), () => addLog("INFO", "Dispatched Takeoff 5m"));
+                      }} className="bg-indigo-900/40 border border-indigo-800 text-indigo-500 p-3 rounded hover:bg-indigo-800 hover:text-white transition col-span-2">TAKEOFF (5.0m)</button>
+                  </div>
                 </div>
+
               </div>
-
             </div>
           )}
 
-          {/* Logs Tab */}
           {tab === "logs" && (
             <div className="bg-black text-gray-300 p-6 rounded-xl shadow-lg font-mono text-xs h-full overflow-y-auto border border-gray-800">
               <div className="sticky top-0 bg-black/90 pb-2 mb-4 border-b border-gray-800 flex justify-between items-center backdrop-blur-sm">
