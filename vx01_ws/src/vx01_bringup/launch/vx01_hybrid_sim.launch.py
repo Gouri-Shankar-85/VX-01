@@ -42,7 +42,7 @@ def generate_launch_description():
         parameters=[
             {'fcu_url': 'tcp://127.0.0.1:5760'},
             {'use_sim_time': True},
-            {'conn/timeout': 120.0},
+            {'sys': {'conn_timeout': 120.0}},
             {'gcs_url': ''},
             {'target_system_id': 1},
             {'target_component_id': 1},
