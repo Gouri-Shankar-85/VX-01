@@ -360,7 +360,7 @@ export default function Dashboard() {
                   Start Mission
                 </button>
                 <button
-                  onClick={() => callService("/mavros/cmd/return_to_launch", "mavros_msgs/CommandBool", { value: true })}
+                  onClick={() => callService("/mavros/set_mode", "mavros_msgs/srv/SetMode", { custom_mode: "RTL" })}
                   className="w-full bg-yellow-500 text-white p-3 rounded-lg disabled:opacity-50 hover:bg-yellow-600"
                   disabled={!rosConnected}
                 >
