@@ -19,15 +19,19 @@ def generate_launch_description():
     )
 
     # Launch ArduPilot SITL binary directly with native UDP output
+    # ardupilot_sim_bypass.parm: ARMING_CHECK=0, compass disabled, EKF relaxed
     sitl_layer = ExecuteProcess(
         cmd=[
-            '/ardupilot/build/sitl/bin/arducopter', 
-            '-S', 
-            '--model', 'JSON', 
-            '--speedup', '1', 
-            '--slave', '0', 
-            '--defaults', '/ardupilot/Tools/autotest/default_params/copter.parm,/ardupilot/Tools/autotest/default_params/gazebo-iris.parm', 
-            '--sim-address=127.0.0.1', 
+            '/ardupilot/build/sitl/bin/arducopter',
+            '-S',
+            '--model', 'JSON',
+            '--speedup', '1',
+            '--slave', '0',
+            '--defaults',
+            '/ardupilot/Tools/autotest/default_params/copter.parm,'
+            '/ardupilot/Tools/autotest/default_params/gazebo-iris.parm,'
+            '/vx01_ws/src/vx01_bringup/config/ardupilot_sim_bypass.parm',
+            '--sim-address=127.0.0.1',
             '-I0'
         ],
         cwd='/ardupilot/ArduCopter',
@@ -52,16 +56,6 @@ def generate_launch_description():
         ]
     )
 
-    # Auto-bypass arming checks 60s after launch (drone is always tilted on hexapod)
-    arming_bypass = ExecuteProcess(
-        cmd=[
-            'bash', '-c',
-            'sleep 60 && ros2 param set /mavros ARMING_CHECK 0 || '
-            'ros2 service call /mavros/param/set mavros_msgs/srv/ParamSet '
-            '"param_id: ARMING_CHECK\nvalue: {integer: 0, real: 0.0}"'
-        ],
-        output='screen'
-    )
 
     # Hybrid Mode Nodes
     mode_manager = Node(
@@ -88,6 +82,6 @@ def generate_launch_description():
         sitl_layer,
         TimerAction(
             period=10.0,
-            actions=[mavros_node, mode_manager, aerial_controller, web_video_server, arming_bypass]
+            actions=[mavros_node, mode_manager, aerial_controller, web_video_server]
         )
     ])

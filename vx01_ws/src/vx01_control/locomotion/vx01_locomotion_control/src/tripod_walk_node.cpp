@@ -463,42 +463,42 @@ void TripodWalkNode::sendHalfCycle()
 {
     if (!walking_) return;
 
-    const double half_dur = step_period_ / 2.0;
-    legs_done_ = 0;
+    // Bump the generation counter — stale callbacks from the previous cycle
+    // will see their captured cycle_id != current cycle_id_ and bail out.
+    const int this_cycle = ++cycle_id_;
+    legs_done_.store(0);
 
-    // Decide which legs are swing vs stance for this half-cycle
-    // Group A = {0,2,4}, Group B = {1,3,5}
-    const bool group_a_swings = (half_cycle_group_ == 0);
+    const double half_dur     = step_period_ / 2.0;
+    const bool   group_a_swings = (half_cycle_group_ == 0);
+
+    RCLCPP_INFO(get_logger(), "Half-cycle %d: %s swings",
+                this_cycle, group_a_swings ? "A(0,2,4)" : "B(1,3,5)");
 
     for (int leg = 0; leg < 6; ++leg) {
         const bool in_group_a = (leg == 0 || leg == 2 || leg == 4);
         const bool is_swing   = group_a_swings ? in_group_a : !in_group_a;
-        sendFullHalfCycleTraj(leg, is_swing, half_dur);
+        sendFullHalfCycleTraj(leg, is_swing, half_dur, this_cycle);
     }
 }
 
-void TripodWalkNode::sendFullHalfCycleTraj(int leg_id, bool is_swing, double duration)
+void TripodWalkNode::sendFullHalfCycleTraj(
+    int leg_id, bool is_swing, double duration, int this_cycle)
 {
     trajectory_msgs::msg::JointTrajectory traj;
-    traj.joint_names   = joint_names_[leg_id];
-    traj.header.stamp  = now();
+    traj.joint_names     = joint_names_[leg_id];
+    traj.header.stamp    = now();
     traj.header.frame_id = base_frame_;
 
-    const int n_wp = n_waypoints_ * 3;  // Use 3x waypoints for full half-cycle
+    const int n_wp = n_waypoints_ * 3;  // 3x waypoints for smooth full half-cycle
 
     for (int wp = 0; wp <= n_wp; ++wp) {
         const double t = static_cast<double>(wp) / static_cast<double>(n_wp);
-        std::array<double, 3> angles;
-        if (is_swing) {
-            angles = swingWaypoint(leg_id, t);
-        } else {
-            angles = stanceWaypoint(leg_id, t);
-        }
-
+        const auto angles = is_swing ? swingWaypoint(leg_id, t)
+                                     : stanceWaypoint(leg_id, t);
         trajectory_msgs::msg::JointTrajectoryPoint pt;
-        pt.positions         = {angles[0], angles[1], angles[2]};
-        pt.velocities        = {0.0, 0.0, 0.0};
-        pt.time_from_start   = rclcpp::Duration::from_seconds(t * duration);
+        pt.positions       = {angles[0], angles[1], angles[2]};
+        pt.velocities      = {0.0, 0.0, 0.0};
+        pt.time_from_start = rclcpp::Duration::from_seconds(t * duration);
         traj.points.push_back(pt);
     }
 
@@ -511,18 +511,24 @@ void TripodWalkNode::sendFullHalfCycleTraj(int leg_id, bool is_swing, double dur
     auto send_opts = rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions();
 
     send_opts.result_callback =
-        [this, leg_id](const GoalHandleFJT::WrappedResult & result) {
+        [this, leg_id, this_cycle](const GoalHandleFJT::WrappedResult & result) {
             goal_active_[leg_id] = false;
+
+            // CRITICAL: ignore stale callbacks from a previous cycle
+            if (this_cycle != cycle_id_.load()) return;
+
             if (result.code != rclcpp_action::ResultCode::SUCCEEDED) {
-                RCLCPP_WARN(get_logger(),
-                    "Leg %d half-cycle did not succeed (code=%d) — continuing",
-                    leg_id, static_cast<int>(result.code));
+                RCLCPP_DEBUG(get_logger(),
+                    "Leg %d cycle %d: code=%d (canceled/aborted — normal during stop)",
+                    leg_id, this_cycle, static_cast<int>(result.code));
             }
-            // When all 6 legs finish their trajectories, flip group and re-send
-            legs_done_++;
-            if (legs_done_ >= 6 && walking_) {
-                half_cycle_group_ = 1 - half_cycle_group_;  // flip A<->B
-                sendHalfCycle();
+
+            // Count toward this cycle's completion
+            const int done = ++legs_done_;
+            if (done == 6 && walking_) {
+                // All 6 legs finished — advance to next half-cycle
+                half_cycle_group_ = 1 - half_cycle_group_;
+                sendHalfCycle();  // this bumps cycle_id_, invalidating this_cycle
             }
         };
 

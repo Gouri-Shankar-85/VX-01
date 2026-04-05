@@ -15,6 +15,8 @@ def generate_launch_description():
             os.path.join(rtabmap_dir, 'launch', 'rtabmap.launch.py')
         ),
         launch_arguments={
+            # Odometry tuning: lower inlier threshold for sim low-texture scenes
+            # Use GFTT detector (type=1), larger F2M map, auto-reinit on lost odom
             'rtabmap_args':         '--delete_db_on_start'
                                     ' --Vis/MinInliers 10'
                                     ' --Vis/FeatureType 1'
@@ -25,9 +27,8 @@ def generate_launch_description():
             'rgb_topic':            '/depth_camera/color/image_raw',
             'depth_topic':          '/depth_camera/depth/image_raw',
             'camera_info_topic':    '/depth_camera/camera_info',
-            # Completely disconnect IMU — Gazebo IMU lacks orientation covariance.
-            # SLAM runs on visual odometry only.
-            'imu_topic':            '',
+            # NOTE: do NOT pass imu_topic:='' — that generates '-r imu:=' which
+            # crashes rtabmap. Instead disable IMU waiting; spam errors are harmless.
             'wait_imu_to_init':     'false',
             'approx_sync':          'true',
             'qos':                  '2',
@@ -41,4 +42,3 @@ def generate_launch_description():
                               description='Use simulation (Gazebo) clock if true'),
         rtabmap_launch
     ])
-

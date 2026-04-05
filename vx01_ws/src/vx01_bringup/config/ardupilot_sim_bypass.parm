@@ -1,0 +1,24 @@
+# VX-01 Simulation ArduPilot Parameter Overrides
+# Applied AFTER the standard defaults to bypass pre-arm checks
+# that always fail when drone is mounted on/near the hexapod body.
+
+# Disable ALL pre-arm checks (bitmask=0 = no checks)
+ARMING_CHECK 0
+
+# Disable compass use entirely (Gazebo compass field is unreliable)
+COMPASS_USE  0
+COMPASS_USE2 0
+COMPASS_USE3 0
+
+# Relax EKF attitude/velocity thresholds for sim
+EK3_CHECK_SCALE 200
+
+# Allow arming even when GPS HDOP is high
+GPS_HDOP_GOOD 2.3
+
+# Set GPS type for SITL JSON model
+GPS_TYPE 1
+GPS_TYPE2 0
+
+# Allow fast arming in sim
+PILOT_SPEED_UP 500
