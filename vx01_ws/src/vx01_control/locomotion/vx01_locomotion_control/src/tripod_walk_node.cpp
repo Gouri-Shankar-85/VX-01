@@ -167,23 +167,35 @@ void TripodWalkNode::jointStateCallback(const sensor_msgs::msg::JointState::Shar
     joint_state_received_ = true;
 }
 
-// Compute per-leg stride amplitude in leg-local Y for given cmd_vel.
-// model: leg_x = home_x (constant reach)
-//        leg_y sweeps from -stride_y to +stride_y during swing
-//        stride_y = projection of cmd_vel onto leg-local Y axis * step_length_/2
-double TripodWalkNode::legStrideY(int leg_id) const
+// Compute per-leg stride amplitude in leg-local X and Y for given cmd_vel.
+void TripodWalkNode::legStride(int leg_id, double& stride_x, double& stride_y) const
 {
     const double a       = leg_angles_[leg_id];
-    const double r_x     = std::cos(a) * (home_x_ - body_radius_);
-    const double r_y     = std::sin(a) * (home_x_ - body_radius_);
-    const double lin_proj = cmd_vx_ * (-std::sin(a)) + cmd_vy_ * (std::cos(a));
-    const double rot_proj = cmd_omega_ * (r_y * std::sin(a) + r_x * std::cos(a));
-    const double scale    = (max_linear_vel_ > 1e-9)
-                            ? std::min(1.0, (std::hypot(cmd_vx_, cmd_vy_) +
-                                std::abs(cmd_omega_) * (home_x_ - body_radius_) / 1000.0)
-                                / max_linear_vel_)
-                            : 0.0;
-    return (lin_proj + rot_proj / (home_x_ - body_radius_)) * (step_length_ / 2.0);
+    // Distance from robot center to foot = body_radius_ + home_x_
+    const double R       = body_radius_ + home_x_;
+    const double r_x     = std::cos(a) * R;
+    const double r_y     = std::sin(a) * R;
+    
+    // Foot velocity in base frame (cmd_vel - omega x r)
+    // Actually, when robot moves with cmd_vel, foot must move opposite during stance
+    // So foot motion in base frame relative to ground is V_base + omega x r
+    // We want the swing vector to be strictly this relative motion scaled by step_length/2.
+    const double v_x     = cmd_vx_ - cmd_omega_ * r_y;
+    const double v_y     = cmd_vy_ + cmd_omega_ * r_x;
+    
+    // Convert base velocity vector to leg-local frame
+    const double loc_v_x = v_x * std::cos(a) + v_y * std::sin(a);
+    const double loc_v_y = -v_x * std::sin(a) + v_y * std::cos(a);
+    
+    // Calculate scaling to not exceed physical step_length
+    const double speed   = std::hypot(v_x, v_y);
+    const double scale   = (max_linear_vel_ > 1e-9 && speed > 1e-9) 
+                           ? std::min(1.0, speed / max_linear_vel_) 
+                           : 0.0;
+                           
+    const double normalized_step = (speed > 1e-9) ? (step_length_ / 2.0) * scale / speed : 0.0;
+    stride_x = loc_v_x * normalized_step;
+    stride_y = loc_v_y * normalized_step;
 }
 
 // IK for a given (leg_x, leg_y, leg_z) in leg-local frame.
@@ -196,20 +208,41 @@ bool TripodWalkNode::computeIK(double lx, double ly, double lz,
 }
 
 // Swing waypoint at normalised t in [0,1] over the full swing arc:
-//   leg_y: from -stride_y  to  +stride_y  (Bezier quadratic via 0)
-//   leg_z: home_z + step_height * 4*t*(1-t)  (parabolic lift)
-//   leg_x: home_x constant
+//   leg_x, leg_y: 3D quadratic Bezier blending stride_x, stride_y
+//   leg_z: 3D quadratic Bezier reaching step_height at t=0.5
 std::array<double, 3> TripodWalkNode::swingWaypoint(int leg_id, double t) const
 {
     t = std::clamp(t, 0.0, 1.0);
-    const double stride_y  = legStrideY(leg_id);
-    const double u         = 1.0 - t;
-    const double leg_y     = u * u * (-stride_y) + 2.0 * u * t * 0.0 + t * t * stride_y;
-    const double lift      = step_height_ * 4.0 * t * (1.0 - t);
-    const double leg_z     = home_z_ + lift;
+    double stride_x = 0.0, stride_y = 0.0;
+    legStride(leg_id, stride_x, stride_y);
+    
+    // 3D Bezier curve
+    // P1: Start of swing (leg pushed back)
+    const double P1x = home_x_ - stride_x;
+    const double P1y = -stride_y;
+    const double P1z = home_z_;
+    
+    // P2: Apex of swing
+    const double P2x = home_x_;
+    const double P2y = 0.0;
+    const double P2z = home_z_ + 2.0 * step_height_;
+    
+    // P3: End of swing (leg pushed forward)
+    const double P3x = home_x_ + stride_x;
+    const double P3y = stride_y;
+    const double P3z = home_z_;
+    
+    const double u  = 1.0 - t;
+    const double a_b = u * u;
+    const double b_b = 2.0 * u * t;
+    const double c_b = t * t;
+    
+    const double leg_x = a_b * P1x + b_b * P2x + c_b * P3x;
+    const double leg_y = a_b * P1y + b_b * P2y + c_b * P3y;
+    const double leg_z = a_b * P1z + b_b * P2z + c_b * P3z;
 
     double t1 = 0.0, t2 = 0.0, t3 = 0.0;
-    if (!computeIK(home_x_, leg_y, leg_z, t1, t2, t3)) {
+    if (!computeIK(leg_x, leg_y, leg_z, t1, t2, t3)) {
         t1 = current_joint_state_[leg_id*3+0];
         t2 = current_joint_state_[leg_id*3+1];
         t3 = current_joint_state_[leg_id*3+2];
@@ -218,17 +251,20 @@ std::array<double, 3> TripodWalkNode::swingWaypoint(int leg_id, double t) const
 }
 
 // Stance/drag waypoint at normalised t in [0,1]:
-//   leg_y slides from +stride_y to -stride_y (opposite direction of swing)
+//   leg slides from (stride_x, stride_y) to (-stride_x, -stride_y)
 //   leg_z = home_z constant
-//   leg_x = home_x constant
 std::array<double, 3> TripodWalkNode::stanceWaypoint(int leg_id, double t) const
 {
     t = std::clamp(t, 0.0, 1.0);
-    const double stride_y = legStrideY(leg_id);
-    const double leg_y    = stride_y * (1.0 - 2.0 * t);
+    double stride_x = 0.0, stride_y = 0.0;
+    legStride(leg_id, stride_x, stride_y);
+    
+    // stance slides from forward to backward
+    const double leg_x = home_x_ + stride_x * (1.0 - 2.0 * t);
+    const double leg_y = stride_y * (1.0 - 2.0 * t);
 
     double t1 = 0.0, t2 = 0.0, t3 = 0.0;
-    if (!computeIK(home_x_, leg_y, home_z_, t1, t2, t3)) {
+    if (!computeIK(leg_x, leg_y, home_z_, t1, t2, t3)) {
         t1 = current_joint_state_[leg_id*3+0];
         t2 = current_joint_state_[leg_id*3+1];
         t3 = current_joint_state_[leg_id*3+2];
@@ -417,7 +453,6 @@ void TripodWalkNode::executeGaitBlock()
 {
     const double block_duration = step_period_ / 6.0;
     for (int leg = 0; leg < 6; ++leg) {
-        if (goal_active_[leg]) continue;
         sendLegTrajectory(leg, locomotion_->isSwingPhase(leg), block_duration);
     }
 }

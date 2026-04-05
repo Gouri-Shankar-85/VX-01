@@ -43,8 +43,8 @@ private:
     void sendStandUpTrajectory();
     void sendLegTrajectory(int leg_id, bool is_swing, double block_duration);
 
-    // Per-leg stride amplitude in leg-local Y for current cmd_vel
-    double legStrideY(int leg_id) const;
+    // Per-leg stride amplitude in leg-local X and Y for current cmd_vel
+    void legStride(int leg_id, double& stride_x, double& stride_y) const;
 
     bool computeIK(double lx, double ly, double lz,
                    double& t1, double& t2, double& t3) const;
