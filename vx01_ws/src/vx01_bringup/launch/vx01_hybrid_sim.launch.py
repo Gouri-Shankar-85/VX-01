@@ -41,6 +41,7 @@ def generate_launch_description():
         output='screen',
         parameters=[
             {'fcu_url': 'tcp://127.0.0.1:5760'},
+            {'use_sim_time': True},
             {'gcs_url': ''},
             {'target_system_id': 1},
             {'target_component_id': 1},
