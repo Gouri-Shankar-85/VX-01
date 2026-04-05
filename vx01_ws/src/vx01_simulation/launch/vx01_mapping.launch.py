@@ -22,6 +22,7 @@ def generate_launch_description():
             'depth_topic': '/depth_camera/depth/image_raw',
             'camera_info_topic': '/depth_camera/camera_info',
             'approx_sync': 'true',
+            'wait_imu_to_init': 'false',
             'qos': '2',
             'use_sim_time': use_sim_time,
             'rviz': 'false'

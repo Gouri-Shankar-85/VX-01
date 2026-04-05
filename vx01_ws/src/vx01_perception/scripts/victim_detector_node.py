@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 import yaml
 import os
+import base64
 
 from vx01_msgs.msg import Victim, VictimArray, MissionState
 
@@ -25,6 +26,7 @@ class VictimDetectorNode(Node):
         self.bridge  = CvBridge()
         self.depth   = None
         self.active  = True
+        self.victim_id_counter = 0
 
         # Camera intrinsics — taken from camera_info
         self.fx = None
@@ -92,7 +94,7 @@ class VictimDetectorNode(Node):
 
         frame   = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         detects = self._detect(frame)
-        victims = [self._build_victim(d) for d in detects]
+        victims = [self._build_victim(d, frame) for d in detects]
 
         out         = VictimArray()
         out.header  = msg.header
@@ -125,7 +127,7 @@ class VictimDetectorNode(Node):
             return []
         return [(boxes[i], confidences[i], class_ids[i]) for i in indices.flatten()]
 
-    def _build_victim(self, detection: tuple) -> Victim:
+    def _build_victim(self, detection: tuple, frame: np.ndarray) -> Victim:
         (x, y, w, h), conf, class_id = detection
 
         u = x + w // 2
@@ -141,7 +143,21 @@ class VictimDetectorNode(Node):
         Y = (v - self.cy) * depth_m / self.fy
         Z = depth_m
 
+        y1 = max(0, y)
+        x1 = max(0, x)
+        y2 = min(frame.shape[0], y + h)
+        x2 = min(frame.shape[1], x + w)
+        crop = frame[y1:y2, x1:x2]
+        
+        b64_str = ""
+        if crop.size > 0:
+            _, buffer = cv2.imencode('.jpg', crop)
+            b64_str = base64.b64encode(buffer).decode('utf-8')
+
+        self.victim_id_counter += 1
+
         victim                          = Victim()
+        victim.id                       = self.victim_id_counter
         victim.detected                 = True
         victim.label                    = self.classes[class_id]
         victim.confidence               = conf
@@ -149,6 +165,7 @@ class VictimDetectorNode(Node):
         victim.position.point.x         = X
         victim.position.point.y         = Y
         victim.position.point.z         = Z
+        victim.image_base64             = b64_str
         return victim
 
 

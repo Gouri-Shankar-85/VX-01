@@ -43,7 +43,7 @@
     </joint>
 
     <xacro:if value="${use_sim}">
-        <gazebo reference="depth_camera_optical_frame">
+        <gazebo reference="depth_camera_link">
             <sensor name="depth_camera" type="rgbd_camera">
                 <ignition_frame_id>depth_camera_optical_frame</ignition_frame_id>
                 <camera name="depth_camera">

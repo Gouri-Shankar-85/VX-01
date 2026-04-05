@@ -190,7 +190,7 @@ drone_arm_controller:
       arm_joint1: { trajectory: 0.2, goal: 0.1 }
       arm_joint2: { trajectory: 0.2, goal: 0.1 }
       arm_joint3: { trajectory: 0.2, goal: 0.1 }
-gz_ros2_control:
+ign_ros2_control:
   ros__parameters:
     gains:
       coxa_leg0_joint: {p: 50.0, i: 0.01, d: 2.0}
