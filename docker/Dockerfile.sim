@@ -23,6 +23,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     mesa-utils \
     && rm -rf /var/lib/apt/lists/*
 
+# ArduPilot SITL setup
+ENV USER=root
+RUN git clone https://github.com/ArduPilot/ardupilot.git /ardupilot && \
+    cd /ardupilot && \
+    git checkout Copter-4.5 && \
+    git submodule update --init --recursive && \
+    Tools/environment_install/install-prereqs-ubuntu.sh -y && \
+    ./waf configure --board sitl && \
+    ./waf copter
+
+# ArduPilot Gazebo Plugin for Ignition Fortress
+RUN apt-get update && apt-get install -y libgz-sim6-dev rapidjson-dev && \
+    git clone https://github.com/ArduPilot/ardupilot_gazebo.git /ardupilot_gazebo && \
+    cd /ardupilot_gazebo && \
+    mkdir build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo && \
+    make -j$(nproc) && \
+    make install && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV GZ_SIM_SYSTEM_PLUGIN_PATH=/usr/local/lib
 ENV QT_X11_NO_MITSHM=1
 
 ENTRYPOINT ["/entrypoint.sh"]
