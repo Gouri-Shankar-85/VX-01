@@ -29,11 +29,9 @@ controller_manager:
     drone_arm_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
-
 joint_state_broadcaster:
   ros__parameters:
     use_sim_time: true
-
 
 leg_0_controller:
   ros__parameters:
@@ -57,7 +55,6 @@ leg_0_controller:
       femur_leg0_joint: { trajectory: 1.5, goal: 0.8 }
       tibia_leg0_joint: { trajectory: 1.5, goal: 0.8 }
 
-
 leg_1_controller:
   ros__parameters:
     use_sim_time: true
@@ -79,7 +76,6 @@ leg_1_controller:
       coxa_leg1_joint:  { trajectory: 1.5, goal: 0.8 }
       femur_leg1_joint: { trajectory: 1.5, goal: 0.8 }
       tibia_leg1_joint: { trajectory: 1.5, goal: 0.8 }
-
 
 leg_2_controller:
   ros__parameters:
@@ -103,7 +99,6 @@ leg_2_controller:
       femur_leg2_joint: { trajectory: 1.5, goal: 0.8 }
       tibia_leg2_joint: { trajectory: 1.5, goal: 0.8 }
 
-
 leg_3_controller:
   ros__parameters:
     use_sim_time: true
@@ -125,7 +120,6 @@ leg_3_controller:
       coxa_leg3_joint:  { trajectory: 1.5, goal: 0.8 }
       femur_leg3_joint: { trajectory: 1.5, goal: 0.8 }
       tibia_leg3_joint: { trajectory: 1.5, goal: 0.8 }
-
 
 leg_4_controller:
   ros__parameters:
@@ -149,7 +143,6 @@ leg_4_controller:
       femur_leg4_joint: { trajectory: 1.5, goal: 0.8 }
       tibia_leg4_joint: { trajectory: 1.5, goal: 0.8 }
 
-
 leg_5_controller:
   ros__parameters:
     use_sim_time: true
@@ -172,7 +165,6 @@ leg_5_controller:
       femur_leg5_joint: { trajectory: 1.5, goal: 0.8 }
       tibia_leg5_joint: { trajectory: 1.5, goal: 0.8 }
 
-
 drone_arm_controller:
   ros__parameters:
     use_sim_time: true
@@ -181,10 +173,6 @@ drone_arm_controller:
       - arm_joint1
       - arm_joint2
       - arm_joint3
-      - prop_0
-      - prop_1
-      - prop_2
-      - prop_3
     command_interfaces:
       - position
     state_interfaces:
