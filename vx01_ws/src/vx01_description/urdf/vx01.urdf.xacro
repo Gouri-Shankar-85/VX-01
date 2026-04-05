@@ -59,7 +59,7 @@
               <fdm_port_out>9003</fdm_port_out>
               <modelXYZToAirplaneXForwardZDown>0 0 0 3.14159 0 0</modelXYZToAirplaneXForwardZDown>
               <gazeboXYZToNED>0 0 0 3.14159 0 0</gazeboXYZToNED>
-              <imuName>vx01::base_link::imu_sensor</imuName>
+              <imuName>imu_sensor</imuName>
               
               <control channel="0">
                 <jointName>prop_0</jointName>

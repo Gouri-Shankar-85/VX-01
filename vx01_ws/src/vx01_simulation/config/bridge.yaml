@@ -13,7 +13,7 @@
 
 # ── IMU  (Hiwonder IM10A — 10-axis AHRS/INS) ─────────────────────────────────
 - ros_topic_name: "/imu/data"
-  gz_topic_name: "/imu/data"
+  gz_topic_name: "/world/empty/model/vx01/link/base_footprint/sensor/imu_sensor/imu"
   ros_type_name: "sensor_msgs/msg/Imu"
   gz_type_name: "ignition.msgs.IMU"
   direction: GZ_TO_ROS
