@@ -116,6 +116,27 @@
                 <state_interface name="position"><param name="initial_value">0.0</param></state_interface>
             </joint>
 
+            <joint name="prop_0">
+                <command_interface name="velocity"></command_interface>
+                <state_interface name="velocity"></state_interface>
+                <state_interface name="position"></state_interface>
+            </joint>
+            <joint name="prop_1">
+                <command_interface name="velocity"></command_interface>
+                <state_interface name="velocity"></state_interface>
+                <state_interface name="position"></state_interface>
+            </joint>
+            <joint name="prop_2">
+                <command_interface name="velocity"></command_interface>
+                <state_interface name="velocity"></state_interface>
+                <state_interface name="position"></state_interface>
+            </joint>
+            <joint name="prop_3">
+                <command_interface name="velocity"></command_interface>
+                <state_interface name="velocity"></state_interface>
+                <state_interface name="position"></state_interface>
+            </joint>
+
         </ros2_control>
 
     </xacro:if>
