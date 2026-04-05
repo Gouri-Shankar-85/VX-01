@@ -54,3 +54,9 @@
   ros_type_name: "sensor_msgs/msg/LaserScan"
   gz_type_name: "ignition.msgs.LaserScan"
   direction: GZ_TO_ROS
+
+- ros_topic_name: "/tf_mini/scan"
+  gz_topic_name: "/tf_mini/scan"
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  gz_type_name: "ignition.msgs.LaserScan"
+  direction: GZ_TO_ROS

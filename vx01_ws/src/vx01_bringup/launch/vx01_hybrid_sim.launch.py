@@ -42,7 +42,7 @@ def generate_launch_description():
         parameters=[
             {'fcu_url': 'tcp://127.0.0.1:5760'},
             {'use_sim_time': True},
-            {'sys': {'conn_timeout': 120.0}},
+            os.path.join(get_package_share_directory('vx01_bringup'), 'config', 'mavros_sim_config.yaml'),
             {'gcs_url': ''},
             {'target_system_id': 1},
             {'target_component_id': 1},
@@ -64,11 +64,18 @@ def generate_launch_description():
         output='screen'
     )
 
+    web_video_server = Node(
+        package='web_video_server',
+        executable='web_video_server',
+        output='screen',
+        parameters=[{'port': 8080}]
+    )
+
     return LaunchDescription([
         sim_launch,
         sitl_layer,
         TimerAction(
             period=10.0,
-            actions=[mavros_node, mode_manager, aerial_controller]
+            actions=[mavros_node, mode_manager, aerial_controller, web_video_server]
         )
     ])

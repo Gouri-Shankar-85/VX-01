@@ -30,6 +30,10 @@
     <!-- ── Sensors ── -->
     <xacro:include filename="$(find vx01_description)/urdf/sensors/depth_camera.xacro"/>
     <xacro:include filename="$(find vx01_description)/urdf/sensors/imu.xacro"/>
+    <xacro:include filename="$(find vx01_description)/urdf/sensors/tf_mini.xacro"/>
+    <xacro:tf_mini parent="base_footprint">
+        <origin xyz="0 0 -0.05" rpy="0 1.5708 0"/>
+    </xacro:tf_mini>
     <!-- <xacro:include filename="$(find vx01_description)/urdf/sensors/tf_lidar.xacro"/> -->
 
     <!-- ROS2_control -->

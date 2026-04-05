@@ -1,0 +1,5 @@
+# MAVROS parameters for VX-01 Hybrid Simulation
+/**:
+  ros__parameters:
+    sys:
+      conn_timeout: 120.0

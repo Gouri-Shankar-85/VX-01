@@ -190,3 +190,54 @@ drone_arm_controller:
       arm_joint1: { trajectory: 0.2, goal: 0.1 }
       arm_joint2: { trajectory: 0.2, goal: 0.1 }
       arm_joint3: { trajectory: 0.2, goal: 0.1 }
+gz_ros2_control:
+  ros__parameters:
+    gains:
+      coxa_leg0_joint: {p: 50.0, i: 0.01, d: 2.0}
+      femur_leg0_joint: {p: 50.0, i: 0.01, d: 2.0}
+      tibia_leg0_joint: {p: 50.0, i: 0.01, d: 2.0}
+      coxa_leg1_joint: {p: 50.0, i: 0.01, d: 2.0}
+      femur_leg1_joint: {p: 50.0, i: 0.01, d: 2.0}
+      tibia_leg1_joint: {p: 50.0, i: 0.01, d: 2.0}
+      coxa_leg2_joint: {p: 50.0, i: 0.01, d: 2.0}
+      femur_leg2_joint: {p: 50.0, i: 0.01, d: 2.0}
+      tibia_leg2_joint: {p: 50.0, i: 0.01, d: 2.0}
+      coxa_leg3_joint: {p: 50.0, i: 0.01, d: 2.0}
+      femur_leg3_joint: {p: 50.0, i: 0.01, d: 2.0}
+      tibia_leg3_joint: {p: 50.0, i: 0.01, d: 2.0}
+      coxa_leg4_joint: {p: 50.0, i: 0.01, d: 2.0}
+      femur_leg4_joint: {p: 50.0, i: 0.01, d: 2.0}
+      tibia_leg4_joint: {p: 50.0, i: 0.01, d: 2.0}
+      coxa_leg5_joint: {p: 50.0, i: 0.01, d: 2.0}
+      femur_leg5_joint: {p: 50.0, i: 0.01, d: 2.0}
+      tibia_leg5_joint: {p: 50.0, i: 0.01, d: 2.0}
+      arm_joint0: {p: 20.0, i: 0.0, d: 1.0}
+      arm_joint1: {p: 20.0, i: 0.0, d: 1.0}
+      arm_joint2: {p: 20.0, i: 0.0, d: 1.0}
+      arm_joint3: {p: 20.0, i: 0.0, d: 1.0}
+
+controller_manager:
+  ros__parameters:
+    gains:
+      coxa_leg0_joint: {p: 50.0, i: 0.01, d: 2.0}
+      femur_leg0_joint: {p: 50.0, i: 0.01, d: 2.0}
+      tibia_leg0_joint: {p: 50.0, i: 0.01, d: 2.0}
+      coxa_leg1_joint: {p: 50.0, i: 0.01, d: 2.0}
+      femur_leg1_joint: {p: 50.0, i: 0.01, d: 2.0}
+      tibia_leg1_joint: {p: 50.0, i: 0.01, d: 2.0}
+      coxa_leg2_joint: {p: 50.0, i: 0.01, d: 2.0}
+      femur_leg2_joint: {p: 50.0, i: 0.01, d: 2.0}
+      tibia_leg2_joint: {p: 50.0, i: 0.01, d: 2.0}
+      coxa_leg3_joint: {p: 50.0, i: 0.01, d: 2.0}
+      femur_leg3_joint: {p: 50.0, i: 0.01, d: 2.0}
+      tibia_leg3_joint: {p: 50.0, i: 0.01, d: 2.0}
+      coxa_leg4_joint: {p: 50.0, i: 0.01, d: 2.0}
+      femur_leg4_joint: {p: 50.0, i: 0.01, d: 2.0}
+      tibia_leg4_joint: {p: 50.0, i: 0.01, d: 2.0}
+      coxa_leg5_joint: {p: 50.0, i: 0.01, d: 2.0}
+      femur_leg5_joint: {p: 50.0, i: 0.01, d: 2.0}
+      tibia_leg5_joint: {p: 50.0, i: 0.01, d: 2.0}
+      arm_joint0: {p: 20.0, i: 0.0, d: 1.0}
+      arm_joint1: {p: 20.0, i: 0.0, d: 1.0}
+      arm_joint2: {p: 20.0, i: 0.0, d: 1.0}
+      arm_joint3: {p: 20.0, i: 0.0, d: 1.0}

@@ -210,6 +210,21 @@ export default function Dashboard() {
     svc.callService(new ROSLIB.ServiceRequest(request), () => {});
   };
 
+  const backendLaunch = async (command_id, command_string) => {
+    try {
+      const res = await fetch(`http://${window.location.hostname}:3001/api/launch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command_id, command_string })
+      });
+      const data = await res.json();
+      if (!res.ok) addLog("ERROR", data.error || "Failed to launch process");
+      else addLog("INFO", data.message);
+    } catch (err) {
+      addLog("ERROR", "Backend unreachable. Is server.js running?");
+    }
+  };
+
   const logColor = { INFO: "text-green-400", WARN: "text-yellow-400", ERROR: "text-red-500", FATAL: "text-red-700", DEBUG: "text-gray-400" };
 
   return (
@@ -284,8 +299,18 @@ export default function Dashboard() {
           <div className="grid grid-cols-4 gap-6">
             <div className="col-span-3 bg-white p-4 rounded-xl shadow-lg">
               <h3 className="font-semibold mb-2">Camera Feed</h3>
-              <div className="h-80 bg-gray-900 rounded-lg flex items-center justify-center text-gray-400">
-                Live Stream
+              <div className="h-80 bg-gray-900 rounded-lg flex items-center justify-center text-gray-400 overflow-hidden">
+                {rosConnected ? (
+                  <img
+                    src={`http://${window.location.hostname}:8080/stream?topic=/depth_camera/color/image_raw&type=ros_compressed&width=640&height=480`}
+                    className="w-full h-full object-cover"
+                    alt="Camera Feed"
+                    onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }}
+                  />
+                ) : null}
+                <div className={rosConnected ? "hidden" : "block"}>
+                  {rosConnected ? "No Camera Feed" : "Live Stream Offline"}
+                </div>
               </div>
             </div>
 
@@ -348,6 +373,38 @@ export default function Dashboard() {
             </div>
 
             <div className="bg-white p-6 rounded-xl shadow-lg">
+              <h3 className="font-semibold mb-4">Launch & Diagnostics</h3>
+              <div className="space-y-3">
+                <button
+                  onClick={() => backendLaunch("sim", "ros2 launch vx01_bringup vx01_hybrid_sim.launch.py")}
+                  className="w-full bg-blue-800 text-white p-3 rounded-lg hover:bg-blue-900"
+                >
+                  Boot Hybrid Simulator
+                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => backendLaunch("map", "ros2 launch vx01_simulation vx01_mapping.launch.py")}
+                    className="w-full bg-purple-600 text-white p-2 text-sm rounded hover:bg-purple-700"
+                  >
+                    Start Mapping
+                  </button>
+                  <button
+                    onClick={() => backendLaunch("walk", "ros2 launch vx01_locomotion_control walk.launch.py")}
+                    className="w-full bg-green-600 text-white p-2 text-sm rounded hover:bg-green-700"
+                  >
+                    Start Hexapod Walk
+                  </button>
+                  <button
+                    onClick={() => backendLaunch("auto", "python3 /vx01_ws/src/vx01_bringup/scripts/mission_coordinator.py")}
+                    className="w-full col-span-2 bg-indigo-600 text-white p-2 text-sm rounded hover:bg-indigo-700"
+                  >
+                    Start Full Mission Autonomy
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-lg">
               <h3 className="font-semibold mb-4">Mission Control</h3>
               <div className="space-y-3">
                 <button
@@ -369,12 +426,6 @@ export default function Dashboard() {
                   className="w-full bg-red-600 text-white p-3 rounded-lg hover:bg-red-700"
                 >
                   Emergency Stop
-                </button>
-                <button
-                  onClick={() => sendOperatorCmd("RESET")}
-                  className="w-full bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700 mt-2"
-                >
-                  Reset Mission
                 </button>
               </div>
             </div>
