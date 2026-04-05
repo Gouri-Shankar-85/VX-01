@@ -33,6 +33,7 @@ TripodWalkNode::TripodWalkNode(const rclcpp::NodeOptions & options)
         [this](const std_msgs::msg::Empty::SharedPtr) {
             RCLCPP_INFO(get_logger(), "Go-home command received.");
             walking_ = false;
+            ++cycle_id_;   // invalidate any in-flight walk callbacks
             locomotion_->stand();
             sendStandUpTrajectory();
         });
@@ -443,15 +444,14 @@ void TripodWalkNode::cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr m
 
     if (any_motion && !walking_) {
         walking_ = true;
-        half_cycle_group_ = 0;  // Start with group A swinging
-        legs_done_        = 0;
+        half_cycle_group_ = 0;
         locomotion_->walk();
         RCLCPP_INFO(get_logger(), "Walking: vx=%.3f vy=%.3f omega=%.3f",
                     cmd_vx_, cmd_vy_, cmd_omega_);
-        // Kick off the first half-cycle immediately
-        sendHalfCycle();
+        sendHalfCycle();  // kicks off first half-cycle
     } else if (!any_motion && walking_) {
         walking_ = false;
+        ++cycle_id_;   // invalidate all pending half-cycle callbacks immediately
         locomotion_->stand();
         RCLCPP_INFO(get_logger(), "Stopping — returning to stand.");
     }

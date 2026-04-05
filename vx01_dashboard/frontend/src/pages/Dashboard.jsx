@@ -193,40 +193,65 @@ export default function Dashboard() {
   const startDroneCmd = (lx, ly, lz, az) => {
     if (!rosRef.current || !rosConnected) return;
     if (droneIntervalRef.current) clearInterval(droneIntervalRef.current);
-    
-    currentCmdRef.current = { lx: lx * speedMultiplier, ly: ly * speedMultiplier, lz: lz * speedMultiplier, az: az * speedMultiplier };
-    
-    const droneVel = new ROSLIB.Topic({ ros: rosRef.current, name: "/mavros/setpoint_velocity/cmd_vel_unstamped", messageType: "geometry_msgs/msg/Twist" });
-    
-    droneVel.publish(new ROSLIB.Message({
-      linear: { x: currentCmdRef.current.lx, y: currentCmdRef.current.ly, z: currentCmdRef.current.lz },
+
+    currentCmdRef.current = {
+      lx: lx * speedMultiplier,
+      ly: ly * speedMultiplier,
+      lz: lz * speedMultiplier,
+      az: az * speedMultiplier
+    };
+
+    // Publish to /drone/cmd_vel — aerial_controller streams this to MAVROS at 10Hz
+    const droneCmdTopic = new ROSLIB.Topic({
+      ros: rosRef.current,
+      name: "/drone/cmd_vel",
+      messageType: "geometry_msgs/msg/Twist"
+    });
+
+    const publishCmd = () => droneCmdTopic.publish(new ROSLIB.Message({
+      linear:  { x: currentCmdRef.current.lx, y: currentCmdRef.current.ly, z: currentCmdRef.current.lz },
       angular: { x: 0, y: 0, z: currentCmdRef.current.az },
     }));
 
-    droneIntervalRef.current = setInterval(() => {
-      droneVel.publish(new ROSLIB.Message({
-        linear: { x: currentCmdRef.current.lx, y: currentCmdRef.current.ly, z: currentCmdRef.current.lz },
-        angular: { x: 0, y: 0, z: currentCmdRef.current.az },
-      }));
-    }, 100);
+    publishCmd();
+    // Also keep frontend interval to switch directions cleanly
+    droneIntervalRef.current = setInterval(publishCmd, 200);
   };
 
   const stopDrone = () => {
     if (droneIntervalRef.current) clearInterval(droneIntervalRef.current);
     if (!rosRef.current || !rosConnected) return;
-    const droneVel = new ROSLIB.Topic({ ros: rosRef.current, name: "/mavros/setpoint_velocity/cmd_vel_unstamped", messageType: "geometry_msgs/msg/Twist" });
-    droneVel.publish(new ROSLIB.Message({ linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0 } }));
+    currentCmdRef.current = { lx: 0, ly: 0, lz: 0, az: 0 };
+    const droneCmdTopic = new ROSLIB.Topic({
+      ros: rosRef.current,
+      name: "/drone/cmd_vel",
+      messageType: "geometry_msgs/msg/Twist"
+    });
+    droneCmdTopic.publish(new ROSLIB.Message({
+      linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0 }
+    }));
   };
 
   const forceArm = () => {
     if (!rosRef.current || !rosConnected) return;
+    // Step 1: Set ARMING_CHECK=0
     const paramSet = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/param/set", serviceType: "mavros_msgs/srv/ParamSet" });
     paramSet.callService(new ROSLIB.ServiceRequest({ param_id: "ARMING_CHECK", value: { integer: 0, real: 0.0 } }), () => {
-      addLog("WARN", "Bypassed arming checks");
+      addLog("WARN", "ARMING_CHECK bypassed");
+      // Step 2: Set GUIDED mode
       setTimeout(() => {
-        const armSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
-        armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), () => addLog("INFO", "Force Arm successful"));
-      }, 500);
+        const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode", serviceType: "mavros_msgs/srv/SetMode" });
+        modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "GUIDED" }), () => {
+          addLog("INFO", "Mode: GUIDED");
+          // Step 3: Arm
+          setTimeout(() => {
+            const armSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
+            armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), (res) => {
+              addLog(res && res.success ? "INFO" : "WARN", res && res.success ? "Armed successfully" : "Arm failed — try again");
+            });
+          }, 500);
+        });
+      }, 300);
     });
   };
 

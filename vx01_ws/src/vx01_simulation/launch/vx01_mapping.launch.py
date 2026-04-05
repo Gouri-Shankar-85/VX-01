@@ -15,22 +15,27 @@ def generate_launch_description():
             os.path.join(rtabmap_dir, 'launch', 'rtabmap.launch.py')
         ),
         launch_arguments={
-            # Odometry tuning: lower inlier threshold for sim low-texture scenes
-            # Use GFTT detector (type=1), larger F2M map, auto-reinit on lost odom
+            # ORB features (type=11) work well on low-texture Gazebo scenes
+            # GFTT (type=1) fails on plain floors/walls — switched to ORB
             'rtabmap_args':         '--delete_db_on_start'
-                                    ' --Vis/MinInliers 10'
-                                    ' --Vis/FeatureType 1'
+                                    ' --Vis/FeatureType 11'
+                                    ' --Kp/DetectorStrategy 11'
+                                    ' --Vis/MaxFeatures 1000'
+                                    ' --Vis/MinInliers 5'
+                                    ' --OdomF2M/MinInliers 5'
                                     ' --OdomF2M/MaxSize 3000'
-                                    ' --Odom/ResetCountdown 1',
+                                    ' --Odom/ResetCountdown 1'
+                                    ' --Vis/MaxDepth 4.0',
             'frame_id':             'base_footprint',
             'visual_odometry':      'true',
             'rgb_topic':            '/depth_camera/color/image_raw',
             'depth_topic':          '/depth_camera/depth/image_raw',
             'camera_info_topic':    '/depth_camera/camera_info',
-            # NOTE: do NOT pass imu_topic:='' — that generates '-r imu:=' which
-            # crashes rtabmap. Instead disable IMU waiting; spam errors are harmless.
+            # DO NOT pass imu_topic:='' — crashes rtabmap with invalid remap
             'wait_imu_to_init':     'false',
             'approx_sync':          'true',
+            # 100ms tolerance handles the ~66ms RGB/depth timestamp mismatch in sim
+            'approx_sync_max_interval': '0.1',
             'qos':                  '2',
             'use_sim_time':         use_sim_time,
             'rviz':                 'false',
