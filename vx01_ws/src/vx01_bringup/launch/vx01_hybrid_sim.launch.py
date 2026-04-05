@@ -47,8 +47,20 @@ def generate_launch_description():
             {'target_system_id': 1},
             {'target_component_id': 1},
             {'fcu_protocol': 'v2.0'},
-            {'plugin_denylist': ['ftp', 'param']}
+            # 'param' plugin MUST be active for dashboard ARMING_CHECK bypass to work
+            {'plugin_denylist': ['ftp']}
         ]
+    )
+
+    # Auto-bypass arming checks 60s after launch (drone is always tilted on hexapod)
+    arming_bypass = ExecuteProcess(
+        cmd=[
+            'bash', '-c',
+            'sleep 60 && ros2 param set /mavros ARMING_CHECK 0 || '
+            'ros2 service call /mavros/param/set mavros_msgs/srv/ParamSet '
+            '"param_id: ARMING_CHECK\nvalue: {integer: 0, real: 0.0}"'
+        ],
+        output='screen'
     )
 
     # Hybrid Mode Nodes
@@ -76,6 +88,6 @@ def generate_launch_description():
         sitl_layer,
         TimerAction(
             period=10.0,
-            actions=[mavros_node, mode_manager, aerial_controller, web_video_server]
+            actions=[mavros_node, mode_manager, aerial_controller, web_video_server, arming_bypass]
         )
     ])

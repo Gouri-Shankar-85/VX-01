@@ -18,6 +18,7 @@
 #include <string>
 #include <memory>
 #include <array>
+#include <atomic>
 
 namespace vx01_locomotion_control {
 
@@ -43,6 +44,8 @@ private:
     void executeGaitBlock();
     void sendStandUpTrajectory();
     void sendLegTrajectory(int leg_id, bool is_swing, double block_duration);
+    void sendHalfCycle();
+    void sendFullHalfCycleTraj(int leg_id, bool is_swing, double duration);
 
     // Per-leg stride amplitude in leg-local X and Y for current cmd_vel
     void legStride(int leg_id, double& stride_x, double& stride_y) const;
@@ -86,6 +89,8 @@ private:
 
     double cmd_vx_{0.0}, cmd_vy_{0.0}, cmd_omega_{0.0};
     bool   walking_{false};
+    int    half_cycle_group_{0};  // 0=GroupA swings, 1=GroupB swings
+    std::atomic<int> legs_done_{0};
     std::array<bool, 6>    goal_active_{};
     std::array<double, 18> current_joint_state_{};
     bool   joint_state_received_{false};

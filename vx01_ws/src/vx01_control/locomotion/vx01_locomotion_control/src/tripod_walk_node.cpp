@@ -443,9 +443,13 @@ void TripodWalkNode::cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr m
 
     if (any_motion && !walking_) {
         walking_ = true;
+        half_cycle_group_ = 0;  // Start with group A swinging
+        legs_done_        = 0;
         locomotion_->walk();
         RCLCPP_INFO(get_logger(), "Walking: vx=%.3f vy=%.3f omega=%.3f",
                     cmd_vx_, cmd_vy_, cmd_omega_);
+        // Kick off the first half-cycle immediately
+        sendHalfCycle();
     } else if (!any_motion && walking_) {
         walking_ = false;
         locomotion_->stand();
@@ -453,20 +457,86 @@ void TripodWalkNode::cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr m
     }
 }
 
-void TripodWalkNode::gaitCycleTimer()
+// Sends full swing + stance trajectories for all 6 legs for current half_cycle_group_.
+// Groups: 0 => A swings (legs 0,2,4), 1 => B swings (legs 1,3,5)
+void TripodWalkNode::sendHalfCycle()
 {
     if (!walking_) return;
-    executeGaitBlock();
-    locomotion_->update(step_period_ / 6.0);
-}
 
-void TripodWalkNode::executeGaitBlock()
-{
-    const double block_duration = step_period_ / 6.0;
+    const double half_dur = step_period_ / 2.0;
+    legs_done_ = 0;
+
+    // Decide which legs are swing vs stance for this half-cycle
+    // Group A = {0,2,4}, Group B = {1,3,5}
+    const bool group_a_swings = (half_cycle_group_ == 0);
+
     for (int leg = 0; leg < 6; ++leg) {
-        sendLegTrajectory(leg, locomotion_->isSwingPhase(leg), block_duration);
+        const bool in_group_a = (leg == 0 || leg == 2 || leg == 4);
+        const bool is_swing   = group_a_swings ? in_group_a : !in_group_a;
+        sendFullHalfCycleTraj(leg, is_swing, half_dur);
     }
 }
+
+void TripodWalkNode::sendFullHalfCycleTraj(int leg_id, bool is_swing, double duration)
+{
+    trajectory_msgs::msg::JointTrajectory traj;
+    traj.joint_names   = joint_names_[leg_id];
+    traj.header.stamp  = now();
+    traj.header.frame_id = base_frame_;
+
+    const int n_wp = n_waypoints_ * 3;  // Use 3x waypoints for full half-cycle
+
+    for (int wp = 0; wp <= n_wp; ++wp) {
+        const double t = static_cast<double>(wp) / static_cast<double>(n_wp);
+        std::array<double, 3> angles;
+        if (is_swing) {
+            angles = swingWaypoint(leg_id, t);
+        } else {
+            angles = stanceWaypoint(leg_id, t);
+        }
+
+        trajectory_msgs::msg::JointTrajectoryPoint pt;
+        pt.positions         = {angles[0], angles[1], angles[2]};
+        pt.velocities        = {0.0, 0.0, 0.0};
+        pt.time_from_start   = rclcpp::Duration::from_seconds(t * duration);
+        traj.points.push_back(pt);
+    }
+
+    auto goal = FollowJointTrajectory::Goal();
+    goal.trajectory          = traj;
+    goal.goal_time_tolerance = rclcpp::Duration::from_seconds(1.5);
+
+    goal_active_[leg_id] = true;
+
+    auto send_opts = rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions();
+
+    send_opts.result_callback =
+        [this, leg_id](const GoalHandleFJT::WrappedResult & result) {
+            goal_active_[leg_id] = false;
+            if (result.code != rclcpp_action::ResultCode::SUCCEEDED) {
+                RCLCPP_WARN(get_logger(),
+                    "Leg %d half-cycle did not succeed (code=%d) — continuing",
+                    leg_id, static_cast<int>(result.code));
+            }
+            // When all 6 legs finish their trajectories, flip group and re-send
+            legs_done_++;
+            if (legs_done_ >= 6 && walking_) {
+                half_cycle_group_ = 1 - half_cycle_group_;  // flip A<->B
+                sendHalfCycle();
+            }
+        };
+
+    send_opts.feedback_callback =
+        [](GoalHandleFJT::SharedPtr,
+           const std::shared_ptr<const FollowJointTrajectory::Feedback>) {};
+
+    action_clients_[leg_id]->async_send_goal(goal, send_opts);
+}
+
+// Legacy gaitCycleTimer and executeGaitBlock kept empty — driving is done via sendHalfCycle()
+void TripodWalkNode::gaitCycleTimer() {}
+void TripodWalkNode::executeGaitBlock() {}
+
 
 }  // namespace vx01_locomotion_control
 
