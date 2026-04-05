@@ -22,8 +22,8 @@ app.post('/api/launch', (req, res) => {
 
     console.log(`Starting process: ${command_id} -> ${command_string}`);
     
-    // Launch inside bash shell with ROS sourced
-    const child = exec(`bash -c "${ROS_SETUP} && ${command_string}"`);
+    // Launch directly into the Docker Container from the host
+    const child = exec(`docker exec vx01-dev bash -c "${ROS_SETUP} && ${command_string}"`);
     
     processes[command_id] = child;
 
