@@ -34,13 +34,25 @@ def generate_launch_description():
         output='screen'
     )
 
-    # Launch MAVROS connecting directly to SITL TCP port
+    # MAVProxy router to handle connection backpressure
+    mavproxy_layer = ExecuteProcess(
+        cmd=[
+            'mavproxy.py',
+            '--master=tcp:127.0.0.1:5760',
+            '--out=tcpin:127.0.0.1:5762',
+            '--daemon',
+            '--nowait'
+        ],
+        output='screen'
+    )
+
+    # Launch MAVROS connecting to MAVProxy
     mavros_node = Node(
         package='mavros',
         executable='mavros_node',
         output='screen',
         parameters=[
-            {'fcu_url': 'tcp://127.0.0.1:5760'},
+            {'fcu_url': 'tcp://127.0.0.1:5762'},
             {'gcs_url': ''},
             {'target_system_id': 1},
             {'target_component_id': 1},
@@ -64,6 +76,10 @@ def generate_launch_description():
     return LaunchDescription([
         sim_launch,
         sitl_layer,
+        TimerAction(
+            period=5.0,
+            actions=[mavproxy_layer]
+        ),
         TimerAction(
             period=10.0,
             actions=[mavros_node, mode_manager, aerial_controller]
