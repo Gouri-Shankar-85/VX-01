@@ -11,7 +11,7 @@ const PORT = 3001;
 // Keep track of running processes
 const processes = {};
 
-const ROS_SETUP = 'source /opt/ros/humble/setup.bash && source /home/devan/vx-01/vx01_ws/install/setup.bash';
+const ROS_SETUP = 'source /opt/ros/humble/setup.bash && source /vx01_ws/install/setup.bash';
 
 app.post('/api/launch', (req, res) => {
     const { command_id, command_string } = req.body;
