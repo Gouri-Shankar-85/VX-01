@@ -39,7 +39,7 @@ def generate_launch_description():
         cmd=[
             'mavproxy.py',
             '--master=tcp:127.0.0.1:5760',
-            '--out=tcpin:127.0.0.1:5762',
+            '--out=udp:127.0.0.1:14550',
             '--daemon',
             '--nowait'
         ],
@@ -52,7 +52,7 @@ def generate_launch_description():
         executable='mavros_node',
         output='screen',
         parameters=[
-            {'fcu_url': 'tcp://127.0.0.1:5762'},
+            {'fcu_url': 'udp://127.0.0.1:14550@'},
             {'gcs_url': ''},
             {'target_system_id': 1},
             {'target_component_id': 1},
