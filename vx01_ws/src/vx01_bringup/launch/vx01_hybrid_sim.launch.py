@@ -45,7 +45,7 @@ def generate_launch_description():
             {'target_system_id': 1},
             {'target_component_id': 1},
             {'fcu_protocol': 'v2.0'},
-            {'plugin_denylist': ['ftp']}
+            {'plugin_denylist': ['ftp', 'param']}
         ]
     )
 
