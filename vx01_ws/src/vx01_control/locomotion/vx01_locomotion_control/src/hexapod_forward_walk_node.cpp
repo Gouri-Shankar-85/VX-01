@@ -8,8 +8,8 @@ using namespace std::chrono_literals;
 namespace vx01_locomotion_control {
 
 HexapodForwardWalkNode::HexapodForwardWalkNode(const rclcpp::NodeOptions& options)
-: Node("hexapod_forward_walk_node", options), standby_done_(false),
-  last_sent_block_(-1), block_period_(0.0),
+: Node("hexapod_forward_walk_node", options), block_period_(0.0),
+  standby_done_(false), last_sent_block_(-1), 
   last_sent_angles_(18, 0.0)
 {
     declare_parameter("L1", 60.55);

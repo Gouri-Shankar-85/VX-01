@@ -997,7 +997,7 @@ void CameraPublisher::rgbInfoPublisher(AS_CAM_PTR pCamera, const AS_SDK_Data_s *
 }
 
 void CameraPublisher::irInfoPublisher(AS_CAM_PTR pCamera, const AS_SDK_Data_s *pstData,
-                                      AS_CAM_Parameter_s &stParameter, builtin_interfaces::msg::Time time)
+                                      AS_CAM_Parameter_s &stParameter, builtin_interfaces::msg::Time /*time*/)
 {
     if (pstData->irImg.size == 0) {
         return;
@@ -1030,7 +1030,7 @@ void CameraPublisher::irInfoPublisher(AS_CAM_PTR pCamera, const AS_SDK_Data_s *p
 }
 
 void CameraPublisher::peakInfoPublisher(AS_CAM_PTR pCamera, const AS_SDK_Data_s *pstData,
-                                        AS_CAM_Parameter_s &stParameter, builtin_interfaces::msg::Time time)
+                                        AS_CAM_Parameter_s &stParameter, builtin_interfaces::msg::Time /*time*/)
 {
     if (pstData->peakImg.size == 0) {
         return;
@@ -1078,7 +1078,7 @@ void CameraPublisher::peakInfoPublisher(AS_CAM_PTR pCamera, const AS_SDK_Data_s 
 }
 
 void CameraPublisher::depthMergeInfoPublisher(AS_CAM_PTR pCamera, const AS_SDK_MERGE_s *pstData,
-        AS_CAM_Parameter_s &stParameter, builtin_interfaces::msg::Time time)
+        AS_CAM_Parameter_s & /*stParameter*/, builtin_interfaces::msg::Time time)
 {
     AS_SDK_CAM_MODEL_E cam_type = AS_SDK_CAM_MODEL_UNKNOWN;
     auto it_par = m_cam_type_map.find(pCamera);
@@ -1116,7 +1116,7 @@ void CameraPublisher::depthMergeInfoPublisher(AS_CAM_PTR pCamera, const AS_SDK_M
 }
 
 void CameraPublisher::pointcloudMergePublisher(AS_CAM_PTR pCamera, const AS_SDK_MERGE_s *pData,
-        AS_CAM_Parameter_s &stParameter)
+        AS_CAM_Parameter_s & /*stParameter*/)
 {
     if (pData->pointCloud.size == 0) {
         return;

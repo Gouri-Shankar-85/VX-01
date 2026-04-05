@@ -9,7 +9,7 @@ namespace vx01_locomotion_control {
 
 HexapodTurnNode::HexapodTurnNode(const rclcpp::NodeOptions& options)
 : Node("hexapod_turn_node", options),
-  standby_done_(false), last_sent_block_(-1), block_period_(0.0),
+  block_period_(0.0), standby_done_(false), last_sent_block_(-1),
   last_sent_angles_(18, 0.0)
 {
     declare_parameter("L1",               60.55);

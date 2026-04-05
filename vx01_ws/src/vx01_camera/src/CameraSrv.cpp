@@ -293,7 +293,7 @@ void CameraSrv::onNewMergeFrame(AS_CAM_PTR pCamera, const AS_SDK_MERGE_s *pstDat
     server->m_camera_status->onCameraNewMergeFrame(pCamera, pstData);
 }
 
-int CameraSrv::getConfigFile(AS_CAM_PTR pCamera, std::string &configfile, AS_SDK_CAM_MODEL_E cam_type)
+int CameraSrv::getConfigFile(AS_CAM_PTR /*pCamera*/, std::string &configfile, AS_SDK_CAM_MODEL_E cam_type)
 {
     int ret = 0;
     std::string name_key;
