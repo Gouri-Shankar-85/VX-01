@@ -494,6 +494,21 @@ export default function Dashboard() {
                     <button onClick={() => sendHexapodCmd(-0.5, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl border border-gray-700 hover:bg-white hover:text-black transition shadow-inner">↓</button>
                     <div></div>
                   </div>
+
+                  <div className="mt-6 border-t border-gray-800 pt-4">
+                    <button
+                      onClick={() => {
+                        if (!rosRef.current || !rosConnected) return;
+                        stopHexapod();
+                        const goHome = new ROSLIB.Topic({ ros: rosRef.current, name: "/hexapod/go_home", messageType: "std_msgs/msg/Empty" });
+                        goHome.publish(new ROSLIB.Message({}));
+                        addLog("INFO", "Go-home command sent to hexapod.");
+                      }}
+                      className="w-full bg-amber-900/40 border border-amber-700 text-amber-400 p-3 rounded-lg hover:bg-amber-700 hover:text-white transition font-mono text-sm font-bold tracking-widest"
+                    >
+                      ⌂ SEND TO HOME POSITION
+                    </button>
+                  </div>
                 </div>
 
                 {/* Drone Control */}
@@ -536,13 +551,26 @@ export default function Dashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 font-mono text-sm max-w-sm mx-auto">
                     <button onClick={forceArm} className="bg-red-900/40 border border-red-800 text-red-500 p-3 rounded hover:bg-red-800 hover:text-white transition">FORCE ARM / BYPASS</button>
                     <button onClick={() => {
-                        const armSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
-                        armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), () => addLog("INFO", "Normal Arming"));
-                      }} className="bg-emerald-900/40 border border-emerald-800 text-emerald-500 p-3 rounded hover:bg-emerald-800 hover:text-white transition">ARM (NORMAL)</button>
+                        if (!rosRef.current || !rosConnected) return;
+                        // Step 1: set GUIDED mode, then ARM
+                        const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode", serviceType: "mavros_msgs/srv/SetMode" });
+                        modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "GUIDED" }), (res) => {
+                          addLog("INFO", `Mode set: ${JSON.stringify(res)}`);
+                          setTimeout(() => {
+                            const armSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
+                            armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), () => addLog("INFO", "ARM command sent"));
+                          }, 500);
+                        });
+                      }} className="bg-emerald-900/40 border border-emerald-800 text-emerald-500 p-3 rounded hover:bg-emerald-800 hover:text-white transition">GUIDED + ARM</button>
                     <button onClick={() => {
                         const svc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/takeoff", serviceType: "mavros_msgs/srv/CommandTOL" });
                         svc.callService(new ROSLIB.ServiceRequest({ altitude: 5.0 }), () => addLog("INFO", "Dispatched Takeoff 5m"));
-                      }} className="bg-indigo-900/40 border border-indigo-800 text-indigo-500 p-3 rounded hover:bg-indigo-800 hover:text-white transition col-span-2">TAKEOFF (5.0m)</button>
+                      }} className="bg-indigo-900/40 border border-indigo-800 text-indigo-500 p-3 rounded hover:bg-indigo-800 hover:text-white transition">TAKEOFF (5.0m)</button>
+                    <button onClick={() => {
+                        stopDrone();
+                        const svc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/land", serviceType: "mavros_msgs/srv/CommandTOL" });
+                        svc.callService(new ROSLIB.ServiceRequest({ altitude: 0.0 }), () => addLog("INFO", "Land command sent"));
+                      }} className="bg-gray-800 border border-gray-700 text-gray-400 p-3 rounded hover:bg-gray-600 hover:text-white transition">LAND</button>
                   </div>
                 </div>
 

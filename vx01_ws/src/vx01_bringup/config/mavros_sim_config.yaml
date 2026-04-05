@@ -3,3 +3,13 @@
   ros__parameters:
     sys:
       conn_timeout: 120.0
+    # Force ArduPilot to stream all telemetry data at 10Hz
+    conn:
+      heartbeat_rate: 1.0
+      timeout: 60.0
+    # Stream rates for telemetry (applied on connect)
+    stream_params:
+      stream_id_all:
+        stream_id: 0
+        message_rate: 10
+        on_off: true

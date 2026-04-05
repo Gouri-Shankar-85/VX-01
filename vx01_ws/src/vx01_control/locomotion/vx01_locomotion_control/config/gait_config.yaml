@@ -16,17 +16,17 @@ tripod_walk_node:
     home_z: -72.82
 
     # Gait parameters
-    step_length: 40.0         
-    step_height: 20.0         
-    step_period: 3.0          
-    stand_duration: 3.0      
+    step_length: 60.0          # mm — stride length, visible in sim
+    step_height: 30.0          # mm — lift height
+    step_period: 4.2           # s  — one full 6-block cycle (blocks=0.7s each)
+    stand_duration: 3.0
 
     # Velocity scaling
     max_linear_vel: 0.15      # m/s
     max_angular_vel: 0.5      # rad/s
 
     # Trajectory waypoints per phase block
-    trajectory_waypoints: 8
+    trajectory_waypoints: 12
 
     # Joint names per leg (order: coxa, femur, tibia)
     leg_joint_names:

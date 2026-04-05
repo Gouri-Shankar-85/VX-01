@@ -4,6 +4,7 @@
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
+#include <std_msgs/msg/empty.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <control_msgs/action/follow_joint_trajectory.hpp>
@@ -61,6 +62,7 @@ private:
 
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr    cmd_vel_sub_;
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub_;
+    rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr         go_home_sub_;
     rclcpp::TimerBase::SharedPtr gait_timer_;
     rclcpp::TimerBase::SharedPtr stand_up_timer_;
 

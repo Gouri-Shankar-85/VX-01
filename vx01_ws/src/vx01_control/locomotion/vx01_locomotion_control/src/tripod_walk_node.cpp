@@ -2,6 +2,7 @@
 
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <builtin_interfaces/msg/duration.hpp>
+#include <std_msgs/msg/empty.hpp>
 
 #include <chrono>
 #include <cmath>
@@ -25,6 +26,16 @@ TripodWalkNode::TripodWalkNode(const rclcpp::NodeOptions & options)
     cmd_vel_sub_ = create_subscription<geometry_msgs::msg::Twist>(
         "/cmd_vel", 10,
         std::bind(&TripodWalkNode::cmdVelCallback, this, std::placeholders::_1));
+
+    // Go-home service: publish empty message to /hexapod/go_home
+    go_home_sub_ = create_subscription<std_msgs::msg::Empty>(
+        "/hexapod/go_home", 10,
+        [this](const std_msgs::msg::Empty::SharedPtr) {
+            RCLCPP_INFO(get_logger(), "Go-home command received.");
+            walking_ = false;
+            locomotion_->stand();
+            sendStandUpTrajectory();
+        });
 
     const double block_period = step_period_ / 6.0;
     gait_timer_ = rclcpp::create_timer(
@@ -51,13 +62,13 @@ void TripodWalkNode::declareParameters()
     declare_parameter("home_x",              223.03);
     declare_parameter("home_y",                0.0);
     declare_parameter("home_z",              -72.82);
-    declare_parameter("step_length",           40.0);
-    declare_parameter("step_height",           20.0);
-    declare_parameter("step_period",            3.0);
+    declare_parameter("step_length",           60.0);
+    declare_parameter("step_height",           30.0);
+    declare_parameter("step_period",            4.2);
     declare_parameter("stand_duration",         3.0);
     declare_parameter("max_linear_vel",         0.15);
     declare_parameter("max_angular_vel",        0.5);
-    declare_parameter("trajectory_waypoints",   8);
+    declare_parameter("trajectory_waypoints",  12);
     declare_parameter("base_frame",            "base_link");
 
     declare_parameter("leg_controller_names", std::vector<std::string>{
@@ -333,7 +344,7 @@ void TripodWalkNode::sendLegTrajectory(int leg_id, bool is_swing, double block_d
 
     auto goal = FollowJointTrajectory::Goal();
     goal.trajectory          = traj;
-    goal.goal_time_tolerance = rclcpp::Duration::from_seconds(0.5);
+    goal.goal_time_tolerance = rclcpp::Duration::from_seconds(2.0);
 
     goal_active_[leg_id] = true;
 
