@@ -105,8 +105,6 @@ export default function Dashboard() {
     });
     state.subscribe((msg) => {
       setRobotActive(msg.connected);
-      if (robotTimeoutRef.current) clearTimeout(robotTimeoutRef.current);
-      robotTimeoutRef.current = setTimeout(() => setRobotActive(false), 10000);
       setTelemetry((t) => ({ ...t, mode: msg.mode }));
     });
 
