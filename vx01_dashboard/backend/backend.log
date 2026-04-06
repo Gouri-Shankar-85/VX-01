@@ -646,3 +646,18 @@ Starting process: sim -> ros2 launch vx01_bringup vx01_hybrid_sim.launch.py
 [sim] [mavros_node-14] [WARN] [1775456528.145879736] [mavros.param]: PR: request param #241 timeout, retries left 0, and 1183 params still missing
 [sim] [mavros_node-14] [ERROR] [1775456529.146292584] [mavros.param]: PR: request param #241 completely missing.
 [sim] [mavros_node-14] [WARN] [1775456529.146442288] [mavros.param]: PR: 1182 params still missing, trying to request next: #242
+[sim] [mavros_node-14] [WARN] [1775456530.146711651] [mavros.param]: PR: request param #242 timeout, retries left 2, and 1182 params still missing
+[sim] [mavros_node-14] [WARN] [1775456531.147017812] [mavros.param]: PR: request param #242 timeout, retries left 1, and 1182 params still missing
+[sim] [mavros_node-14] [WARN] [1775456532.147419472] [mavros.param]: PR: request param #242 timeout, retries left 0, and 1182 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456533.147950174] [mavros.param]: PR: request param #242 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456533.148092233] [mavros.param]: PR: 1181 params still missing, trying to request next: #243
+[sim] [mavros_node-14] [WARN] [1775456534.148306002] [mavros.param]: PR: request param #243 timeout, retries left 2, and 1181 params still missing
+[sim] [mavros_node-14] [WARN] [1775456535.148570915] [mavros.param]: PR: request param #243 timeout, retries left 1, and 1181 params still missing
+[sim] [mavros_node-14] [WARN] [1775456536.148887713] [mavros.param]: PR: request param #243 timeout, retries left 0, and 1181 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456537.149438745] [mavros.param]: PR: request param #243 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456537.149578179] [mavros.param]: PR: 1180 params still missing, trying to request next: #244
+[sim] [mavros_node-14] [WARN] [1775456538.150097047] [mavros.param]: PR: request param #244 timeout, retries left 2, and 1180 params still missing
+[sim] [mavros_node-14] [WARN] [1775456539.150712706] [mavros.param]: PR: request param #244 timeout, retries left 1, and 1180 params still missing
+[sim] [mavros_node-14] [WARN] [1775456540.151323433] [mavros.param]: PR: request param #244 timeout, retries left 0, and 1180 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456541.151777660] [mavros.param]: PR: request param #244 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456541.151921222] [mavros.param]: PR: 1179 params still missing, trying to request next: #245
