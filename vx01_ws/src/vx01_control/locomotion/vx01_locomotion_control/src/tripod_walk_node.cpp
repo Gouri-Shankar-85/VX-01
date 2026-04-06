@@ -64,10 +64,10 @@ void TripodWalkNode::declareParameters()
     declare_parameter("home_y",                0.0);
     declare_parameter("home_z",              -72.82);
     declare_parameter("step_length",           60.0);
-    declare_parameter("step_height",           30.0);
-    declare_parameter("step_period",            4.2);
-    declare_parameter("stand_duration",         3.0);
-    declare_parameter("max_linear_vel",         0.15);
+    declare_parameter("step_height",           35.0);
+    declare_parameter("step_period",            1.5);
+    declare_parameter("stand_duration",         2.0);
+    declare_parameter("max_linear_vel",         0.20);
     declare_parameter("max_angular_vel",        0.5);
     declare_parameter("trajectory_waypoints",  12);
     declare_parameter("base_frame",            "base_link");
@@ -498,21 +498,43 @@ void TripodWalkNode::sendHalfCycle()
 void TripodWalkNode::sendFullHalfCycleTraj(
     int leg_id, bool is_swing, double duration, int this_cycle)
 {
+    // ── Step 1: Compute all joint angle positions (as arrays) ─────────────
+    const int n_wp = n_waypoints_ * 3;    // 36 waypoints per half-cycle
+    using Angles = std::array<double, 3>;
+    std::vector<Angles> all_angles;
+    all_angles.reserve(n_wp + 1);
+
+    for (int wp = 0; wp <= n_wp; ++wp) {
+        const double t = static_cast<double>(wp) / static_cast<double>(n_wp);
+        all_angles.push_back(
+            is_swing ? swingWaypoint(leg_id, t) : stanceWaypoint(leg_id, t));
+    }
+
+    // ── Step 2: Central-difference velocities ──────────────────────────────
+    // v[0] = v[N] = 0  (smooth start/stop at half-cycle boundaries)
+    // v[i] = (θ[i+1] - θ[i-1]) / (2*Δt) for interior points
+    // This prevents the JTC from creating zero-velocity knots that cause
+    // micro-stops and motor shudder on hardware.
+    const double dt = duration / static_cast<double>(n_wp);
+    std::vector<Angles> all_vels(n_wp + 1, {0.0, 0.0, 0.0});
+    for (int wp = 1; wp < n_wp; ++wp) {
+        for (int j = 0; j < 3; ++j) {
+            all_vels[wp][j] = (all_angles[wp+1][j] - all_angles[wp-1][j]) / (2.0 * dt);
+        }
+    }
+
+    // ── Step 3: Build trajectory message ──────────────────────────────────
     trajectory_msgs::msg::JointTrajectory traj;
     traj.joint_names     = joint_names_[leg_id];
     traj.header.stamp    = now();
     traj.header.frame_id = base_frame_;
 
-    const int n_wp = n_waypoints_ * 3;  // 3x waypoints for smooth full half-cycle
-
     for (int wp = 0; wp <= n_wp; ++wp) {
-        const double t = static_cast<double>(wp) / static_cast<double>(n_wp);
-        const auto angles = is_swing ? swingWaypoint(leg_id, t)
-                                     : stanceWaypoint(leg_id, t);
         trajectory_msgs::msg::JointTrajectoryPoint pt;
-        pt.positions       = {angles[0], angles[1], angles[2]};
-        pt.velocities      = {0.0, 0.0, 0.0};
-        pt.time_from_start = rclcpp::Duration::from_seconds(t * duration);
+        pt.positions       = {all_angles[wp][0], all_angles[wp][1], all_angles[wp][2]};
+        pt.velocities      = {all_vels[wp][0],   all_vels[wp][1],   all_vels[wp][2]};
+        pt.time_from_start = rclcpp::Duration::from_seconds(
+            static_cast<double>(wp) / n_wp * duration);
         traj.points.push_back(pt);
     }
 
@@ -528,7 +550,6 @@ void TripodWalkNode::sendFullHalfCycleTraj(
         [this, leg_id, this_cycle](const GoalHandleFJT::WrappedResult & result) {
             goal_active_[leg_id] = false;
 
-            // CRITICAL: ignore stale callbacks from a previous cycle
             if (this_cycle != cycle_id_.load()) return;
 
             if (result.code != rclcpp_action::ResultCode::SUCCEEDED) {
@@ -537,12 +558,10 @@ void TripodWalkNode::sendFullHalfCycleTraj(
                     leg_id, this_cycle, static_cast<int>(result.code));
             }
 
-            // Count toward this cycle's completion
             const int done = ++legs_done_;
             if (done == 6 && walking_) {
-                // All 6 legs finished — advance to next half-cycle
                 half_cycle_group_ = 1 - half_cycle_group_;
-                sendHalfCycle();  // this bumps cycle_id_, invalidating this_cycle
+                sendHalfCycle();
             }
         };
 
@@ -555,8 +574,6 @@ void TripodWalkNode::sendFullHalfCycleTraj(
 
 // Legacy gaitCycleTimer and executeGaitBlock kept empty — driving is done via sendHalfCycle()
 void TripodWalkNode::gaitCycleTimer() {}
-void TripodWalkNode::executeGaitBlock() {}
-
 
 }  // namespace vx01_locomotion_control
 

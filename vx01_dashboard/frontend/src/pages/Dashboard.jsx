@@ -110,6 +110,9 @@ export default function Dashboard() {
     state.subscribe((msg) => {
       setRobotActive(msg.connected);
       setTelemetry((t) => ({ ...t, mode: msg.mode }));
+      // Update ref for forceArm's polling loop (avoids stale closure)
+      isArmedRef.current = msg.armed;
+      setDroneArmed(msg.armed);
     });
 
     const missionState = new ROSLIB.Topic({
@@ -232,47 +235,91 @@ export default function Dashboard() {
     }));
   };
 
+  // Tracks armed state via /mavros/state subscription (already subscribed above)
+  const isArmedRef = useRef(false);
+  // Update the ref whenever telemetry.mode changes (we use a separate state track)
+  const [droneArmed, setDroneArmed] = useState(false);
+
   const forceArm = () => {
-    if (!rosRef.current || !rosConnected) return;
-    const paramSet = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/param/set", serviceType: "mavros_msgs/srv/ParamSet" });
-    const modeSvc  = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode",  serviceType: "mavros_msgs/srv/SetMode" });
+    if (!rosRef.current || !rosConnected) { addLog("ERROR", "ROS not connected"); return; }
+
+    const paramSet = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/param/set",  serviceType: "mavros_msgs/srv/ParamSet" });
+    const modeSvc  = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode",   serviceType: "mavros_msgs/srv/SetMode" });
     const armSvc   = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
 
-    // Step 1: Bypass all arming checks
+    addLog("INFO", "Force-Arm sequence started...");
+
+    // Step 1: Bypass ALL arming checks (pre-flight, GPS, EKF, RC)
     paramSet.callService(new ROSLIB.ServiceRequest({ param_id: "ARMING_CHECK", value: { integer: 0, real: 0.0 } }), () => {
-      addLog("WARN", "ARMING_CHECK=0 set");
+      addLog("WARN", "[1/5] ARMING_CHECK=0 — all pre-arm checks bypassed");
 
-      // Step 2: Also disable EKF failsafe (stops drone from disarming on EKF errors)
+      // Step 2: Disable EKF failsafe (prevents disarm on EKF variance)
       paramSet.callService(new ROSLIB.ServiceRequest({ param_id: "FS_EKF_ACTION", value: { integer: 0, real: 0.0 } }), () => {
-        addLog("INFO", "EKF failsafe disabled");
+        addLog("WARN", "[2/5] FS_EKF_ACTION=0 — EKF failsafe disabled");
 
-        // Step 3: STABILIZE mode — does NOT require position estimate
+        // Step 3: STABILIZE mode (no position estimate needed, always armable)
         setTimeout(() => {
-          modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "STABILIZE" }), () => {
-            addLog("INFO", "Mode: STABILIZE");
+          modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "STABILIZE" }), (mres) => {
+            addLog("INFO", `[3/5] Mode → STABILIZE ${mres?.mode_sent ? "✓" : "(ack pending)"}`);
 
-            // Step 4: ARM in STABILIZE (always works without GPS)
+            // Step 4: ARM with retry — poll /mavros/state for up to 4s
             setTimeout(() => {
-              armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), (res) => {
-                if (res && res.success) {
-                  addLog("INFO", "Armed in STABILIZE ✓");
-
-                  // Step 5: Switch to GUIDED for velocity control (after armed)
-                  setTimeout(() => {
-                    modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "GUIDED" }), () => {
-                      addLog("INFO", "Mode: GUIDED — ready for velocity commands");
-                    });
-                  }, 1000);
-                } else {
-                  addLog("ERROR", "Arm failed. Check FCU logs.");
-                }
-              });
+              addLog("INFO", "[4/5] Sending ARM command...");
+              let retries = 0;
+              const attemptArm = () => {
+                armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), (res) => {
+                  if (res?.success) {
+                    addLog("INFO", "[4/5] ARM accepted by FCU ✓");
+                    // Step 5: Wait for arm confirmation then switch to GUIDED
+                    let polls = 0;
+                    const poll = setInterval(() => {
+                      polls++;
+                      if (isArmedRef.current) {
+                        clearInterval(poll);
+                        addLog("INFO", "[4/5] Armed state CONFIRMED ✓");
+                        setTimeout(() => {
+                          modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "GUIDED" }), () => {
+                            addLog("INFO", "[5/5] Mode → GUIDED ✓ — velocity commands active");
+                          });
+                        }, 500);
+                      } else if (polls >= 6) {
+                        clearInterval(poll);
+                        addLog("ERROR", "[4/5] Arm accepted but state not confirmed — check FCU");
+                      }
+                    }, 800);
+                  } else if (retries < 3) {
+                    retries++;
+                    addLog("WARN", `[4/5] ARM failed, retry ${retries}/3...`);
+                    setTimeout(attemptArm, 1200);
+                  } else {
+                    addLog("ERROR", "[4/5] ARM FAILED after 3 retries. Check Stabilize mode + ARMING_CHECK=0");
+                  }
+                });
+              };
+              attemptArm();
             }, 500);
           });
         }, 300);
       });
     });
   };
+
+  const disarmDrone = () => {
+    if (!rosRef.current || !rosConnected) return;
+    const armSvc  = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
+    const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode",   serviceType: "mavros_msgs/srv/SetMode" });
+    stopDrone();
+    // First issue LAND command (safest), then disarm
+    modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "LAND" }), () => {
+      addLog("INFO", "LAND mode set — disarming after touchdown...");
+      setTimeout(() => {
+        armSvc.callService(new ROSLIB.ServiceRequest({ value: false }), (res) => {
+          addLog(res?.success ? "INFO" : "WARN", res?.success ? "Disarmed ✓" : "Disarm failed — try LAND first");
+        });
+      }, 3000);
+    });
+  };
+
 
 
   const backendLaunch = async (command_id, command_string) => {
@@ -594,28 +641,35 @@ export default function Dashboard() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 font-mono text-sm max-w-sm mx-auto">
-                    <button onClick={forceArm} className="bg-red-900/40 border border-red-800 text-red-500 p-3 rounded hover:bg-red-800 hover:text-white transition">FORCE ARM / BYPASS</button>
+                    {/* Force-arm does: ARMING_CHECK=0 → STABILIZE → ARM (retry) → GUIDED */}
+                    <button onClick={forceArm} className="bg-red-900/40 border border-red-800 text-red-400 p-3 rounded hover:bg-red-800 hover:text-white transition">
+                      {droneArmed ? "🔴 ARMED · FORCE ARM" : "⚡ FORCE ARM / BYPASS"}
+                    </button>
+                    {/* Clean disarm — issues LAND first then disarms after 3s */}
+                    <button onClick={disarmDrone} className="bg-orange-900/40 border border-orange-800 text-orange-400 p-3 rounded hover:bg-orange-800 hover:text-white transition">
+                      🛬 LAND + DISARM
+                    </button>
+                    {/* Takeoff via velocity setpoint to 5m: set GUIDED first, then climb */}
                     <button onClick={() => {
                         if (!rosRef.current || !rosConnected) return;
-                        // Step 1: set GUIDED mode, then ARM
-                        const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode", serviceType: "mavros_msgs/srv/SetMode" });
-                        modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "GUIDED" }), (res) => {
-                          addLog("INFO", `Mode set: ${JSON.stringify(res)}`);
-                          setTimeout(() => {
-                            const armSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
-                            armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), () => addLog("INFO", "ARM command sent"));
-                          }, 500);
-                        });
-                      }} className="bg-emerald-900/40 border border-emerald-800 text-emerald-500 p-3 rounded hover:bg-emerald-800 hover:text-white transition">GUIDED + ARM</button>
-                    <button onClick={() => {
-                        const svc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/takeoff", serviceType: "mavros_msgs/srv/CommandTOL" });
-                        svc.callService(new ROSLIB.ServiceRequest({ altitude: 5.0 }), () => addLog("INFO", "Dispatched Takeoff 5m"));
-                      }} className="bg-indigo-900/40 border border-indigo-800 text-indigo-500 p-3 rounded hover:bg-indigo-800 hover:text-white transition">TAKEOFF (5.0m)</button>
+                        addLog("INFO", "Takeoff: climbing at 0.5m/s for 10s...");
+                        // Publish climb command via /drone/cmd_vel (aerial_controller streams to MAVROS)
+                        let t = 0;
+                        const climbInterval = setInterval(() => {
+                          const topic = new ROSLIB.Topic({ ros: rosRef.current, name: "/drone/cmd_vel", messageType: "geometry_msgs/msg/Twist" });
+                          topic.publish(new ROSLIB.Message({ linear: { x: 0, y: 0, z: 0.5 }, angular: { x: 0, y: 0, z: 0 } }));
+                          if (++t >= 10) { clearInterval(climbInterval); addLog("INFO", "Takeoff complete — hovering"); }
+                        }, 1000);
+                      }} className="bg-indigo-900/40 border border-indigo-800 text-indigo-400 p-3 rounded hover:bg-indigo-800 hover:text-white transition">
+                      ↑ TAKEOFF (~5m)
+                    </button>
                     <button onClick={() => {
                         stopDrone();
-                        const svc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/land", serviceType: "mavros_msgs/srv/CommandTOL" });
-                        svc.callService(new ROSLIB.ServiceRequest({ altitude: 0.0 }), () => addLog("INFO", "Land command sent"));
-                      }} className="bg-gray-800 border border-gray-700 text-gray-400 p-3 rounded hover:bg-gray-600 hover:text-white transition">LAND</button>
+                        const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode", serviceType: "mavros_msgs/srv/SetMode" });
+                        modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "LAND" }), () => addLog("INFO", "LAND mode active"));
+                      }} className="bg-gray-800 border border-gray-700 text-gray-400 p-3 rounded hover:bg-gray-600 hover:text-white transition">
+                      ↓ LAND
+                    </button>
                   </div>
                 </div>
 

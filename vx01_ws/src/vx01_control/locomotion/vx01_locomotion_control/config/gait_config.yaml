@@ -27,13 +27,13 @@ tripod_walk_node:
     # Swing apex uses Bézier control point P1z = home_z + 2*step_height.
     # Quadratic Bézier reaches midpoint = (P0+2*P1+P2)/4, so actual apex at t=0.5
     # is home_z + step_height (the 2× factor in P1z compensates the Bézier weighting).
-    step_length: 30.0          # mm — safe for all 6 legs (max=76mm at home_x=190)
-    step_height: 25.0          # mm — visible lift in sim
-    step_period: 1.8           # s  — full cycle (0.9s per half-cycle)
+    step_length: 60.0          # mm — hardware-grade: gives 17.9° coxa sweep (max=76mm at home_x=190)
+    step_height: 35.0          # mm — clearly visible lift in sim and hardware
+    step_period: 1.5           # s  — full cycle (0.75s per half-cycle, natural tempo)
     stand_duration: 2.0
 
     # Velocity scaling
-    max_linear_vel: 0.15      # m/s — consistent with stride math
+    max_linear_vel: 0.20      # m/s — consistent with stride math
     max_angular_vel: 0.6      # rad/s
 
     # Trajectory waypoints per phase block

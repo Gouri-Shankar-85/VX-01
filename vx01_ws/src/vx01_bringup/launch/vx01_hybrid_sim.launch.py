@@ -48,7 +48,9 @@ def generate_launch_description():
         executable='mavros_node',
         output='screen',
         parameters=[
-            {'fcu_url': 'udp://127.0.0.1:14550@14555'},  # UDP instead of TCP
+        # UDP MAVROS: bind on all interfaces so ArduPilot's --out udp:127.0.0.1:14550 arrives.
+            # Format: udp://[local_bind_addr]:[local_port]@  (empty @ = no GCS forward)
+            {'fcu_url': 'udp://0.0.0.0:14550@'},
             {'use_sim_time': True},
             os.path.join(get_package_share_directory('vx01_bringup'), 'config', 'mavros_sim_config.yaml'),
             {'gcs_url': ''},
@@ -85,7 +87,10 @@ def generate_launch_description():
         sim_launch,
         sitl_layer,
         TimerAction(
-            period=10.0,
+            # Delay is critical: ArduPilot SITL needs ~12-15s to init JSON physics bridge.
+        # MAVROS connecting too early → 'Lost connection' loop.
+        # 18s gives headroom for slow machines and sim startup jitter.
+        period=18.0,
             actions=[mavros_node, mode_manager, aerial_controller, web_video_server]
         )
     ])
