@@ -5,20 +5,43 @@
 # Disable ALL pre-arm checks (bitmask=0 = no checks)
 ARMING_CHECK 0
 
+# Disable EKF failsafe (stops disarming on EKF unhealthy during hex motion)
+FS_EKF_ACTION 0
+
 # Disable compass use entirely (Gazebo compass field is unreliable)
 COMPASS_USE  0
 COMPASS_USE2 0
 COMPASS_USE3 0
 
-# Relax EKF attitude/velocity thresholds for sim
+# Relax EKF thresholds for sim
 EK3_CHECK_SCALE 200
 
 # Allow arming even when GPS HDOP is high
 GPS_HDOP_GOOD 2.3
 
-# Set GPS type for SITL JSON model
+# GPS type for SITL JSON model  
 GPS_TYPE 1
 GPS_TYPE2 0
 
-# Allow fast arming in sim
+# Rangefinder: use SIM type (no serial port needed in Gazebo)
+# Without this, ArduPilot tries SERIAL and fails, broadcasting
+# DISTANCE_SENSOR messages MAVROS can't map → ERROR spam → TCP overload
+RNGFND1_TYPE 17
+RNGFND1_ORIENT 25
+RNGFND1_MIN_CM 20
+RNGFND1_MAX_CM 1200
+
+# Reduce MAVLink stream rates to prevent TCP buffer overload.
+# During param sync, all these streams compete with param packets.
+# Lower rates = more bandwidth for param sync = faster stable connection.
+SR0_EXTRA1   4
+SR0_EXTRA2   4
+SR0_EXTRA3   2
+SR0_EXT_STAT 4
+SR0_POSITION 4
+SR0_RAW_SENS 2
+SR0_RC_CHAN  2
+SR0_ADSB     0
+
+# Allow fast arming + pilot speed in sim
 PILOT_SPEED_UP 500

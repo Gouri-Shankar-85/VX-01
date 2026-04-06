@@ -18,8 +18,9 @@ def generate_launch_description():
         )
     )
 
-    # Launch ArduPilot SITL binary directly with native UDP output
-    # ardupilot_sim_bypass.parm: ARMING_CHECK=0, compass disabled, EKF relaxed
+    # Launch ArduPilot SITL binary.
+    # --out udp:127.0.0.1:14550 → MAVROS receives on UDP (fire-and-forget, no blocking)
+    # TCP port 5760 still active for Mission Planner / GCS tools
     sitl_layer = ExecuteProcess(
         cmd=[
             '/ardupilot/build/sitl/bin/arducopter',
@@ -32,19 +33,22 @@ def generate_launch_description():
             '/ardupilot/Tools/autotest/default_params/gazebo-iris.parm,'
             '/vx01_ws/src/vx01_bringup/config/ardupilot_sim_bypass.parm',
             '--sim-address=127.0.0.1',
+            '--out', 'udp:127.0.0.1:14550',   # MAVROS UDP input
             '-I0'
         ],
         cwd='/ardupilot/ArduCopter',
         output='screen'
     )
 
-    # Launch MAVROS connecting directly to ArduCopter native UDP
+    # Launch MAVROS — use UDP (not TCP) to prevent param sync from blocking heartbeat.
+    # TCP: if param sync stalls, it blocks heartbeat → 'Lost connection' → sync restarts forever.
+    # UDP: param timeouts can't block heartbeat — FCU link stays stable during full param download.
     mavros_node = Node(
         package='mavros',
         executable='mavros_node',
         output='screen',
         parameters=[
-            {'fcu_url': 'tcp://127.0.0.1:5760'},
+            {'fcu_url': 'udp://127.0.0.1:14550@14555'},  # UDP instead of TCP
             {'use_sim_time': True},
             os.path.join(get_package_share_directory('vx01_bringup'), 'config', 'mavros_sim_config.yaml'),
             {'gcs_url': ''},
