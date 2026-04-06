@@ -1,0 +1,648 @@
+nohup: ignoring input
+VX-01 Launch Backend running on http://localhost:3001
+  POST /api/launch   { command_id, command_string }
+  POST /api/stop     { command_id }
+  POST /api/stop-all — kills everything in the container
+  GET  /api/status   — list running processes
+[stop-all] Graceful shutdown requested. Running: []
+[stop-all] Inner shutdown error: Command failed: docker exec vx01-dev bash -c "pkill -SIGINT -f 'ros2 launch' 2>/dev/null; true && pkill -SIGINT -f 'ros2 run'    2>/dev/null; true && sleep 3 && pkill -SIGKILL -f 'ros2'                  2>/dev/null; true && pkill -SIGKILL -f 'mavros_node'            2>/dev/null; true && pkill -SIGKILL -f 'arducopter'             2>/dev/null; true && pkill -SIGKILL -f 'ign gazebo'             2>/dev/null; true && pkill -SIGKILL -f 'gz sim'                 2>/dev/null; true && pkill -SIGKILL -f 'gzserver'               2>/dev/null; true && pkill -SIGKILL -f 'gzclient'               2>/dev/null; true && pkill -SIGKILL -f 'rosbridge'              2>/dev/null; true && pkill -SIGKILL -f 'web_video_server'       2>/dev/null; true && rm -f /tmp/.ros_*                          2>/dev/null; true && rm -f /root/.ros/log/latest                2>/dev/null; true"
+
+Starting process: sim -> ros2 launch vx01_bringup vx01_hybrid_sim.launch.py
+[sim] [INFO] [launch]: All log files can be found below /root/.ros/log/2026-04-06-11-49-43-561501-Gouri-Shankar-3754
+[INFO] [launch]: Default logging verbosity is set to INFO
+[sim] [INFO] [robot_state_publisher-1]: process started with pid [3782]
+[INFO] [ign gazebo-2]: process started with pid [3784]
+[sim] [INFO] [parameter_bridge-3]: process started with pid [3786]
+[INFO] [arducopter-4]: process started with pid [3788]
+[sim] [arducopter-4] Setting SIM_SPEEDUP=1.000000
+[sim] [arducopter-4] Starting SITL: JSON
+[sim] [arducopter-4] JSON control interface set to 127.0.0.1:9002
+[sim] [arducopter-4] Starting sketch 'ArduCopter'
+[arducopter-4] Starting SITL input
+[arducopter-4] Using Irlock at port : 9005
+[arducopter-4] Waiting for connection ....
+[sim] [arducopter-4] bind port 5760 for SERIAL0
+[sim] [arducopter-4] SERIAL0 on TCP port 5760
+[sim] [robot_state_publisher-1] [INFO] [1775456384.274545222] [robot_state_publisher]: got segment arm_link_0
+[sim] [robot_state_publisher-1] [INFO] [1775456384.274742937] [robot_state_publisher]: got segment arm_link_1
+[robot_state_publisher-1] [INFO] [1775456384.274756663] [robot_state_publisher]: got segment arm_link_2
+[robot_state_publisher-1] [INFO] [1775456384.274763035] [robot_state_publisher]: got segment arm_link_3
+[sim] [robot_state_publisher-1] [INFO] [1775456384.274771090] [robot_state_publisher]: got segment base_footprint
+[robot_state_publisher-1] [INFO] [1775456384.274777062] [robot_state_publisher]: got segment base_link
+[robot_state_publisher-1] [INFO] [1775456384.274786099] [robot_state_publisher]: got segment coxa_link_0
+[sim] [robot_state_publisher-1] [INFO] [1775456384.274793162] [robot_state_publisher]: got segment coxa_link_1
+[robot_state_publisher-1] [INFO] [1775456384.274798352] [robot_state_publisher]: got segment coxa_link_2
+[robot_state_publisher-1] [INFO] [1775456384.274803532] [robot_state_publisher]: got segment coxa_link_3
+[robot_state_publisher-1] [INFO] [1775456384.274811216] [robot_state_publisher]: got segment coxa_link_4
+[robot_state_publisher-1] [INFO] [1775456384.274816306] [robot_state_publisher]: got segment coxa_link_5
+[robot_state_publisher-1] [INFO] [1775456384.274820925] [robot_state_publisher]: got segment depth_camera_link
+[robot_state_publisher-1] [INFO] [1775456384.274826956] [robot_state_publisher]: got segment depth_camera_optical_frame
+[robot_state_publisher-1] [INFO] [1775456384.274835182] [robot_state_publisher]: got segment femur_link_0
+[robot_state_publisher-1] [INFO] [1775456384.274840161] [robot_state_publisher]: got segment femur_link_1
+[robot_state_publisher-1] [INFO] [1775456384.274847866] [robot_state_publisher]: got segment femur_link_2
+[robot_state_publisher-1] [INFO] [1775456384.274853256] [robot_state_publisher]: got segment femur_link_3
+[robot_state_publisher-1] [INFO] [1775456384.274858035] [robot_state_publisher]: got segment femur_link_4
+[robot_state_publisher-1] [INFO] [1775456384.274862704] [robot_state_publisher]: got segment femur_link_5
+[robot_state_publisher-1] [INFO] [1775456384.274867513] [robot_state_publisher]: got segment imu_link
+[robot_state_publisher-1] [INFO] [1775456384.274872162] [robot_state_publisher]: got segment motor_link_0
+[robot_state_publisher-1] [INFO] [1775456384.274877292] [robot_state_publisher]: got segment motor_link_1
+[robot_state_publisher-1] [INFO] [1775456384.274885076] [robot_state_publisher]: got segment motor_link_2
+[robot_state_publisher-1] [INFO] [1775456384.274891028] [robot_state_publisher]: got segment motor_link_3
+[robot_state_publisher-1] [INFO] [1775456384.274898151] [robot_state_publisher]: got segment prop_link_0
+[robot_state_publisher-1] [INFO] [1775456384.274904082] [robot_state_publisher]: got segment prop_link_1
+[robot_state_publisher-1] [INFO] [1775456384.274909042] [robot_state_publisher]: got segment prop_link_2
+[robot_state_publisher-1] [INFO] [1775456384.274915334] [robot_state_publisher]: got segment prop_link_3
+[robot_state_publisher-1] [INFO] [1775456384.274919953] [robot_state_publisher]: got segment tf_mini_link
+[robot_state_publisher-1] [INFO] [1775456384.274924541] [robot_state_publisher]: got segment tibia_link_0
+[robot_state_publisher-1] [INFO] [1775456384.274929461] [robot_state_publisher]: got segment tibia_link_1
+[robot_state_publisher-1] [INFO] [1775456384.274934380] [robot_state_publisher]: got segment tibia_link_2
+[robot_state_publisher-1] [INFO] [1775456384.274940251] [robot_state_publisher]: got segment tibia_link_3
+[robot_state_publisher-1] [INFO] [1775456384.274945060] [robot_state_publisher]: got segment tibia_link_4
+[robot_state_publisher-1] [INFO] [1775456384.274949919] [robot_state_publisher]: got segment tibia_link_5
+[sim] [ign gazebo-2] QStandardPaths: XDG_RUNTIME_DIR not set, defaulting to '/tmp/runtime-root'
+[sim] [parameter_bridge-3] [INFO] [1775456385.310793881] [vx01_bridge]: Creating GZ->ROS Bridge: [/clock (ignition.msgs.Clock) -> /clock (rosgraph_msgs/msg/Clock)] (Lazy 0)
+[sim] [parameter_bridge-3] [INFO] [1775456385.312422390] [vx01_bridge]: Creating GZ->ROS Bridge: [/world/empty/model/vx01/link/base_footprint/sensor/imu_sensor/imu (ignition.msgs.IMU) -> /imu/data (sensor_msgs/msg/Imu)] (Lazy 0)
+[sim] [parameter_bridge-3] [INFO] [1775456385.314506954] [vx01_bridge]: Creating GZ->ROS Bridge: [/depth_camera/image (ignition.msgs.Image) -> /depth_camera/color/image_raw (sensor_msgs/msg/Image)] (Lazy 0)
+[parameter_bridge-3] [INFO] [1775456385.315208935] [vx01_bridge]: Creating GZ->ROS Bridge: [/depth_camera/depth_image (ignition.msgs.Image) -> /depth_camera/depth/image_raw (sensor_msgs/msg/Image)] (Lazy 0)
+[sim] [parameter_bridge-3] [INFO] [1775456385.315821818] [vx01_bridge]: Creating GZ->ROS Bridge: [/depth_camera/camera_info (ignition.msgs.CameraInfo) -> /depth_camera/camera_info (sensor_msgs/msg/CameraInfo)] (Lazy 0)
+[sim] [parameter_bridge-3] [INFO] [1775456385.316616555] [vx01_bridge]: Creating GZ->ROS Bridge: [/depth_camera/points (ignition.msgs.PointCloudPacked) -> /depth_camera/points (sensor_msgs/msg/PointCloud2)] (Lazy 0)
+[sim] [parameter_bridge-3] [INFO] [1775456385.317400753] [vx01_bridge]: Creating GZ->ROS Bridge: [/lidar/scan (ignition.msgs.LaserScan) -> /lidar/scan (sensor_msgs/msg/LaserScan)] (Lazy 0)
+[sim] [parameter_bridge-3] [INFO] [1775456385.318037531] [vx01_bridge]: Creating GZ->ROS Bridge: [/tf_mini/scan (ignition.msgs.LaserScan) -> /tf_mini/scan (sensor_msgs/msg/LaserScan)] (Lazy 0)
+[sim] [INFO] [create-5]: process started with pid [3947]
+[sim] [create-5] [INFO] [1775456389.293461704] [spawn_vx01]: Requesting list of world names.
+[sim] [create-5] [INFO] [1775456389.495482480] [spawn_vx01]: Waiting messages on topic [robot_description].
+[sim] [create-5] [INFO] [1775456389.696992887] [spawn_vx01]: Requested creation of entity.
+[create-5] [INFO] [1775456389.697063931] [spawn_vx01]: OK creation of entity.
+[sim] [ign gazebo-2] [INFO] [1775456389.829861680] [GazeboSimROS2ControlPlugin]: robot_param_node is robot_state_publisher
+[ign gazebo-2] [INFO] [1775456389.829939237] [GazeboSimROS2ControlPlugin]: robot_param_node is robot_description
+[sim] [ign gazebo-2] [INFO] [1775456389.841374739] [gz_ros2_control]: connected to service!! robot_state_publisher asking for robot_description
+[sim] [ign gazebo-2] [INFO] [1775456389.843427522] [gz_ros2_control]: Received URDF from param server
+[sim] [INFO] [create-5]: process has finished cleanly [pid 3947]
+[sim] [ign gazebo-2] [INFO] [1775456389.855488250] [gz_ros2_control]: The position_proportional_gain has been set to: 0.1
+[sim] [ign gazebo-2] [INFO] [1775456389.855602457] [gz_ros2_control]: Loading joint: coxa_leg0_joint
+[ign gazebo-2] [INFO] [1775456389.855618136] [gz_ros2_control]: 	State:
+[sim] [ign gazebo-2] [INFO] [1775456389.855631351] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.855649967] [gz_ros2_control]: 			 found initial value: 0.000000
+[ign gazebo-2] [INFO] [1775456389.855667590] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.855677068] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.855709940] [gz_ros2_control]: Loading joint: femur_leg0_joint
+[sim] [ign gazebo-2] [INFO] [1775456389.855717705] [gz_ros2_control]: 	State:
+[sim] [ign gazebo-2] [INFO] [1775456389.855723336] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.855730600] [gz_ros2_control]: 			 found initial value: -0.785000
+[sim] [ign gazebo-2] [INFO] [1775456389.855738475] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.855744426] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.855761318] [gz_ros2_control]: Loading joint: tibia_leg0_joint
+[ign gazebo-2] [INFO] [1775456389.855766858] [gz_ros2_control]: 	State:
+[ign gazebo-2] [INFO] [1775456389.855771928] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.855779823] [gz_ros2_control]: 			 found initial value: 0.600000
+[ign gazebo-2] [INFO] [1775456389.855790674] [gz_ros2_control]: 	Command:
+[sim] [ign gazebo-2] [INFO] [1775456389.855799540] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.855826692] [gz_ros2_control]: Loading joint: coxa_leg1_joint
+[ign gazebo-2] [INFO] [1775456389.855838785] [gz_ros2_control]: 	State:
+[sim] [ign gazebo-2] [INFO] [1775456389.855848283] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.855856118] [gz_ros2_control]: 			 found initial value: 0.000000
+[sim] [ign gazebo-2] [INFO] [1775456389.855866668] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.855875885] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.855894040] [gz_ros2_control]: Loading joint: femur_leg1_joint
+[sim] [ign gazebo-2] [INFO] [1775456389.855900031] [gz_ros2_control]: 	State:
+[sim] [ign gazebo-2] [INFO] [1775456389.855905351] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.855911643] [gz_ros2_control]: 			 found initial value: -0.785000
+[sim] [ign gazebo-2] [INFO] [1775456389.855917825] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.855923055] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.855939776] [gz_ros2_control]: Loading joint: tibia_leg1_joint
+[sim] [ign gazebo-2] [INFO] [1775456389.855945277] [gz_ros2_control]: 	State:
+[ign gazebo-2] [INFO] [1775456389.855950877] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.855955987] [gz_ros2_control]: 			 found initial value: 0.600000
+[ign gazebo-2] [INFO] [1775456389.855962169] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.855968030] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.855982407] [gz_ros2_control]: Loading joint: coxa_leg2_joint
+[ign gazebo-2] [INFO] [1775456389.855988940] [gz_ros2_control]: 	State:
+[ign gazebo-2] [INFO] [1775456389.855994029] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.855998828] [gz_ros2_control]: 			 found initial value: 0.000000
+[ign gazebo-2] [INFO] [1775456389.856004489] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.856009489] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856024657] [gz_ros2_control]: Loading joint: femur_leg2_joint
+[ign gazebo-2] [INFO] [1775456389.856030228] [gz_ros2_control]: 	State:
+[ign gazebo-2] [INFO] [1775456389.856035678] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856041159] [gz_ros2_control]: 			 found initial value: -0.785000
+[ign gazebo-2] [INFO] [1775456389.856047631] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.856053091] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856067168] [gz_ros2_control]: Loading joint: tibia_leg2_joint
+[ign gazebo-2] [INFO] [1775456389.856075744] [gz_ros2_control]: 	State:
+[ign gazebo-2] [INFO] [1775456389.856084461] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856094159] [gz_ros2_control]: 			 found initial value: 0.600000
+[ign gazebo-2] [INFO] [1775456389.856104389] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.856112534] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856135067] [gz_ros2_control]: Loading joint: coxa_leg3_joint
+[ign gazebo-2] [INFO] [1775456389.856142260] [gz_ros2_control]: 	State:
+[ign gazebo-2] [INFO] [1775456389.856148272] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856202685] [gz_ros2_control]: 			 found initial value: 0.000000
+[ign gazebo-2] [INFO] [1775456389.856212955] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.856218756] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856237651] [gz_ros2_control]: Loading joint: femur_leg3_joint
+[ign gazebo-2] [INFO] [1775456389.856243643] [gz_ros2_control]: 	State:
+[ign gazebo-2] [INFO] [1775456389.856251768] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856257088] [gz_ros2_control]: 			 found initial value: -0.785000
+[sim] [ign gazebo-2] [INFO] [1775456389.856263440] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.856268971] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856284069] [gz_ros2_control]: Loading joint: tibia_leg3_joint
+[ign gazebo-2] [INFO] [1775456389.856289600] [gz_ros2_control]: 	State:
+[sim] [ign gazebo-2] [INFO] [1775456389.856294640] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856326109] [gz_ros2_control]: 			 found initial value: 0.600000
+[ign gazebo-2] [INFO] [1775456389.856335166] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.856340987] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.856358050] [gz_ros2_control]: Loading joint: coxa_leg4_joint
+[sim] [ign gazebo-2] [INFO] [1775456389.856364181] [gz_ros2_control]: 	State:
+[ign gazebo-2] [INFO] [1775456389.856369481] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.856374341] [gz_ros2_control]: 			 found initial value: 0.000000
+[sim] [ign gazebo-2] [INFO] [1775456389.856379971] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.856385332] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.856403516] [gz_ros2_control]: Loading joint: femur_leg4_joint
+[sim] [ign gazebo-2] [INFO] [1775456389.856409578] [gz_ros2_control]: 	State:
+[sim] [ign gazebo-2] [INFO] [1775456389.856415008] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856420568] [gz_ros2_control]: 			 found initial value: -0.785000
+[sim] [ign gazebo-2] [INFO] [1775456389.856426780] [gz_ros2_control]: 	Command:
+[sim] [ign gazebo-2] [INFO] [1775456389.856432040] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.856448121] [gz_ros2_control]: Loading joint: tibia_leg4_joint
+[ign gazebo-2] [INFO] [1775456389.856454092] [gz_ros2_control]: 	State:
+[ign gazebo-2] [INFO] [1775456389.856459482] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.856464502] [gz_ros2_control]: 			 found initial value: 0.600000
+[sim] [ign gazebo-2] [INFO] [1775456389.856470623] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.856476204] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.856489619] [gz_ros2_control]: Loading joint: coxa_leg5_joint
+[ign gazebo-2] [INFO] [1775456389.856495501] [gz_ros2_control]: 	State:
+[sim] [ign gazebo-2] [INFO] [1775456389.856501261] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.856506311] [gz_ros2_control]: 			 found initial value: 0.000000
+[ign gazebo-2] [INFO] [1775456389.856512142] [gz_ros2_control]: 	Command:
+[sim] [ign gazebo-2] [INFO] [1775456389.856517542] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856531028] [gz_ros2_control]: Loading joint: femur_leg5_joint
+[ign gazebo-2] [INFO] [1775456389.856536899] [gz_ros2_control]: 	State:
+[sim] [ign gazebo-2] [INFO] [1775456389.856542430] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.856549924] [gz_ros2_control]: 			 found initial value: -0.785000
+[sim] [ign gazebo-2] [INFO] [1775456389.856555835] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.856561265] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856582746] [gz_ros2_control]: Loading joint: tibia_leg5_joint
+[sim] [ign gazebo-2] [INFO] [1775456389.856593396] [gz_ros2_control]: 	State:
+[sim] [ign gazebo-2] [INFO] [1775456389.856603215] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856608926] [gz_ros2_control]: 			 found initial value: 0.600000
+[sim] [ign gazebo-2] [INFO] [1775456389.856615308] [gz_ros2_control]: 	Command:
+[sim] [ign gazebo-2] [INFO] [1775456389.856621069] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856642299] [gz_ros2_control]: Loading joint: arm_joint0
+[ign gazebo-2] [INFO] [1775456389.856652548] [gz_ros2_control]: 	State:
+[sim] [ign gazebo-2] [INFO] [1775456389.856658359] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.856663940] [gz_ros2_control]: 			 found initial value: 0.000000
+[ign gazebo-2] [INFO] [1775456389.856674089] [gz_ros2_control]: 	Command:
+[sim] [ign gazebo-2] [INFO] [1775456389.856683517] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856704467] [gz_ros2_control]: Loading joint: arm_joint1
+[sim] [ign gazebo-2] [INFO] [1775456389.856714947] [gz_ros2_control]: 	State:
+[ign gazebo-2] [INFO] [1775456389.856720377] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.856725357] [gz_ros2_control]: 			 found initial value: 0.000000
+[sim] [ign gazebo-2] [INFO] [1775456389.856752789] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.856763108] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.856787444] [gz_ros2_control]: Loading joint: arm_joint2
+[ign gazebo-2] [INFO] [1775456389.856797804] [gz_ros2_control]: 	State:
+[sim] [ign gazebo-2] [INFO] [1775456389.856806821] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856812662] [gz_ros2_control]: 			 found initial value: 0.000000
+[sim] [ign gazebo-2] [INFO] [1775456389.856822300] [gz_ros2_control]: 	Command:
+[sim] [ign gazebo-2] [INFO] [1775456389.856833201] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856865923] [gz_ros2_control]: Loading joint: arm_joint3
+[ign gazebo-2] [INFO] [1775456389.856879168] [gz_ros2_control]: 	State:
+[ign gazebo-2] [INFO] [1775456389.856889578] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.856898856] [gz_ros2_control]: 			 found initial value: 0.000000
+[ign gazebo-2] [INFO] [1775456389.856910007] [gz_ros2_control]: 	Command:
+[sim] [ign gazebo-2] [INFO] [1775456389.856919936] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.856945694] [gz_ros2_control]: Loading joint: prop_0
+[ign gazebo-2] [INFO] [1775456389.856957487] [gz_ros2_control]: 	State:
+[sim] [ign gazebo-2] [INFO] [1775456389.856971083] [gz_ros2_control]: 		 velocity
+[sim] [ign gazebo-2] [INFO] [1775456389.856980010] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.856989928] [gz_ros2_control]: 	Command:
+[sim] [ign gazebo-2] [INFO] [1775456389.856999857] [gz_ros2_control]: 		 velocity
+[sim] [ign gazebo-2] [INFO] [1775456389.857039903] [gz_ros2_control]: Loading joint: prop_1
+[sim] [ign gazebo-2] [INFO] [1775456389.857049421] [gz_ros2_control]: 	State:
+[ign gazebo-2] [INFO] [1775456389.857055363] [gz_ros2_control]: 		 velocity
+[sim] [ign gazebo-2] [INFO] [1775456389.857061153] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.857066263] [gz_ros2_control]: 	Command:
+[ign gazebo-2] [INFO] [1775456389.857071533] [gz_ros2_control]: 		 velocity
+[sim] [ign gazebo-2] [INFO] [1775456389.857087183] [gz_ros2_control]: Loading joint: prop_2
+[ign gazebo-2] [INFO] [1775456389.857093024] [gz_ros2_control]: 	State:
+[sim] [ign gazebo-2] [INFO] [1775456389.857098665] [gz_ros2_control]: 		 velocity
+[sim] [ign gazebo-2] [INFO] [1775456389.857104355] [gz_ros2_control]: 		 position
+[ign gazebo-2] [INFO] [1775456389.857109455] [gz_ros2_control]: 	Command:
+[sim] [ign gazebo-2] [INFO] [1775456389.857114415] [gz_ros2_control]: 		 velocity
+[sim] [ign gazebo-2] [INFO] [1775456389.857129864] [gz_ros2_control]: Loading joint: prop_3
+[sim] [ign gazebo-2] [INFO] [1775456389.857135404] [gz_ros2_control]: 	State:
+[ign gazebo-2] [INFO] [1775456389.857140845] [gz_ros2_control]: 		 velocity
+[sim] [ign gazebo-2] [INFO] [1775456389.857147016] [gz_ros2_control]: 		 position
+[sim] [ign gazebo-2] [INFO] [1775456389.857152286] [gz_ros2_control]: 	Command:
+[sim] [ign gazebo-2] [INFO] [1775456389.857157476] [gz_ros2_control]: 		 velocity
+[ign gazebo-2] [INFO] [1775456389.857274719] [gz_ros2_control]: Loading sensor: imu_sensor
+[sim] [ign gazebo-2] [INFO] [1775456389.857289326] [gz_ros2_control]: 	State:
+[ign gazebo-2] [INFO] [1775456389.857375019] [resource_manager]: Initialize hardware 'vx01_hardware' 
+[sim] [ign gazebo-2] [WARN] [1775456389.857424483] [gz_ros2_control]: The ign_ros2_control plugin got renamed to gz_ros2_control.
+[sim] [ign gazebo-2] Update the <ros2_control> tag and gazebo plugin to
+[sim] [ign gazebo-2] <hardware>
+[sim] [ign gazebo-2]   <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+[sim] [ign gazebo-2] </hardware>
+[sim] [ign gazebo-2] <gazebo>
+[ign gazebo-2]   <plugin filename="gz_ros2_control-system"name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+[sim] [ign gazebo-2]     ...
+[sim] [ign gazebo-2]   </plugin>
+[ign gazebo-2] </gazebo>
+[sim] [ign gazebo-2] [INFO] [1775456389.857481471] [resource_manager]: Successful initialization of hardware 'vx01_hardware'
+[ign gazebo-2] [INFO] [1775456389.857560110] [resource_manager]: 'configure' hardware 'vx01_hardware' 
+[ign gazebo-2] [INFO] [1775456389.857567464] [gz_ros2_control]: System Successfully configured!
+[ign gazebo-2] [INFO] [1775456389.857585899] [resource_manager]: Successful 'configure' of hardware 'vx01_hardware'
+[ign gazebo-2] [INFO] [1775456389.857602090] [resource_manager]: 'activate' hardware 'vx01_hardware' 
+[sim] [ign gazebo-2] [INFO] [1775456389.857610455] [resource_manager]: Successful 'activate' of hardware 'vx01_hardware'
+[ign gazebo-2] [INFO] [1775456389.857620454] [gz_ros2_control]: Loading controller_manager
+[sim] [INFO] [spawner-6]: process started with pid [3992]
+[sim] [ign gazebo-2] [INFO] [1775456392.524282364] [controller_manager]: Loading controller 'joint_state_broadcaster'
+[sim] [spawner-6] [FATAL] [1775456392.545544616] [joint_state_broadcaster_spawner]: [91mFailed loading controller [1mjoint_state_broadcaster[0m
+[sim] [ERROR] [spawner-6]: process has died [pid 3992, exit code 1, cmd '/opt/ros/humble/lib/controller_manager/spawner joint_state_broadcaster --controller-manager /controller_manager --controller-manager-timeout 30 --ros-args -r __node:=joint_state_broadcaster_spawner'].
+[sim] [INFO] [spawner-7]: process started with pid [4005]
+[sim] [ign gazebo-2] [INFO] [1775456392.841796874] [gz_ros2_control]: IMU imu_sensor has a topic name: world/empty/model/vx01/link/base_footprint/sensor/imu_sensor/imu
+[sim] [ign gazebo-2] [INFO] [1775456393.039083666] [controller_manager]: Loading controller 'leg_0_controller'
+[sim] [ign gazebo-2] [WARN] [1775456393.053173893] [leg_0_controller]: [Deprecated]: "allow_nonzero_velocity_at_trajectory_end" is set to true. The default behavior will change to false.
+[sim] [spawner-7] [FATAL] [1775456393.059820020] [leg_0_controller_spawner]: [91mFailed loading controller [1mleg_0_controller[0m
+[sim] [ERROR] [spawner-7]: process has died [pid 4005, exit code 1, cmd '/opt/ros/humble/lib/controller_manager/spawner leg_0_controller --controller-manager /controller_manager --controller-manager-timeout 30 --ros-args -r __node:=leg_0_controller_spawner'].
+[sim] [INFO] [spawner-8]: process started with pid [4092]
+[sim] [spawner-8] [WARN] [1775456393.581617267] [leg_1_controller_spawner]: [93mController already loaded, skipping load_controller[0m
+[sim] [spawner-8] [ERROR] [1775456393.585251251] [leg_1_controller_spawner]: [91mFailed to configure controller[0m
+[sim] [ERROR] [spawner-8]: process has died [pid 4092, exit code 1, cmd '/opt/ros/humble/lib/controller_manager/spawner leg_1_controller --controller-manager /controller_manager --controller-manager-timeout 30 --ros-args -r __node:=leg_1_controller_spawner'].
+[sim] [INFO] [spawner-9]: process started with pid [4104]
+[sim] [ign gazebo-2] [INFO] [1775456393.834170505] [controller_manager]: Configuring controller 'leg_1_controller'
+[sim] [ign gazebo-2] [ERROR] [1775456393.834349645] [controller_manager]: Could not configure controller with name 'leg_1_controller' because no controller with this name exists
+[sim] [ign gazebo-2] [INFO] [1775456394.093841937] [controller_manager]: Loading controller 'leg_2_controller'
+[sim] [ign gazebo-2] [WARN] [1775456394.101063305] [leg_2_controller]: [Deprecated]: "allow_nonzero_velocity_at_trajectory_end" is set to true. The default behavior will change to false.
+[sim] [spawner-9] [FATAL] [1775456394.122544133] [leg_2_controller_spawner]: [91mFailed loading controller [1mleg_2_controller[0m
+[sim] [ERROR] [spawner-9]: process has died [pid 4104, exit code 1, cmd '/opt/ros/humble/lib/controller_manager/spawner leg_2_controller --controller-manager /controller_manager --controller-manager-timeout 30 --ros-args -r __node:=leg_2_controller_spawner'].
+[sim] [INFO] [spawner-10]: process started with pid [4117]
+[sim] [ign gazebo-2] [INFO] [1775456394.624533511] [controller_manager]: Loading controller 'leg_3_controller'
+[sim] [ign gazebo-2] [WARN] [1775456394.632065348] [leg_3_controller]: [Deprecated]: "allow_nonzero_velocity_at_trajectory_end" is set to true. The default behavior will change to false.
+[sim] [spawner-10] [FATAL] [1775456394.656483507] [leg_3_controller_spawner]: [91mFailed loading controller [1mleg_3_controller[0m
+[sim] [ERROR] [spawner-10]: process has died [pid 4117, exit code 1, cmd '/opt/ros/humble/lib/controller_manager/spawner leg_3_controller --controller-manager /controller_manager --controller-manager-timeout 30 --ros-args -r __node:=leg_3_controller_spawner'].
+[sim] [INFO] [spawner-11]: process started with pid [4130]
+[sim] [spawner-11] [WARN] [1775456395.185522779] [leg_4_controller_spawner]: [93mController already loaded, skipping load_controller[0m
+[sim] [ign gazebo-2] [INFO] [1775456395.187169052] [controller_manager]: Configuring controller 'leg_4_controller'
+[sim] [ign gazebo-2] [ERROR] [1775456395.187245146] [controller_manager]: Could not configure controller with name 'leg_4_controller' because no controller with this name exists
+[sim] [spawner-11] [ERROR] [1775456395.188769989] [leg_4_controller_spawner]: [91mFailed to configure controller[0m
+[sim] [ERROR] [spawner-11]: process has died [pid 4130, exit code 1, cmd '/opt/ros/humble/lib/controller_manager/spawner leg_4_controller --controller-manager /controller_manager --controller-manager-timeout 30 --ros-args -r __node:=leg_4_controller_spawner'].
+[sim] [INFO] [spawner-12]: process started with pid [4142]
+[sim] [ign gazebo-2] [INFO] [1775456395.771067320] [controller_manager]: Loading controller 'leg_5_controller'
+[sim] [ign gazebo-2] [WARN] [1775456395.777743063] [leg_5_controller]: [Deprecated]: "allow_nonzero_velocity_at_trajectory_end" is set to true. The default behavior will change to false.
+[sim] [spawner-12] [FATAL] [1775456395.797381566] [leg_5_controller_spawner]: [91mFailed loading controller [1mleg_5_controller[0m
+[sim] [ERROR] [spawner-12]: process has died [pid 4142, exit code 1, cmd '/opt/ros/humble/lib/controller_manager/spawner leg_5_controller --controller-manager /controller_manager --controller-manager-timeout 30 --ros-args -r __node:=leg_5_controller_spawner'].
+[sim] [INFO] [spawner-13]: process started with pid [4155]
+[sim] [ign gazebo-2] [INFO] [1775456396.315245766] [controller_manager]: Loading controller 'drone_arm_controller'
+[sim] [spawner-13] [FATAL] [1775456396.338543580] [drone_arm_controller_spawner]: [91mFailed loading controller [1mdrone_arm_controller[0m
+[sim] [ERROR] [spawner-13]: process has died [pid 4155, exit code 1, cmd '/opt/ros/humble/lib/controller_manager/spawner drone_arm_controller --controller-manager /controller_manager --controller-manager-timeout 30 --ros-args -r __node:=drone_arm_controller_spawner'].
+[sim] [INFO] [mavros_node-14]: process started with pid [4168]
+[sim] [INFO] [mode_manager_node-15]: process started with pid [4170]
+[INFO] [aerial_controller_node-16]: process started with pid [4172]
+[INFO] [web_video_server-17]: process started with pid [4174]
+[sim] [mavros_node-14] [INFO] [1775456402.292351059] [mavros_node]: Starting mavros_node container
+[mavros_node-14] [INFO] [1775456402.292520400] [mavros_node]: FCU URL: tcp://127.0.0.1:5760
+[mavros_node-14] [INFO] [1775456402.292544466] [mavros_node]: GCS URL: 
+[mavros_node-14] [INFO] [1775456402.292558733] [mavros_node]: UAS Prefix: /uas1
+[mavros_node-14] [INFO] [1775456402.292569303] [mavros_node]: Starting mavros router node
+[mode_manager_node-15] [INFO] [1775456402.293807462] [mode_manager_node]: VX-01 Mode Manager Initialized.
+[sim] [web_video_server-17] [INFO] [1775456402.296437781] [web_video_server]: Loading streamer plugin: web_video_server/stream/h264
+[sim] [aerial_controller_node-16] [INFO] [1775456402.297556213] [aerial_controller_node]: AerialController ready. Publish geometry_msgs/Twist to /drone/cmd_vel for flight. Publish std_msgs/Bool to /drone/arm to arm (true) or disarm (false).
+[sim] [mavros_node-14] [INFO] [1775456402.303202424] [mavros_router]: Built-in SIMD instructions: SSE, SSE2
+[sim] [mavros_node-14] [INFO] [1775456402.303266265] [mavros_router]: Built-in MAVLink package version: 2026.3.3
+[mavros_node-14] [INFO] [1775456402.303314547] [mavros_router]: Known MAVLink dialects: common ardupilotmega ASLUAV AVSSUAS all csAirLink cubepilot development icarous loweheiser marsh matrixpilot paparazzi standard stemstudios storm32 uAvionix ualberta
+[mavros_node-14] [INFO] [1775456402.303326770] [mavros_router]: MAVROS Router started
+[sim] [mavros_node-14] [INFO] [1775456402.303599377] [mavros_node]: Starting mavros uas node
+[sim] [mavros_node-14] [WARN] [1775456402.347821416] [mavros]: diagnostic_updater: No HW_ID was set. This is probably a bug. Please report it. For devices that do not have a HW_ID, set this value to 'none'. This warning only occurs once all diagnostics are OK. It is okay to wait until the device is open before calling setHardwareID.
+[sim] [mavros_node-14] [INFO] [1775456402.348006667] [mavros_router]: Requested to add endpoint: type: 0, url: tcp://127.0.0.1:5760
+[mavros_node-14] [INFO] [1775456402.348101096] [mavros_router]: Endpoint link[1000] created
+[sim] [arducopter-4] Connection on serial port 5760
+[sim] [mavros_node-14] [INFO] [1775456402.349019088] [mavros_router]: link[1000] opened successfully
+[mavros_node-14] [INFO] [1775456402.349063692] [mavros_router]: Requested to add endpoint: type: 2, url: /uas1
+[sim] [mavros_node-14] [INFO] [1775456402.349090673] [mavros_router]: Endpoint link[1001] created
+[mavros_node-14] [INFO] [1775456402.350139984] [mavros_router]: link[1001] opened successfully
+[sim] [mavros_node-14] [INFO] [1775456402.357756603] [mavros]: UAS Executor started, threads: 16
+[sim] [arducopter-4] Loaded defaults from /ardupilot/Tools/autotest/default_params/copter.parm,/ardupilot/Tools/autotest/default_params/gazebo-iris.parm,/vx01_ws/src/vx01_bringup/config/ardupilot_sim_bypass.parm
+[arducopter-4] Home: -35.363262 149.165237 alt=584.000000m hdg=353.000000
+[sim] [mavros_node-14] [INFO] [1775456402.375430610] [mavros]: Plugin actuator_control created
+[mavros_node-14] [INFO] [1775456402.375536391] [mavros]: Plugin actuator_control initialized
+[sim] [mavros_node-14] [INFO] [1775456402.397100548] [mavros]: Plugin adsb created
+[mavros_node-14] [INFO] [1775456402.397205176] [mavros]: Plugin adsb initialized
+[sim] [mavros_node-14] [INFO] [1775456402.404419341] [mavros]: Plugin altitude created
+[mavros_node-14] [INFO] [1775456402.404491167] [mavros]: Plugin altitude initialized
+[sim] [mavros_node-14] [INFO] [1775456402.409298968] [mavros]: Plugin cam_imu_sync created
+[mavros_node-14] [INFO] [1775456402.409373098] [mavros]: Plugin cam_imu_sync initialized
+[sim] [mavros_node-14] [INFO] [1775456402.414068516] [mavros]: Plugin camera created
+[mavros_node-14] [INFO] [1775456402.414160580] [mavros]: Plugin camera initialized
+[sim] [mavros_node-14] [INFO] [1775456402.419237221] [mavros]: Plugin cellular_status created
+[sim] [mavros_node-14] [INFO] [1775456402.419323284] [mavros]: Plugin cellular_status initialized
+[sim] [mavros_node-14] [INFO] [1775456402.430622288] [mavros]: Plugin command created
+[mavros_node-14] [INFO] [1775456402.430708602] [mavros]: Plugin command initialized
+[sim] [mavros_node-14] [INFO] [1775456402.436449402] [mavros]: Plugin companion_process_status created
+[sim] [mavros_node-14] [INFO] [1775456402.436520958] [mavros]: Plugin companion_process_status initialized
+[sim] [web_video_server-17] [INFO] [1775456402.437853746] [web_video_server]: Loading streamer plugin: web_video_server/stream/mjpeg
+[sim] [web_video_server-17] [INFO] [1775456402.437923969] [web_video_server]: Loading streamer plugin: web_video_server/stream/png
+[sim] [web_video_server-17] [INFO] [1775456402.437953966] [web_video_server]: Loading streamer plugin: web_video_server/stream/ros_compressed
+[sim] [web_video_server-17] [INFO] [1775456402.437975246] [web_video_server]: Loading streamer plugin: web_video_server/stream/vp8
+[sim] [web_video_server-17] [INFO] [1775456402.437993441] [web_video_server]: Loading streamer plugin: web_video_server/stream/vp9
+[sim] [web_video_server-17] [INFO] [1775456402.438012517] [web_video_server]: Loading streamer plugin: web_video_server/snapshot/jpeg
+[sim] [web_video_server-17] [INFO] [1775456402.438226032] [web_video_server]: Loading streamer plugin: web_video_server/snapshot/png
+[web_video_server-17] [INFO] [1775456402.438252182] [web_video_server]: Loading streamer plugin: web_video_server/snapshot/ros_compressed
+[sim] [web_video_server-17] [INFO] [1775456402.438435590] [web_video_server]: Waiting For connections on 0.0.0.0:8080
+[sim] [mavros_node-14] [INFO] [1775456402.443830003] [mavros]: Plugin debug_value created
+[sim] [mavros_node-14] [INFO] [1775456402.443907810] [mavros]: Plugin debug_value initialized
+[sim] [mavros_node-14] [INFO] [1775456402.449876683] [mavros.distance_sensor]: DS: Plugin not configured!
+[sim] [mavros_node-14] [INFO] [1775456402.450102131] [mavros]: Plugin distance_sensor created
+[mavros_node-14] [INFO] [1775456402.450154110] [mavros]: Plugin distance_sensor initialized
+[sim] [mavros_node-14] [INFO] [1775456402.456467626] [mavros]: Plugin esc_status created
+[mavros_node-14] [INFO] [1775456402.456540515] [mavros]: Plugin esc_status initialized
+[sim] [mavros_node-14] [INFO] [1775456402.463479127] [mavros]: Plugin esc_telemetry created
+[mavros_node-14] [INFO] [1775456402.463563557] [mavros]: Plugin esc_telemetry initialized
+[sim] [mavros_node-14] [INFO] [1775456402.472674440] [mavros]: Plugin fake_gps created
+[mavros_node-14] [INFO] [1775456402.472768659] [mavros]: Plugin fake_gps initialized
+[mavros_node-14] [INFO] [1775456402.472786944] [mavros]: Plugin ftp ignored
+[sim] [mavros_node-14] [INFO] [1775456402.481156862] [mavros]: Plugin geofence created
+[mavros_node-14] [INFO] [1775456402.481233497] [mavros]: Plugin geofence initialized
+[sim] [mavros_node-14] [INFO] [1775456402.491211725] [mavros]: Plugin gimbal_control created
+[sim] [mavros_node-14] [INFO] [1775456402.491310262] [mavros]: Plugin gimbal_control initialized
+[sim] [mavros_node-14] [INFO] [1775456402.502751366] [mavros]: Plugin global_position created
+[mavros_node-14] [INFO] [1775456402.502856325] [mavros]: Plugin global_position initialized
+[sim] [mavros_node-14] [INFO] [1775456402.509690800] [mavros]: Plugin gps_input created
+[sim] [mavros_node-14] [INFO] [1775456402.509777715] [mavros]: Plugin gps_input initialized
+[sim] [mavros_node-14] [INFO] [1775456402.517702789] [mavros]: Plugin gps_rtk created
+[mavros_node-14] [INFO] [1775456402.517788511] [mavros]: Plugin gps_rtk initialized
+[sim] [mavros_node-14] [INFO] [1775456402.525104980] [mavros]: Plugin gps_status created
+[sim] [mavros_node-14] [INFO] [1775456402.525195863] [mavros]: Plugin gps_status initialized
+[sim] [mavros_node-14] [INFO] [1775456402.532176145] [mavros]: Plugin guided_target created
+[mavros_node-14] [INFO] [1775456402.532246688] [mavros]: Plugin guided_target initialized
+[sim] [mavros_node-14] [INFO] [1775456402.540509523] [mavros]: Plugin hil created
+[sim] [mavros_node-14] [INFO] [1775456402.540585477] [mavros]: Plugin hil initialized
+[sim] [mavros_node-14] [INFO] [1775456402.547754336] [mavros]: Plugin home_position created
+[mavros_node-14] [INFO] [1775456402.547846190] [mavros]: Plugin home_position initialized
+[sim] [mavros_node-14] [INFO] [1775456402.557399252] [mavros]: Plugin imu created
+[mavros_node-14] [INFO] [1775456402.557544177] [mavros]: Plugin imu initialized
+[sim] [mavros_node-14] [INFO] [1775456402.569052989] [mavros]: Plugin landing_target created
+[sim] [mavros_node-14] [INFO] [1775456402.569161976] [mavros]: Plugin landing_target initialized
+[sim] [mavros_node-14] [INFO] [1775456402.582659060] [mavros]: Plugin local_position created
+[mavros_node-14] [INFO] [1775456402.582756845] [mavros]: Plugin local_position initialized
+[sim] [mavros_node-14] [INFO] [1775456402.593074127] [mavros]: Plugin log_transfer created
+[mavros_node-14] [INFO] [1775456402.593156664] [mavros]: Plugin log_transfer initialized
+[sim] [mavros_node-14] [INFO] [1775456402.602054042] [mavros]: Plugin mag_calibration_status created
+[mavros_node-14] [INFO] [1775456402.602200099] [mavros]: Plugin mag_calibration_status initialized
+[sim] [mavros_node-14] [INFO] [1775456402.611293920] [mavros]: Plugin manual_control created
+[mavros_node-14] [INFO] [1775456402.611414038] [mavros]: Plugin manual_control initialized
+[sim] [mavros_node-14] [INFO] [1775456402.619695277] [mavros]: Plugin mocap_pose_estimate created
+[sim] [mavros_node-14] [INFO] [1775456402.619846735] [mavros]: Plugin mocap_pose_estimate initialized
+[sim] [mavros_node-14] [INFO] [1775456402.629931445] [mavros]: Plugin mount_control created
+[mavros_node-14] [INFO] [1775456402.630044039] [mavros]: Plugin mount_control initialized
+[sim] [mavros_node-14] [INFO] [1775456402.637743885] [mavros]: Plugin nav_controller_output created
+[mavros_node-14] [INFO] [1775456402.637830079] [mavros]: Plugin nav_controller_output initialized
+[sim] [mavros_node-14] [INFO] [1775456402.644750918] [mavros]: Plugin obstacle_distance created
+[mavros_node-14] [INFO] [1775456402.644842792] [mavros]: Plugin obstacle_distance initialized
+[sim] [mavros_node-14] [INFO] [1775456402.653741212] [mavros]: Plugin obstacle_distance_3d created
+[sim] [mavros_node-14] [INFO] [1775456402.653916985] [mavros]: Plugin obstacle_distance_3d initialized
+[sim] [mavros_node-14] [INFO] [1775456402.663411857] [mavros]: Plugin odometry created
+[mavros_node-14] [INFO] [1775456402.663507468] [mavros]: Plugin odometry initialized
+[sim] [mavros_node-14] [INFO] [1775456402.671683899] [mavros]: Plugin onboard_computer_status created
+[mavros_node-14] [INFO] [1775456402.671746969] [mavros]: Plugin onboard_computer_status initialized
+[sim] [mavros_node-14] [INFO] [1775456402.681647941] [mavros]: Plugin open_drone_id created
+[mavros_node-14] [INFO] [1775456402.681729325] [mavros]: Plugin open_drone_id initialized
+[sim] [mavros_node-14] [INFO] [1775456402.690630150] [mavros]: Plugin optical_flow created
+[mavros_node-14] [INFO] [1775456402.690724639] [mavros]: Plugin optical_flow initialized
+[sim] [mavros_node-14] [INFO] [1775456402.699407531] [mavros]: Plugin param created
+[sim] [mavros_node-14] [INFO] [1775456402.699574928] [mavros]: Plugin param initialized
+[sim] [mavros_node-14] [INFO] [1775456402.707194462] [mavros]: Plugin play_tune created
+[mavros_node-14] [INFO] [1775456402.707316103] [mavros]: Plugin play_tune initialized
+[sim] [mavros_node-14] [INFO] [1775456402.717478591] [mavros]: Plugin px4flow created
+[mavros_node-14] [INFO] [1775456402.717583460] [mavros]: Plugin px4flow initialized
+[sim] [mavros_node-14] [INFO] [1775456402.728993595] [mavros]: Plugin rallypoint created
+[sim] [mavros_node-14] [INFO] [1775456402.729115416] [mavros]: Plugin rallypoint initialized
+[sim] [mavros_node-14] [INFO] [1775456402.737296696] [mavros]: Plugin rangefinder created
+[sim] [mavros_node-14] [INFO] [1775456402.737501013] [mavros]: Plugin rangefinder initialized
+[sim] [mavros_node-14] [INFO] [1775456402.747549756] [mavros]: Plugin rc_io created
+[sim] [mavros_node-14] [INFO] [1775456402.747740908] [mavros]: Plugin rc_io initialized
+[sim] [mavros_node-14] [INFO] [1775456402.758162268] [mavros]: Plugin setpoint_accel created
+[sim] [mavros_node-14] [INFO] [1775456402.758375332] [mavros]: Plugin setpoint_accel initialized
+[sim] [mavros_node-14] [INFO] [1775456402.767094782] [mavros]: Plugin setpoint_attitude created
+[mavros_node-14] [INFO] [1775456402.767169785] [mavros]: Plugin setpoint_attitude initialized
+[sim] [mavros_node-14] [INFO] [1775456402.778957706] [mavros]: Plugin setpoint_position created
+[mavros_node-14] [INFO] [1775456402.779086260] [mavros]: Plugin setpoint_position initialized
+[sim] [mavros_node-14] [INFO] [1775456402.788996480] [mavros]: Plugin setpoint_raw created
+[mavros_node-14] [INFO] [1775456402.789107941] [mavros]: Plugin setpoint_raw initialized
+[sim] [arducopter-4] 
+[arducopter-4] JSON received:
+[sim] [arducopter-4] 	timestamp
+[sim] [arducopter-4] 	imu: gyro
+[arducopter-4] 	imu: accel_body
+[arducopter-4] 	position
+[arducopter-4] 	quaternion
+[arducopter-4] 	velocity
+[arducopter-4] 
+[mavros_node-14] [INFO] [1775456402.801593827] [mavros]: Plugin setpoint_trajectory created
+[mavros_node-14] [INFO] [1775456402.801726128] [mavros]: Plugin setpoint_trajectory initialized
+[sim] [arducopter-4] bind port 5762 for SERIAL1
+[sim] [arducopter-4] SERIAL1 on TCP port 5762
+[arducopter-4] bind port 5763 for SERIAL2
+[arducopter-4] SERIAL2 on TCP port 5763
+[sim] [mavros_node-14] [INFO] [1775456402.812852815] [mavros]: Plugin setpoint_velocity created
+[sim] [mavros_node-14] [INFO] [1775456402.812978614] [mavros]: Plugin setpoint_velocity initialized
+[sim] [mavros_node-14] [INFO] [1775456402.823158294] [mavros]: Plugin sim_state created
+[mavros_node-14] [INFO] [1775456402.823259176] [mavros]: Plugin sim_state initialized
+[sim] [mavros_node-14] [INFO] [1775456402.838801640] [mavros]: Plugin sys_status created
+[sim] [mavros_node-14] [INFO] [1775456402.838933420] [mavros]: Plugin sys_status initialized
+[sim] [mavros_node-14] [INFO] [1775456402.850318707] [mavros.time]: TM: Timesync mode: MAVLINK
+[sim] [mavros_node-14] [INFO] [1775456402.853342894] [mavros]: Plugin sys_time created
+[mavros_node-14] [INFO] [1775456402.853465216] [mavros]: Plugin sys_time initialized
+[sim] [mavros_node-14] [INFO] [1775456402.865554740] [mavros]: Plugin tdr_radio created
+[mavros_node-14] [INFO] [1775456402.865646544] [mavros]: Plugin tdr_radio initialized
+[sim] [mavros_node-14] [INFO] [1775456402.877049054] [mavros]: Plugin terrain created
+[mavros_node-14] [INFO] [1775456402.877152691] [mavros]: Plugin terrain initialized
+[sim] [mavros_node-14] [INFO] [1775456402.889764465] [mavros]: Plugin trajectory created
+[mavros_node-14] [INFO] [1775456402.889878271] [mavros]: Plugin trajectory initialized
+[sim] [mavros_node-14] [INFO] [1775456402.901327350] [mavros]: Plugin tunnel created
+[mavros_node-14] [INFO] [1775456402.901421960] [mavros]: Plugin tunnel initialized
+[sim] [mavros_node-14] [INFO] [1775456402.910898847] [mavros]: Plugin vfr_hud created
+[sim] [mavros_node-14] [INFO] [1775456402.910990020] [mavros]: Plugin vfr_hud initialized
+[sim] [mavros_node-14] [INFO] [1775456402.920673309] [mavros]: Plugin vibration created
+[mavros_node-14] [INFO] [1775456402.920825127] [mavros]: Plugin vibration initialized
+[sim] [mavros_node-14] [INFO] [1775456402.932391088] [mavros]: Plugin vision_pose created
+[mavros_node-14] [INFO] [1775456402.932501026] [mavros]: Plugin vision_pose initialized
+[sim] [mavros_node-14] [INFO] [1775456402.943267630] [mavros]: Plugin vision_speed created
+[mavros_node-14] [INFO] [1775456402.943552972] [mavros]: Plugin vision_speed initialized
+[sim] [mavros_node-14] [INFO] [1775456402.956390885] [mavros]: Plugin waypoint created
+[sim] [mavros_node-14] [INFO] [1775456402.956861768] [mavros]: Plugin waypoint initialized
+[sim] [mavros_node-14] [INFO] [1775456402.968868605] [mavros]: Plugin wheel_odometry created
+[mavros_node-14] [INFO] [1775456402.968979536] [mavros]: Plugin wheel_odometry initialized
+[sim] [mavros_node-14] [INFO] [1775456402.977684980] [mavros]: Plugin wind_estimation created
+[sim] [mavros_node-14] [INFO] [1775456402.978070751] [mavros]: Plugin wind_estimation initialized
+[sim] [mavros_node-14] [INFO] [1775456402.979475546] [mavros]: Built-in SIMD instructions: SSE, SSE2
+[sim] [mavros_node-14] [INFO] [1775456402.979509230] [mavros]: Built-in MAVLink package version: 2026.3.3
+[mavros_node-14] [INFO] [1775456402.979518428] [mavros]: Known MAVLink dialects: common ardupilotmega ASLUAV AVSSUAS all csAirLink cubepilot development icarous loweheiser marsh matrixpilot paparazzi standard stemstudios storm32 uAvionix ualberta
+[mavros_node-14] [INFO] [1775456402.979526172] [mavros]: MAVROS UAS via /uas1 started. MY ID 1.191, TARGET ID 1.1
+[sim] [mavros_node-14] [INFO] [1775456403.832337694] [mavros_router]: link[1001] detected remote address 1.191
+[sim] [mavros_node-14] [WARN] [1775456404.846513522] [mavros.sys]: VER: broadcast request timeout, retries left 4
+[sim] [mavros_node-14] [WARN] [1775456405.845646554] [mavros.sys]: VER: broadcast request timeout, retries left 3
+[sim] [mavros_node-14] [WARN] [1775456406.846749152] [mavros.sys]: VER: unicast request timeout, retries left 2
+[sim] [arducopter-4] validate_structures:513: Validating structures
+[sim] [arducopter-4] Loaded defaults from /ardupilot/Tools/autotest/default_params/copter.parm,/ardupilot/Tools/autotest/default_params/gazebo-iris.parm,/vx01_ws/src/vx01_bringup/config/ardupilot_sim_bypass.parm
+[sim] [mavros_node-14] [WARN] [1775456407.846710445] [mavros.sys]: VER: unicast request timeout, retries left 1
+[sim] [mavros_node-14] [INFO] [1775456407.966659212] [mavros_router]: link[1000] detected remote address 1.1
+[sim] [mavros_node-14] [WARN] [1775456407.966861035] [mavros.cmd]: CMD: Unexpected command 520, result 0
+[sim] [mavros_node-14] [INFO] [1775456407.967120176] [mavros]: CON: Got HEARTBEAT, connected. FCU: ArduPilot
+[mavros_node-14] [INFO] [1775456407.967254421] [mavros.mission]: WP: detected enable_partial_push: 1
+[sim] [mavros_node-14] [INFO] [1775456407.967472605] [mavros.geofence]: GF: Using MISSION_ITEM_INT
+[mavros_node-14] [INFO] [1775456407.967521628] [mavros.rallypoint]: RP: Using MISSION_ITEM_INT
+[sim] [mavros_node-14] [INFO] [1775456407.967552066] [mavros.mission]: WP: Using MISSION_ITEM_INT
+[mavros_node-14] [INFO] [1775456407.967565321] [mavros.sys]: VER: 1.1: Capabilities         0x000000000000fbef
+[mavros_node-14] [INFO] [1775456407.967580960] [mavros.sys]: VER: 1.1: Flight software:     040507ff (b7207551)
+[sim] [mavros_node-14] [INFO] [1775456407.967589336] [mavros.sys]: VER: 1.1: Middleware software: 00000000 (        )
+[mavros_node-14] [INFO] [1775456407.967597642] [mavros.sys]: VER: 1.1: OS software:         00000000 (        )
+[mavros_node-14] [INFO] [1775456407.967605367] [mavros.sys]: VER: 1.1: Board hardware:      00000000
+[mavros_node-14] [INFO] [1775456407.967612831] [mavros.sys]: VER: 1.1: VID/PID:             0000:0000
+[sim] [mavros_node-14] [INFO] [1775456407.967619804] [mavros.sys]: VER: 1.1: UID:                 0000000000000000
+[sim] [mavros_node-14] [WARN] [1775456414.406801574] [mavros.param]: PR: Param COMPASS_DEV_ID (65535/1422): 97539 different index: 65535/1424
+[sim] [mavros_node-14] [WARN] [1775456414.407968558] [mavros.param]: PR: Param COMPASS_DEV_ID2 (65535/1422): 131874 different index: 65535/1424
+[mavros_node-14] [WARN] [1775456414.408236095] [mavros.param]: PR: Param COMPASS_DEV_ID3 (65535/1422): 263178 different index: 65535/1424
+[sim] [mavros_node-14] [INFO] [1775456415.042279713] [mavros.sys]: VER: 1.1: Capabilities         0x000000000000fbef
+[mavros_node-14] [INFO] [1775456415.042367950] [mavros.sys]: VER: 1.1: Flight software:     040507ff (b7207551)
+[mavros_node-14] [INFO] [1775456415.042387127] [mavros.sys]: VER: 1.1: Middleware software: 00000000 (        )
+[mavros_node-14] [INFO] [1775456415.042407796] [mavros.sys]: VER: 1.1: OS software:         00000000 (        )
+[mavros_node-14] [INFO] [1775456415.042417394] [mavros.sys]: VER: 1.1: Board hardware:      00000000
+[sim] [mavros_node-14] [INFO] [1775456415.042426531] [mavros.sys]: VER: 1.1: VID/PID:             0000:0000
+[mavros_node-14] [INFO] [1775456415.042456839] [mavros.sys]: VER: 1.1: UID:                 0000000000000000
+[sim] [mavros_node-14] [INFO] [1775456417.967599858] [mavros.home_position]: HP: requesting home position
+[sim] [mavros_node-14] [WARN] [1775456417.967646096] [mavros]: CON: Lost connection, HEARTBEAT timed out.
+[sim] [mavros_node-14] [WARN] [1775456418.968698004] [mavros.param]: PR: request list timeout, retries left 2
+[sim] [mavros_node-14] [WARN] [1775456419.969178668] [mavros.param]: PR: request list timeout, retries left 1
+[sim] [mavros_node-14] [WARN] [1775456420.969636909] [mavros.param]: PR: request list timeout, retries left 0
+[sim] [mavros_node-14] [INFO] [1775456422.009897121] [mavros.sys]: FCU: ArduCopter V4.5.7 (b7207551)
+[sim] [mavros_node-14] [INFO] [1775456422.010056503] [mavros.sys]: FCU: b623b2c8b384455c808f2b675edab5d3
+[sim] [mavros_node-14] [INFO] [1775456422.010137587] [mavros.sys]: FCU: Frame: QUAD/X
+[mavros_node-14] [INFO] [1775456422.010234962] [mavros.sys]: FCU: ArduCopter V4.5.7 (b7207551)
+[mavros_node-14] [INFO] [1775456422.010331094] [mavros.sys]: FCU: b623b2c8b384455c808f2b675edab5d3
+[sim] [mavros_node-14] [INFO] [1775456422.010792269] [mavros.sys]: FCU: Frame: QUAD/X
+[sim] [mavros_node-14] [INFO] [1775456422.010865408] [mavros.sys]: FCU: ArduCopter V4.5.7 (b7207551)
+[mavros_node-14] [INFO] [1775456422.010934549] [mavros.sys]: FCU: b623b2c8b384455c808f2b675edab5d3
+[sim] [mavros_node-14] [INFO] [1775456422.010993792] [mavros.sys]: FCU: Frame: QUAD/X
+[mavros_node-14] [INFO] [1775456422.011074976] [mavros.sys]: FCU: ArduCopter V4.5.7 (b7207551)
+[sim] [mavros_node-14] [INFO] [1775456422.011139999] [mavros.sys]: FCU: b623b2c8b384455c808f2b675edab5d3
+[sim] [mavros_node-14] [INFO] [1775456422.011209681] [mavros.sys]: FCU: Frame: QUAD/X
+[sim] [mavros_node-14] [WARN] [1775456444.074032971] [mavros.param]: PR: request param #221 timeout, retries left 2, and 1203 params still missing
+[sim] [mavros_node-14] [WARN] [1775456445.074413287] [mavros.param]: PR: request param #221 timeout, retries left 1, and 1203 params still missing
+[sim] [mavros_node-14] [WARN] [1775456446.074710995] [mavros.param]: PR: request param #221 timeout, retries left 0, and 1203 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456447.075043509] [mavros.param]: PR: request param #221 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456447.075200527] [mavros.param]: PR: 1202 params still missing, trying to request next: #222
+[sim] [mavros_node-14] [INFO] [1775456447.791907825] [mavros.sys]: FCU: Calibrating barometer
+[sim] [mavros_node-14] [INFO] [1775456447.792712873] [mavros.param]: PR: got an unsolicited param value idx=65535, not resetting retries count 3
+[sim] [mavros_node-14] [INFO] [1775456447.793791229] [mavros.param]: PR: got an unsolicited param value idx=65535, not resetting retries count 3
+[sim] [mavros_node-14] [INFO] [1775456447.794223960] [mavros.param]: PR: got an unsolicited param value idx=65535, not resetting retries count 3
+[sim] [mavros_node-14] [WARN] [1775456448.794432503] [mavros.param]: PR: request param #222 timeout, retries left 2, and 1202 params still missing
+[sim] [mavros_node-14] [WARN] [1775456449.794784709] [mavros.param]: PR: request param #222 timeout, retries left 1, and 1202 params still missing
+[sim] [mavros_node-14] [WARN] [1775456450.795056630] [mavros.param]: PR: request param #222 timeout, retries left 0, and 1202 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456451.795521728] [mavros.param]: PR: request param #222 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456451.795818611] [mavros.param]: PR: 1201 params still missing, trying to request next: #223
+[sim] [mavros_node-14] [WARN] [1775456452.795983257] [mavros.param]: PR: request param #223 timeout, retries left 2, and 1201 params still missing
+[sim] [mavros_node-14] [WARN] [1775456453.796434085] [mavros.param]: PR: request param #223 timeout, retries left 1, and 1201 params still missing
+[sim] [mavros_node-14] [WARN] [1775456454.796779833] [mavros.param]: PR: request param #223 timeout, retries left 0, and 1201 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456455.798822148] [mavros.param]: PR: request param #223 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456455.798955311] [mavros.param]: PR: 1200 params still missing, trying to request next: #224
+[sim] [mavros_node-14] [WARN] [1775456456.799242816] [mavros.param]: PR: request param #224 timeout, retries left 2, and 1200 params still missing
+[sim] [mavros_node-14] [WARN] [1775456457.799660316] [mavros.param]: PR: request param #224 timeout, retries left 1, and 1200 params still missing
+[sim] [mavros_node-14] [WARN] [1775456458.800103924] [mavros.param]: PR: request param #224 timeout, retries left 0, and 1200 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456459.800605792] [mavros.param]: PR: request param #224 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456459.800751028] [mavros.param]: PR: 1199 params still missing, trying to request next: #225
+[sim] [mavros_node-14] [WARN] [1775456460.801220673] [mavros.param]: PR: request param #225 timeout, retries left 2, and 1199 params still missing
+[sim] [mavros_node-14] [WARN] [1775456461.801980298] [mavros.param]: PR: request param #225 timeout, retries left 1, and 1199 params still missing
+[sim] [mavros_node-14] [WARN] [1775456462.802663346] [mavros.param]: PR: request param #225 timeout, retries left 0, and 1199 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456463.803161692] [mavros.param]: PR: request param #225 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456463.803311516] [mavros.param]: PR: 1198 params still missing, trying to request next: #226
+[sim] [mavros_node-14] [WARN] [1775456464.803718337] [mavros.param]: PR: request param #226 timeout, retries left 2, and 1198 params still missing
+[sim] [mavros_node-14] [WARN] [1775456465.804165354] [mavros.param]: PR: request param #226 timeout, retries left 1, and 1198 params still missing
+[sim] [mavros_node-14] [WARN] [1775456466.806684160] [mavros.param]: PR: request param #226 timeout, retries left 0, and 1198 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456467.807004142] [mavros.param]: PR: request param #226 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456467.807129290] [mavros.param]: PR: 1197 params still missing, trying to request next: #227
+[sim] [mavros_node-14] [WARN] [1775456468.807418001] [mavros.param]: PR: request param #227 timeout, retries left 2, and 1197 params still missing
+[sim] [mavros_node-14] [WARN] [1775456469.807722882] [mavros.param]: PR: request param #227 timeout, retries left 1, and 1197 params still missing
+[sim] [mavros_node-14] [WARN] [1775456470.808072377] [mavros.param]: PR: request param #227 timeout, retries left 0, and 1197 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456471.808432059] [mavros.param]: PR: request param #227 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456471.808586442] [mavros.param]: PR: 1196 params still missing, trying to request next: #228
+[sim] [mavros_node-14] [WARN] [1775456472.808878775] [mavros.param]: PR: request param #228 timeout, retries left 2, and 1196 params still missing
+[sim] [mavros_node-14] [WARN] [1775456473.809289922] [mavros.param]: PR: request param #228 timeout, retries left 1, and 1196 params still missing
+[sim] [mavros_node-14] [WARN] [1775456474.809735252] [mavros.param]: PR: request param #228 timeout, retries left 0, and 1196 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456475.810204947] [mavros.param]: PR: request param #228 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456475.810369850] [mavros.param]: PR: 1195 params still missing, trying to request next: #229
+[sim] [mavros_node-14] [WARN] [1775456476.811157868] [mavros.param]: PR: request param #229 timeout, retries left 2, and 1195 params still missing
+[sim] [mavros_node-14] [WARN] [1775456477.811933070] [mavros.param]: PR: request param #229 timeout, retries left 1, and 1195 params still missing
+[sim] [mavros_node-14] [WARN] [1775456478.812444730] [mavros.param]: PR: request param #229 timeout, retries left 0, and 1195 params still missing
+[sim] [mavros_node-14] [INFO] [1775456479.528008837] [mavros.param]: PR: got an unsolicited param value idx=221, not resetting retries count 0
+[sim] [mavros_node-14] [INFO] [1775456479.528632100] [mavros.param]: PR: got an unsolicited param value idx=221, not resetting retries count 0
+[sim] [mavros_node-14] [INFO] [1775456479.529277404] [mavros.param]: PR: got an unsolicited param value idx=221, not resetting retries count 0
+[sim] [mavros_node-14] [INFO] [1775456479.529884757] [mavros.param]: PR: got an unsolicited param value idx=222, not resetting retries count 0
+[sim] [mavros_node-14] [INFO] [1775456479.531285746] [mavros.param]: PR: got an unsolicited param value idx=222, not resetting retries count 0
+[sim] [mavros_node-14] [ERROR] [1775456480.531744530] [mavros.param]: PR: request param #229 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456480.531921997] [mavros.param]: PR: 1194 params still missing, trying to request next: #230
+[sim] [mavros_node-14] [WARN] [1775456481.532344571] [mavros.param]: PR: request param #230 timeout, retries left 2, and 1194 params still missing
+[sim] [mavros_node-14] [WARN] [1775456482.532884987] [mavros.param]: PR: request param #230 timeout, retries left 1, and 1194 params still missing
+[sim] [mavros_node-14] [WARN] [1775456483.533475938] [mavros.param]: PR: request param #230 timeout, retries left 0, and 1194 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456484.533807905] [mavros.param]: PR: request param #230 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456484.533939775] [mavros.param]: PR: 1193 params still missing, trying to request next: #231
+[sim] [mavros_node-14] [WARN] [1775456485.534905133] [mavros.param]: PR: request param #231 timeout, retries left 2, and 1193 params still missing
+[sim] [mavros_node-14] [WARN] [1775456486.535202571] [mavros.param]: PR: request param #231 timeout, retries left 1, and 1193 params still missing
+[sim] [mavros_node-14] [WARN] [1775456487.535489899] [mavros.param]: PR: request param #231 timeout, retries left 0, and 1193 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456488.535864871] [mavros.param]: PR: request param #231 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456488.535994587] [mavros.param]: PR: 1192 params still missing, trying to request next: #232
+[sim] [mavros_node-14] [WARN] [1775456489.536240092] [mavros.param]: PR: request param #232 timeout, retries left 2, and 1192 params still missing
+[sim] [mavros_node-14] [WARN] [1775456490.536550909] [mavros.param]: PR: request param #232 timeout, retries left 1, and 1192 params still missing
+[sim] [mavros_node-14] [WARN] [1775456491.536921057] [mavros.param]: PR: request param #232 timeout, retries left 0, and 1192 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456492.537208356] [mavros.param]: PR: request param #232 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456492.537348492] [mavros.param]: PR: 1191 params still missing, trying to request next: #233
+[sim] [mavros_node-14] [WARN] [1775456493.537693007] [mavros.param]: PR: request param #233 timeout, retries left 2, and 1191 params still missing
+[sim] [mavros_node-14] [WARN] [1775456494.538097746] [mavros.param]: PR: request param #233 timeout, retries left 1, and 1191 params still missing
+[sim] [mavros_node-14] [WARN] [1775456495.538468658] [mavros.param]: PR: request param #233 timeout, retries left 0, and 1191 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456496.539612856] [mavros.param]: PR: request param #233 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456496.539811753] [mavros.param]: PR: 1190 params still missing, trying to request next: #234
+[sim] [mavros_node-14] [WARN] [1775456497.540192320] [mavros.param]: PR: request param #234 timeout, retries left 2, and 1190 params still missing
+[sim] [mavros_node-14] [WARN] [1775456498.540806048] [mavros.param]: PR: request param #234 timeout, retries left 1, and 1190 params still missing
+[sim] [mavros_node-14] [WARN] [1775456499.541987120] [mavros.param]: PR: request param #234 timeout, retries left 0, and 1190 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456500.542762611] [mavros.param]: PR: request param #234 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456500.542915231] [mavros.param]: PR: 1189 params still missing, trying to request next: #235
+[sim] [mavros_node-14] [WARN] [1775456501.543347949] [mavros.param]: PR: request param #235 timeout, retries left 2, and 1189 params still missing
+[sim] [mavros_node-14] [WARN] [1775456502.543877389] [mavros.param]: PR: request param #235 timeout, retries left 1, and 1189 params still missing
+[sim] [mavros_node-14] [WARN] [1775456503.544360058] [mavros.param]: PR: request param #235 timeout, retries left 0, and 1189 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456504.545094774] [mavros.param]: PR: request param #235 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456504.548403544] [mavros.param]: PR: 1188 params still missing, trying to request next: #236
+[sim] [mavros_node-14] [WARN] [1775456505.548829792] [mavros.param]: PR: request param #236 timeout, retries left 2, and 1188 params still missing
+[sim] [mavros_node-14] [WARN] [1775456506.549381807] [mavros.param]: PR: request param #236 timeout, retries left 1, and 1188 params still missing
+[sim] [mavros_node-14] [WARN] [1775456507.550061353] [mavros.param]: PR: request param #236 timeout, retries left 0, and 1188 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456508.550587134] [mavros.param]: PR: request param #236 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456508.550723182] [mavros.param]: PR: 1187 params still missing, trying to request next: #237
+[sim] [mavros_node-14] [WARN] [1775456509.551412081] [mavros.param]: PR: request param #237 timeout, retries left 2, and 1187 params still missing
+[sim] [mavros_node-14] [WARN] [1775456510.551783485] [mavros.param]: PR: request param #237 timeout, retries left 1, and 1187 params still missing
+[sim] [mavros_node-14] [WARN] [1775456511.552173162] [mavros.param]: PR: request param #237 timeout, retries left 0, and 1187 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456512.552642217] [mavros.param]: PR: request param #237 completely missing.
+[mavros_node-14] [WARN] [1775456512.552821828] [mavros.param]: PR: 1186 params still missing, trying to request next: #238
+[sim] [mavros_node-14] [WARN] [1775456513.553296081] [mavros.param]: PR: request param #238 timeout, retries left 2, and 1186 params still missing
+[sim] [mavros_node-14] [INFO] [1775456514.135288484] [mavros.param]: PR: got an unsolicited param value idx=222, not resetting retries count 2
+[sim] [mavros_node-14] [INFO] [1775456514.135856913] [mavros.param]: PR: got an unsolicited param value idx=222, not resetting retries count 2
+[sim] [mavros_node-14] [INFO] [1775456514.136361882] [mavros.param]: PR: got an unsolicited param value idx=222, not resetting retries count 2
+[sim] [mavros_node-14] [INFO] [1775456514.136713028] [mavros.param]: PR: got an unsolicited param value idx=222, not resetting retries count 2
+[sim] [mavros_node-14] [INFO] [1775456514.137214710] [mavros.param]: PR: got an unsolicited param value idx=222, not resetting retries count 2
+[sim] [mavros_node-14] [WARN] [1775456515.137462286] [mavros.param]: PR: request param #238 timeout, retries left 1, and 1186 params still missing
+[sim] [mavros_node-14] [WARN] [1775456516.137850596] [mavros.param]: PR: request param #238 timeout, retries left 0, and 1186 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456517.138230709] [mavros.param]: PR: request param #238 completely missing.
+[mavros_node-14] [WARN] [1775456517.138377568] [mavros.param]: PR: 1185 params still missing, trying to request next: #239
+[sim] [mavros_node-14] [WARN] [1775456518.138603616] [mavros.param]: PR: request param #239 timeout, retries left 2, and 1185 params still missing
+[sim] [mavros_node-14] [WARN] [1775456519.139722256] [mavros.param]: PR: request param #239 timeout, retries left 1, and 1185 params still missing
+[sim] [mavros_node-14] [WARN] [1775456520.140102343] [mavros.param]: PR: request param #239 timeout, retries left 0, and 1185 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456521.140571586] [mavros.param]: PR: request param #239 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456521.140721851] [mavros.param]: PR: 1184 params still missing, trying to request next: #240
+[sim] [mavros_node-14] [WARN] [1775456522.141069732] [mavros.param]: PR: request param #240 timeout, retries left 2, and 1184 params still missing
+[sim] [mavros_node-14] [WARN] [1775456523.141787722] [mavros.param]: PR: request param #240 timeout, retries left 1, and 1184 params still missing
+[sim] [mavros_node-14] [WARN] [1775456524.143338331] [mavros.param]: PR: request param #240 timeout, retries left 0, and 1184 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456525.143915190] [mavros.param]: PR: request param #240 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456525.144105000] [mavros.param]: PR: 1183 params still missing, trying to request next: #241
+[sim] [mavros_node-14] [WARN] [1775456526.144476136] [mavros.param]: PR: request param #241 timeout, retries left 2, and 1183 params still missing
+[sim] [mavros_node-14] [WARN] [1775456527.145561425] [mavros.param]: PR: request param #241 timeout, retries left 1, and 1183 params still missing
+[sim] [mavros_node-14] [WARN] [1775456528.145879736] [mavros.param]: PR: request param #241 timeout, retries left 0, and 1183 params still missing
+[sim] [mavros_node-14] [ERROR] [1775456529.146292584] [mavros.param]: PR: request param #241 completely missing.
+[sim] [mavros_node-14] [WARN] [1775456529.146442288] [mavros.param]: PR: 1182 params still missing, trying to request next: #242

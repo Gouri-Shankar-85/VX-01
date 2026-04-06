@@ -19,8 +19,7 @@ def generate_launch_description():
     )
 
     # Launch ArduPilot SITL binary.
-    # --out udp:127.0.0.1:14550 → MAVROS receives on UDP (fire-and-forget, no blocking)
-    # TCP port 5760 still active for Mission Planner / GCS tools
+    # SITL defaults to TCP server on 5760 (SERIAL0).
     sitl_layer = ExecuteProcess(
         cmd=[
             '/ardupilot/build/sitl/bin/arducopter',
@@ -33,27 +32,20 @@ def generate_launch_description():
             '/ardupilot/Tools/autotest/default_params/gazebo-iris.parm,'
             '/vx01_ws/src/vx01_bringup/config/ardupilot_sim_bypass.parm',
             '--sim-address', '127.0.0.1',
-            # CRITICAL: '--out' does NOT exist in this ArduPilot build.
-            # Use '--serial0' to set SERIAL0 (MAVLink port) to UDP output.
-            # Verified: --serial0 udp:... launches SITL successfully; --out causes exit code 1.
-            '--serial0',  'udp:127.0.0.1:14550',
             '-I',         '0',
         ],
         cwd='/ardupilot/ArduCopter',
         output='screen'
     )
 
-    # Launch MAVROS — use UDP (not TCP) to prevent param sync from blocking heartbeat.
-    # TCP: if param sync stalls, it blocks heartbeat → 'Lost connection' → sync restarts forever.
-    # UDP: param timeouts can't block heartbeat — FCU link stays stable during full param download.
+    # Launch MAVROS — use TCP to connect to SITL on port 5760.
     mavros_node = Node(
         package='mavros',
         executable='mavros_node',
         output='screen',
         parameters=[
-        # UDP MAVROS: bind on all interfaces so ArduPilot's --out udp:127.0.0.1:14550 arrives.
-            # Format: udp://[local_bind_addr]:[local_port]@  (empty @ = no GCS forward)
-            {'fcu_url': 'udp://0.0.0.0:14550@'},
+            # Connect to ArduPilot SITL's default TCP server
+            {'fcu_url': 'tcp://127.0.0.1:5760'},
             {'use_sim_time': True},
             os.path.join(get_package_share_directory('vx01_bringup'), 'config', 'mavros_sim_config.yaml'),
             {'gcs_url': ''},
