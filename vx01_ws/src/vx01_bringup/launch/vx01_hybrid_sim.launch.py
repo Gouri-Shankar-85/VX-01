@@ -25,16 +25,19 @@ def generate_launch_description():
         cmd=[
             '/ardupilot/build/sitl/bin/arducopter',
             '-S',
-            '--model', 'JSON',
-            '--speedup', '1',
-            '--slave', '0',
+            '--model',    'JSON',
+            '--speedup',  '1',
+            '--slave',    '0',
             '--defaults',
             '/ardupilot/Tools/autotest/default_params/copter.parm,'
             '/ardupilot/Tools/autotest/default_params/gazebo-iris.parm,'
             '/vx01_ws/src/vx01_bringup/config/ardupilot_sim_bypass.parm',
-            '--sim-address=127.0.0.1',
-            '--out', 'udp:127.0.0.1:14550',   # MAVROS UDP input
-            '-I0'
+            '--sim-address', '127.0.0.1',
+            # CRITICAL: '--out' does NOT exist in this ArduPilot build.
+            # Use '--serial0' to set SERIAL0 (MAVLink port) to UDP output.
+            # Verified: --serial0 udp:... launches SITL successfully; --out causes exit code 1.
+            '--serial0',  'udp:127.0.0.1:14550',
+            '-I',         '0',
         ],
         cwd='/ardupilot/ArduCopter',
         output='screen'
