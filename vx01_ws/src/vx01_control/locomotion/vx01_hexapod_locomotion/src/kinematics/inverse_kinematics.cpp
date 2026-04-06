@@ -10,9 +10,11 @@ namespace vx01_hexapod_locomotion {
 
         bool InverseKinematics::isReachable(double xp, double yp, double zp)
         {
-            double r_xy = std::sqrt(xp*xp + yp*yp) - L1_;
-            if (r_xy < 0.0) return false;
-            double dist = std::sqrt(r_xy*r_xy + zp*zp);
+            // r_plane: horizontal distance from femur pivot to foot projection
+            // = total horizontal reach from origin  MINUS  coxa length L1
+            const double r_plane = std::sqrt(xp*xp + yp*yp) - L1_;
+            if (r_plane < 0.0) return false;
+            const double dist = std::sqrt(r_plane*r_plane + zp*zp);
             return (dist <= L2_ + L3_ &&
                     dist >= std::abs(L2_ - L3_));
         }
@@ -22,26 +24,30 @@ namespace vx01_hexapod_locomotion {
         {
             if (!isReachable(xp, yp, zp)) return false;
 
+            // theta1: coxa rotates in the horizontal (XY) plane
             theta1 = std::atan2(yp, xp);
 
-            double ct1 = std::cos(theta1);
-            if (std::abs(ct1) < 1e-9) return false;
+            // r_plane: horizontal distance from femur pivot to foot
+            // (total XY reach minus coxa length)
+            const double r_plane = std::sqrt(xp*xp + yp*yp) - L1_;
 
-            double r2 = xp / ct1 - L1_;
+            // r1: 3D straight-line distance from femur pivot to foot
+            const double r1 = std::sqrt(zp*zp + r_plane*r_plane);
 
-            double r1 = std::sqrt(zp*zp + r2*r2);
+            // phi2: elevation angle from horizontal to the foot
+            const double phi2 = std::atan2(zp, r_plane);
 
-            double phi2 = std::atan2(zp, r2);
-
-            double cp1 = (L3_*L3_ - L2_*L2_ - r1*r1) / (-2.0 * L2_ * r1);
+            // Law of cosines for femur angle
+            const double cp1 = (L3_*L3_ - L2_*L2_ - r1*r1) / (-2.0 * L2_ * r1);
             if (cp1 < -1.0 || cp1 > 1.0) return false;
-            double phi1 = std::acos(cp1);
+            const double phi1 = std::acos(cp1);
 
             theta2 = phi2 - phi1;
 
-            double cp3 = (r1*r1 - L2_*L2_ - L3_*L3_) / (-2.0 * L2_ * L3_);
+            // Law of cosines for knee (tibia) angle
+            const double cp3 = (r1*r1 - L2_*L2_ - L3_*L3_) / (-2.0 * L2_ * L3_);
             if (cp3 < -1.0 || cp3 > 1.0) return false;
-            double phi3 = std::acos(cp3);
+            const double phi3 = std::acos(cp3);
 
             theta3 = M_PI - phi3;
 

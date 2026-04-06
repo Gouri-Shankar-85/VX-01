@@ -60,7 +60,7 @@ void TripodWalkNode::declareParameters()
     declare_parameter("L3",                  112.16);
     declare_parameter("body_radius",          105.66);
     declare_parameter("beta_angle",           M_PI / 4.0);
-    declare_parameter("home_x",              223.03);
+    declare_parameter("home_x",              190.0);
     declare_parameter("home_y",                0.0);
     declare_parameter("home_z",              -72.82);
     declare_parameter("step_length",           60.0);
@@ -226,48 +226,53 @@ bool TripodWalkNode::computeIK(double lx, double ly, double lz,
     return ik.compute(lx, ly, lz, t1, t2, t3);
 }
 
-// Swing waypoint at normalised t in [0,1] over the full swing arc:
-//   leg_x, leg_y: 3D quadratic Bezier blending stride_x, stride_y
-//   leg_z: 3D quadratic Bezier reaching step_height at t=0.5
+// Swing waypoint at normalised t in [0,1] over the full swing arc.
+// Quadratic Bézier path: foot traces from (pushed-back) to (pushed-forward)
+// while lifting step_height above ground at t=0.5.
 std::array<double, 3> TripodWalkNode::swingWaypoint(int leg_id, double t) const
 {
     t = std::clamp(t, 0.0, 1.0);
     double stride_x = 0.0, stride_y = 0.0;
     legStride(leg_id, stride_x, stride_y);
     
-    // 3D Bezier curve
-    // P1: Start of swing (leg pushed back)
-    const double P1x = home_x_ - stride_x;
-    const double P1y = -stride_y;
-    const double P1z = home_z_;
+    // Bézier control points:
+    // P0: foot at back of stride (start of swing)
+    const double P0x = home_x_ - stride_x;
+    const double P0y = -stride_y;
+    const double P0z = home_z_;
+
+    // P1: apex control point — Bézier lift.
+    // Quadratic Bézier at t=0.5 evaluates to: (P0 + 2*P1 + P2) / 4
+    // With P0z=P2z=home_z, we need: (home_z + 2*P1z + home_z)/4 = home_z + step_height
+    // → 2*P1z = 4*(home_z+step_height) - 2*home_z = 2*home_z + 4*step_height
+    // → P1z = home_z + 2*step_height   ← the 2× factor IS correct math
+    const double P1x = home_x_;
+    const double P1y = 0.0;
+    const double P1z = home_z_ + 2.0 * step_height_;   // CORRECT: gives actual apex = step_height
+
     
-    // P2: Apex of swing
-    const double P2x = home_x_;
-    const double P2y = 0.0;
-    const double P2z = home_z_ + 2.0 * step_height_;
-    
-    // P3: End of swing (leg pushed forward)
-    const double P3x = home_x_ + stride_x;
-    const double P3y = stride_y;
-    const double P3z = home_z_;
+    // P2: foot at front of stride (end of swing)
+    const double P2x = home_x_ + stride_x;
+    const double P2y = stride_y;
+    const double P2z = home_z_;
     
     const double u  = 1.0 - t;
-    const double a_b = u * u;
-    const double b_b = 2.0 * u * t;
-    const double c_b = t * t;
-    
-    const double leg_x = a_b * P1x + b_b * P2x + c_b * P3x;
-    const double leg_y = a_b * P1y + b_b * P2y + c_b * P3y;
-    const double leg_z = a_b * P1z + b_b * P2z + c_b * P3z;
+    const double leg_x = u*u*P0x + 2*u*t*P1x + t*t*P2x;
+    const double leg_y = u*u*P0y + 2*u*t*P1y + t*t*P2y;
+    const double leg_z = u*u*P0z + 2*u*t*P1z + t*t*P2z;
 
     double t1 = 0.0, t2 = 0.0, t3 = 0.0;
     if (!computeIK(leg_x, leg_y, leg_z, t1, t2, t3)) {
+        // IK failed — hold current position rather than jerking to zero
         t1 = current_joint_state_[leg_id*3+0];
         t2 = current_joint_state_[leg_id*3+1];
         t3 = current_joint_state_[leg_id*3+2];
+        RCLCPP_DEBUG(get_logger(),
+            "Swing IK failed leg %d t=%.2f (%.1f,%.1f,%.1f)", leg_id, t, leg_x, leg_y, leg_z);
     }
     return {t1, t2, t3};
 }
+
 
 // Stance/drag waypoint at normalised t in [0,1]:
 //   leg slides from (stride_x, stride_y) to (-stride_x, -stride_y)
@@ -278,7 +283,7 @@ std::array<double, 3> TripodWalkNode::stanceWaypoint(int leg_id, double t) const
     double stride_x = 0.0, stride_y = 0.0;
     legStride(leg_id, stride_x, stride_y);
     
-    // stance slides from forward to backward
+    // stance slides from forward to backward (foot pushes body forward)
     const double leg_x = home_x_ + stride_x * (1.0 - 2.0 * t);
     const double leg_y = stride_y * (1.0 - 2.0 * t);
 
@@ -287,6 +292,8 @@ std::array<double, 3> TripodWalkNode::stanceWaypoint(int leg_id, double t) const
         t1 = current_joint_state_[leg_id*3+0];
         t2 = current_joint_state_[leg_id*3+1];
         t3 = current_joint_state_[leg_id*3+2];
+        RCLCPP_DEBUG(get_logger(),
+            "Stance IK failed leg %d t=%.2f (%.1f,%.1f,%.1f)", leg_id, t, leg_x, leg_y, home_z_);
     }
     return {t1, t2, t3};
 }
