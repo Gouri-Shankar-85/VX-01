@@ -10,6 +10,8 @@ export default function Dashboard() {
   const [rosConnected, setRosConnected] = useState(false);
   const [robotActive, setRobotActive] = useState(false);
   const [speedMultiplier, setSpeedMultiplier] = useState(1.0);
+  const [runningProcesses, setRunningProcesses] = useState([]);
+  const [stopConfirm, setStopConfirm] = useState(false);  // 2-step confirm for stop-all
 
   const [telemetry, setTelemetry] = useState({
     battery: "--",
@@ -322,6 +324,43 @@ export default function Dashboard() {
 
 
 
+  // Poll process status from backend every 2s
+  useEffect(() => {
+    const poll = setInterval(async () => {
+      try {
+        const res = await fetch(`http://${window.location.hostname}:3001/api/status`);
+        const data = await res.json();
+        setRunningProcesses(data.running || []);
+      } catch (_) { /* backend not up yet */ }
+    }, 2000);
+    return () => clearInterval(poll);
+  }, []);
+
+  const stopAll = async () => {
+    if (!stopConfirm) {
+      // First click: arm the button (show confirmation state for 4s then reset)
+      setStopConfirm(true);
+      setTimeout(() => setStopConfirm(false), 4000);
+      addLog("WARN", "STOP ALL armed — click again within 4s to confirm shutdown");
+      return;
+    }
+    // Second click: fire the shutdown
+    setStopConfirm(false);
+    addLog("WARN", "⚠ EMERGENCY SHUTDOWN — terminating all simulation processes...");
+    try {
+      const res = await fetch(`http://${window.location.hostname}:3001/api/stop-all`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: "{}"
+      });
+      const data = await res.json();
+      addLog("INFO", data.message || "Shutdown initiated");
+      setRunningProcesses([]);
+      setRobotActive(false);
+      // Status display will update via polling
+    } catch (err) {
+      addLog("ERROR", "Could not reach backend for stop-all");
+    }
+  };
+
   const backendLaunch = async (command_id, command_string) => {
     try {
       const res = await fetch(`http://${window.location.hostname}:3001/api/launch`, {
@@ -474,18 +513,47 @@ export default function Dashboard() {
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-2xl flex-1 flex flex-col">
                   <h3 className="font-mono text-gray-400 text-sm mb-4 border-b border-gray-800 pb-2">IGNITION SEQUENCE</h3>
                   <div className="space-y-3 font-mono flex-1">
-                    <button onClick={() => backendLaunch("sim", "ros2 launch vx01_bringup vx01_hybrid_sim.launch.py")} className="w-full bg-blue-600/20 text-blue-400 border border-blue-600/50 p-3 rounded hover:bg-blue-600/40 transition">
-                      1. BOOT HYBRID SIMULATOR
-                    </button>
-                    <button onClick={() => backendLaunch("map", "ros2 launch vx01_simulation vx01_mapping.launch.py use_sim_time:=true")} className="w-full bg-purple-600/20 text-purple-400 border border-purple-600/50 p-3 rounded hover:bg-purple-600/40 transition">
-                      2. INITIALIZE VISUAL SLAM
-                    </button>
-                    <button onClick={() => backendLaunch("walk", "ros2 launch vx01_locomotion_control walk.launch.py use_sim_time:=true")} className="w-full bg-teal-600/20 text-teal-400 border border-teal-600/50 p-3 rounded hover:bg-teal-600/40 transition">
-                      3. START HEXAPOD KINEMATICS
-                    </button>
-                    <div className="pt-4 border-t border-gray-800 mt-4">
-                      <button onClick={() => backendLaunch("auto", "python3 /vx01_ws/src/vx01_bringup/scripts/mission_coordinator.py --ros-args -p use_sim_time:=true")} className="w-full bg-rose-600 text-white font-bold tracking-widest p-4 rounded hover:bg-rose-500 transition shadow-lg shadow-rose-900/50">
-                        ENGAGE AUTONOMY
+                    {[
+                      { id: "sim",  label: "1. BOOT HYBRID SIMULATOR",   cmd: "ros2 launch vx01_bringup vx01_hybrid_sim.launch.py",                                                         color: "blue" },
+                      { id: "map",  label: "2. INITIALIZE VISUAL SLAM",   cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py use_sim_time:=true",                                      color: "purple" },
+                      { id: "walk", label: "3. START HEXAPOD KINEMATICS", cmd: "ros2 launch vx01_locomotion_control walk.launch.py use_sim_time:=true",                                      color: "teal" },
+                    ].map(({ id, label, cmd, color }) => {
+                      const isRunning = runningProcesses.includes(id);
+                      return (
+                        <button
+                          key={id}
+                          onClick={() => backendLaunch(id, cmd)}
+                          className={`w-full p-3 rounded border transition flex items-center justify-between gap-3
+                            bg-${color}-600/20 text-${color}-400 border-${color}-600/50
+                            hover:bg-${color}-600/40
+                            ${isRunning ? `ring-1 ring-${color}-400/60` : ""}`}
+                        >
+                          <span>{label}</span>
+                          {isRunning && <span className="text-xs animate-pulse opacity-70">● RUNNING</span>}
+                        </button>
+                      );
+                    })}
+
+                    <div className="pt-4 border-t border-gray-800 mt-4 space-y-3">
+                      <button
+                        onClick={() => backendLaunch("auto", "python3 /vx01_ws/src/vx01_bringup/scripts/mission_coordinator.py --ros-args -p use_sim_time:=true")}
+                        className="w-full bg-rose-600 text-white font-bold tracking-widest p-4 rounded hover:bg-rose-500 transition shadow-lg shadow-rose-900/50"
+                      >
+                        {runningProcesses.includes("auto") ? "● AUTONOMY ACTIVE" : "ENGAGE AUTONOMY"}
+                      </button>
+
+                      {/* EMERGENCY SHUTDOWN — 2-step confirm prevents accidental clicks */}
+                      <button
+                        onClick={stopAll}
+                        className={`w-full font-black tracking-widest p-4 rounded border-2 transition-all duration-200
+                          ${ stopConfirm
+                            ? "bg-red-600 border-red-400 text-white shadow-lg shadow-red-900/80 scale-[1.02] animate-pulse"
+                            : "bg-gray-900 border-gray-700 text-gray-500 hover:border-red-800 hover:text-red-500"
+                          }`}
+                      >
+                        {stopConfirm
+                          ? "⚠ CONFIRM — KILL ALL PROCESSES"
+                          : "⏹ STOP SIMULATION"}
                       </button>
                     </div>
                   </div>
