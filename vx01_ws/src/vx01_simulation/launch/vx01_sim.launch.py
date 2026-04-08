@@ -49,6 +49,16 @@ def generate_launch_description():
         name='IGN_GAZEBO_RESOURCE_PATH',
         value=description_pkg_parent
     )
+    
+    set_ign_plugin_path = SetEnvironmentVariable(
+        name='IGN_GAZEBO_SYSTEM_PLUGIN_PATH',
+        value='/usr/local/lib'
+    )
+    
+    set_gz_plugin_path = SetEnvironmentVariable(
+        name='GZ_SIM_SYSTEM_PLUGIN_PATH',
+        value='/usr/local/lib'
+    )
 
     robot_state_publisher_node = Node(
         package='robot_state_publisher',
@@ -180,6 +190,8 @@ def generate_launch_description():
 
     return LaunchDescription([
         set_ign_resource_path,
+        set_ign_plugin_path,
+        set_gz_plugin_path,
         use_sim_time_arg,
         robot_state_publisher_node,
         gz_sim,
