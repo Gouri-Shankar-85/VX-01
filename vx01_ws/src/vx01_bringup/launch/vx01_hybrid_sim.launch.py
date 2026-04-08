@@ -67,6 +67,13 @@ def generate_launch_description():
         output='screen'
     )
 
+    rosbridge_server = Node(
+        package='rosbridge_server',
+        executable='rosbridge_websocket',
+        output='screen',
+        parameters=[{'port': 9090}]
+    )
+
     web_video_server = Node(
         package='web_video_server',
         executable='web_video_server',
@@ -79,6 +86,6 @@ def generate_launch_description():
         sitl_layer,
         TimerAction(
         period=18.0,
-            actions=[mavros_node, mode_manager, aerial_controller, web_video_server]
+            actions=[mavros_node, mode_manager, aerial_controller, web_video_server, rosbridge_server]
         )
     ])
