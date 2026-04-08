@@ -28,6 +28,7 @@ def generate_launch_description():
             '/ardupilot/Tools/autotest/default_params/gazebo-iris.parm,'
             '/vx01_ws/src/vx01_bringup/config/ardupilot_sim_bypass.parm',
             '--serial1', 'udp:127.0.0.1:14550',
+            '--serial2', 'udp:127.0.0.1:14555',
         ],
         cwd='/ardupilot/ArduCopter',
         output='screen'
