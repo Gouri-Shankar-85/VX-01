@@ -1,5 +1,4 @@
 #include <rclcpp/rclcpp.hpp>
-#include <geometry_msgs/msg/twist.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <std_msgs/msg/bool.hpp>
 #include <mavros_msgs/msg/state.hpp>
@@ -12,10 +11,9 @@ class AerialControllerNode : public rclcpp::Node {
 public:
     AerialControllerNode() : Node("aerial_controller_node")
     {
-        // ── Subscriptions ─────────────────────────────────────────────────────
-        sub_cmd_ = create_subscription<geometry_msgs::msg::Twist>(
+        sub_cmd_ = create_subscription<geometry_msgs::msg::TwistStamped>(
             "/drone/cmd_vel", 10,
-            [this](const geometry_msgs::msg::Twist::SharedPtr msg) {
+            [this](const geometry_msgs::msg::TwistStamped::SharedPtr msg) {
                 latest_cmd_          = *msg;
                 last_cmd_time_       = now();
                 has_received_cmd_    = true;
@@ -29,62 +27,52 @@ public:
                 current_mode_ = msg->mode;
             });
 
-        // ── Publishers ────────────────────────────────────────────────────────
-        // ArduPilot GUIDED velocity: use cmd_vel_unstamped (Twist, not TwistStamped)
-        pub_vel_ = create_publisher<geometry_msgs::msg::Twist>(
-            "/mavros/setpoint_velocity/cmd_vel_unstamped", 10);
+        pub_vel_ = create_publisher<geometry_msgs::msg::TwistStamped>(
+            "/mavros/setpoint_velocity/cmd_vel", 10);
 
-        // ── Arm / Disarm topics ───────────────────────────────────────────────
         sub_arm_ = create_subscription<std_msgs::msg::Bool>(
             "/drone/arm", 10,
             [this](const std_msgs::msg::Bool::SharedPtr msg) {
                 sendArmCommand(msg->data);
             });
 
-        // ── Service clients (for arm/mode) ────────────────────────────────────
         arm_client_  = create_client<mavros_msgs::srv::CommandBool>("/mavros/cmd/arming");
         mode_client_ = create_client<mavros_msgs::srv::SetMode>("/mavros/set_mode");
 
-        // ── 10 Hz heartbeat ───────────────────────────────────────────────────
-        // Keeps ArduPilot in GUIDED velocity sub-mode. If /drone/cmd_vel goes
-        // silent for >500ms we zero the command to auto-hover.
         heartbeat_timer_ = create_wall_timer(100ms, [this]() { publishSetpoint(); });
 
         RCLCPP_INFO(get_logger(),
             "AerialController ready. "
-            "Publish geometry_msgs/Twist to /drone/cmd_vel for flight. "
+            "Publish geometry_msgs/TwistStamped to /drone/cmd_vel for flight. "
             "Publish std_msgs/Bool to /drone/arm to arm (true) or disarm (false).");
     }
 
 private:
 
-    // ── Setpoint publisher ────────────────────────────────────────────────────
     void publishSetpoint()
     {
-        if (!is_connected_) return;   // don't spam before MAVROS is up
+        if (!is_connected_) return;
 
-        geometry_msgs::msg::Twist cmd;
+        geometry_msgs::msg::TwistStamped cmd;
 
         if (has_received_cmd_) {
-            // Auto-hover: zero the command if no update in 500ms
-            const double age = (now() - last_cmd_time_).seconds();
+            double age = (now() - last_cmd_time_).seconds();
+
             if (age < 0.5) {
                 cmd = latest_cmd_;
             } else {
-                // timeout → hold position (hover) by zeroing all velocities
-                cmd = geometry_msgs::msg::Twist{};
-                if (age > 1.0) {
-                    RCLCPP_DEBUG_THROTTLE(get_logger(), *get_clock(), 5000,
-                        "No /drone/cmd_vel for %.1fs — hovering", age);
-                }
+                cmd.header.stamp = now();
+                cmd.header.frame_id = "base_link";
+                cmd.twist = geometry_msgs::msg::Twist();
             }
+        } else {
+            cmd.header.stamp = now();
+            cmd.header.frame_id = "base_link";
         }
-        // else: pre-arm, publish zero to pre-fill the topic so MAVROS sees it
 
         pub_vel_->publish(cmd);
     }
 
-    // ── Arm/Disarm helper ─────────────────────────────────────────────────────
     void sendArmCommand(bool arm)
     {
         if (!arm_client_->wait_for_service(1s)) {
@@ -105,16 +93,15 @@ private:
             });
     }
 
-    // ── Members ───────────────────────────────────────────────────────────────
-    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr   sub_cmd_;
+    rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr   sub_cmd_;
     rclcpp::Subscription<mavros_msgs::msg::State>::SharedPtr     sub_state_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr         sub_arm_;
-    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr      pub_vel_;
+    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr      pub_vel_;
     rclcpp::TimerBase::SharedPtr                                 heartbeat_timer_;
     rclcpp::Client<mavros_msgs::srv::CommandBool>::SharedPtr     arm_client_;
     rclcpp::Client<mavros_msgs::srv::SetMode>::SharedPtr         mode_client_;
 
-    geometry_msgs::msg::Twist latest_cmd_{};
+    geometry_msgs::msg::TwistStamped latest_cmd_{};
     rclcpp::Time              last_cmd_time_{0, 0, RCL_ROS_TIME};
     bool                      has_received_cmd_ = false;
     bool                      is_connected_     = false;

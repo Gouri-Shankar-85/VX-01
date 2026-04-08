@@ -29,17 +29,14 @@ private:
         RCLCPP_INFO(this->get_logger(), "Transitioning to %s mode", current_mode_.c_str());
 
         if (current_mode_ == "HEXAPOD") {
-            // Fold drone arms inwards
             publishArmTrajectory(1.57);
             RCLCPP_INFO(this->get_logger(), "Drone arms folded.");
         } 
         else if (current_mode_ == "DRONE") {
-            // Deploy drone arms
             publishArmTrajectory(0.0);
             
-            // Fold hexapod legs away
             for (int i = 0; i < 6; ++i) {
-                publishLegTrajectory(i, 0.0, 1.57, 0.0); // Folded posture
+                publishLegTrajectory(i, 0.0, 1.57, 0.0); 
             }
             RCLCPP_INFO(this->get_logger(), "Drone arms deployed, hexapod legs folded.");
         }

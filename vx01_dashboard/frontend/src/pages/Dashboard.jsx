@@ -204,7 +204,7 @@ export default function Dashboard() {
 
     const topic = new ROSLIB.Topic({
       ros: rosRef.current,
-      name: "/mavros/setpoint_velocity/cmd_vel",
+      name: "/drone/cmd_vel",
       messageType: "geometry_msgs/TwistStamped"
     });
 
@@ -716,7 +716,7 @@ export default function Dashboard() {
                       addLog("INFO", "Takeoff sequence initiated...");
                       let t = 0
                       const climbInterval = setInterval(() => {
-                        const topic = new ROSLIB.Topic({ ros: rosRef.current, name: "/mavros/setpoint_velocity/cmd_vel", messageType: "geometry_msgs/msg/TwistStamped" });
+                        const topic = new ROSLIB.Topic({ ros: rosRef.current, name: "/drone/cmd_vel", messageType: "geometry_msgs/msg/TwistStamped" });
                         topic.publish(new ROSLIB.Message({ linear: { x: 0, y: 0, z: 0.5 }, angular: { x: 0, y: 0, z: 0 } }));
                         if (++t >= 10) { clearInterval(climbInterval); addLog("INFO", "Takeoff complete — altitude locked"); }
                       }, 1000);
