@@ -1,22 +1,3 @@
-/**
- * VX-01 Aerial Controller Node
- *
- * Responsibilities:
- *   1. Bridge /drone/cmd_vel → /mavros/setpoint_velocity/cmd_vel_unstamped
- *      (ArduPilot GUIDED mode uses the unstamped Twist topic, NOT TwistStamped)
- *   2. Publish a 10 Hz heartbeat so ArduPilot stays in GUIDED velocity mode
- *      (ArduPilot exits GUIDED if no setpoint arrives for >3s)
- *   3. Auto-hover: if /drone/cmd_vel goes silent for >0.5s, zero the setpoint
- *      so the drone holds position rather than drifting on the last command
- *   4. Expose /drone/arm (Bool) and /drone/disarm for clean arming/disarming
- *      without going through the dashboard's ROS service calls every time
- *
- * ArduPilot GUIDED velocity control:
- *   Topic: /mavros/setpoint_velocity/cmd_vel_unstamped  (geometry_msgs/Twist)
- *   Frame: body frame (base_link). lx=forward, ly=left, lz=up (ENU)
- *   Rate:  must publish ≥2 Hz or ArduPilot exits velocity sub-mode
- */
-
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
