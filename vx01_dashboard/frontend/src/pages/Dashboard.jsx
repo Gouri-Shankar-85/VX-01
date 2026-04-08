@@ -30,7 +30,7 @@ export default function Dashboard() {
 
   const [victimData, setVictimData] = useState([]);
   const [logs, setLogs] = useState([]);
-  
+
   const rosRef = useRef(null);
   const droneIntervalRef = useRef(null);
   const currentCmdRef = useRef({ lx: 0, ly: 0, lz: 0, az: 0 });
@@ -51,7 +51,7 @@ export default function Dashboard() {
     ros.on("connection", () => {
       setRosConnected(true);
       addLog("INFO", `Uplink established at ${ROS_URL}`);
-      
+
       // Force MAVROS to stream Data
       const svc = new ROSLIB.Service({ ros, name: "/mavros/set_stream_rate", serviceType: "mavros_msgs/srv/StreamRate" });
       svc.callService(new ROSLIB.ServiceRequest({ stream_id: 0, message_rate: 10, on_off: true }), () => {
@@ -136,7 +136,7 @@ export default function Dashboard() {
       setVictimData((prev) => {
         const currentMap = new Map(prev.map(v => [v.id, v]));
         msg.victims.forEach(v => currentMap.set(v.id, v));
-        return Array.from(currentMap.values()).sort((a,b) => b.id - a.id);
+        return Array.from(currentMap.values()).sort((a, b) => b.id - a.id);
       });
     });
 
@@ -209,18 +209,18 @@ export default function Dashboard() {
     // Publish to /drone/cmd_vel — aerial_controller streams this to MAVROS at 10Hz
     const droneCmdTopic = new ROSLIB.Topic({
       ros: rosRef.current,
-      name: "/drone/cmd_vel",
+      name: "/mavros/setpoint_velocity/cmd_vel",
       messageType: "geometry_msgs/msg/Twist"
     });
 
     const publishCmd = () => droneCmdTopic.publish(new ROSLIB.Message({
-      linear:  { x: currentCmdRef.current.lx, y: currentCmdRef.current.ly, z: currentCmdRef.current.lz },
+      linear: { x: currentCmdRef.current.lx, y: currentCmdRef.current.ly, z: currentCmdRef.current.lz },
       angular: { x: 0, y: 0, z: currentCmdRef.current.az },
     }));
 
     publishCmd();
     // Also keep frontend interval to switch directions cleanly
-    droneIntervalRef.current = setInterval(publishCmd, 200);
+    droneIntervalRef.current = setInterval(publishCmd, 50);
   };
 
   const stopDrone = () => {
@@ -229,7 +229,7 @@ export default function Dashboard() {
     currentCmdRef.current = { lx: 0, ly: 0, lz: 0, az: 0 };
     const droneCmdTopic = new ROSLIB.Topic({
       ros: rosRef.current,
-      name: "/drone/cmd_vel",
+      name: "/mavros/setpoint_velocity/cmd_vel",
       messageType: "geometry_msgs/msg/Twist"
     });
     droneCmdTopic.publish(new ROSLIB.Message({
@@ -242,81 +242,53 @@ export default function Dashboard() {
   // Update the ref whenever telemetry.mode changes (we use a separate state track)
   const [droneArmed, setDroneArmed] = useState(false);
 
-  const forceArm = () => {
-    if (!rosRef.current || !rosConnected) { addLog("ERROR", "ROS not connected"); return; }
+  const armDrone = () => {
+    if (!rosRef.current || !rosConnected) return;
 
-    const paramSet = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/param/set",  serviceType: "mavros_msgs/srv/ParamSet" });
-    const modeSvc  = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode",   serviceType: "mavros_msgs/srv/SetMode" });
-    const armSvc   = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
+    startDroneCmd(0, 0, 0, 0);  // start stream
 
-    addLog("INFO", "Force-Arm sequence started...");
-
-    // Step 1: Bypass ALL arming checks (pre-flight, GPS, EKF, RC)
-    paramSet.callService(new ROSLIB.ServiceRequest({ param_id: "ARMING_CHECK", value: { integer: 0, real: 0.0 } }), () => {
-      addLog("WARN", "[1/5] ARMING_CHECK=0 — all pre-arm checks bypassed");
-
-      // Step 2: Disable EKF failsafe (prevents disarm on EKF variance)
-      paramSet.callService(new ROSLIB.ServiceRequest({ param_id: "FS_EKF_ACTION", value: { integer: 0, real: 0.0 } }), () => {
-        addLog("WARN", "[2/5] FS_EKF_ACTION=0 — EKF failsafe disabled");
-
-        // Step 3: STABILIZE mode (no position estimate needed, always armable)
-        setTimeout(() => {
-          modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "STABILIZE" }), (mres) => {
-            addLog("INFO", `[3/5] Mode → STABILIZE ${mres?.mode_sent ? "✓" : "(ack pending)"}`);
-
-            // Step 4: ARM with retry — poll /mavros/state for up to 4s
-            setTimeout(() => {
-              addLog("INFO", "[4/5] Sending ARM command...");
-              let retries = 0;
-              const attemptArm = () => {
-                armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), (res) => {
-                  if (res?.success) {
-                    addLog("INFO", "[4/5] ARM accepted by FCU ✓");
-                    // Step 5: Wait for arm confirmation then switch to GUIDED
-                    let polls = 0;
-                    const poll = setInterval(() => {
-                      polls++;
-                      if (isArmedRef.current) {
-                        clearInterval(poll);
-                        addLog("INFO", "[4/5] Armed state CONFIRMED ✓");
-                        setTimeout(() => {
-                          modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "GUIDED" }), () => {
-                            addLog("INFO", "[5/5] Mode → GUIDED ✓ — velocity commands active");
-                          });
-                        }, 500);
-                      } else if (polls >= 6) {
-                        clearInterval(poll);
-                        addLog("ERROR", "[4/5] Arm accepted but state not confirmed — check FCU");
-                      }
-                    }, 800);
-                  } else if (retries < 3) {
-                    retries++;
-                    addLog("WARN", `[4/5] ARM failed, retry ${retries}/3...`);
-                    setTimeout(attemptArm, 1200);
-                  } else {
-                    addLog("ERROR", "[4/5] ARM FAILED after 3 retries. Check Stabilize mode + ARMING_CHECK=0");
-                  }
-                });
-              };
-              attemptArm();
-            }, 500);
-          });
-        }, 300);
-      });
+    const modeSvc = new ROSLIB.Service({
+      ros: rosRef.current,
+      name: "/mavros/set_mode",
+      serviceType: "mavros_msgs/srv/SetMode"
     });
+
+    const armSvc = new ROSLIB.Service({
+      ros: rosRef.current,
+      name: "/mavros/cmd/arming",
+      serviceType: "mavros_msgs/srv/CommandBool"
+    });
+
+    addLog("INFO", "Setting GUIDED mode...");
+
+    modeSvc.callService(
+      new ROSLIB.ServiceRequest({ custom_mode: "GUIDED" }),
+      () => {
+        setTimeout(() => {
+          addLog("INFO", "Arming drone...");
+          armSvc.callService(
+            new ROSLIB.ServiceRequest({ value: true }),
+            (res) => {
+              addLog(res.success ? "INFO" : "ERROR",
+                res.success ? "Drone armed successfully" : "Arming failed");
+            }
+          );
+        }, 2000);
+      }
+    );
   };
 
   const disarmDrone = () => {
     if (!rosRef.current || !rosConnected) return;
-    const armSvc  = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
-    const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode",   serviceType: "mavros_msgs/srv/SetMode" });
+    const armSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
+    const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode", serviceType: "mavros_msgs/srv/SetMode" });
     stopDrone();
     // First issue LAND command (safest), then disarm
     modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "LAND" }), () => {
       addLog("INFO", "LAND mode set — disarming after touchdown...");
       setTimeout(() => {
         armSvc.callService(new ROSLIB.ServiceRequest({ value: false }), (res) => {
-          addLog(res?.success ? "INFO" : "WARN", res?.success ? "Disarmed ✓" : "Disarm failed — try LAND first");
+          addLog(res?.success ? "INFO" : "WARN", res?.success ? "Disarmed" : "Disarm failed — try LAND first");
         });
       }, 3000);
     });
@@ -428,7 +400,7 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        
+
         {/* Top Telemetry Dashboard */}
         <div className="bg-gray-900 border-b border-gray-800 p-4 shadow-md z-0 flex justify-between items-center">
           <div className="flex gap-6">
@@ -455,17 +427,14 @@ export default function Dashboard() {
 
           <div className="flex gap-4">
             <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3 shadow-lg">
-              <span className="text-lg">🔋</span>
-              <Battery size={16} className={telemetry.battery === "--" ? "text-gray-500" : parseInt(telemetry.battery) < 20 ? "text-rose-500" : "text-emerald-400"} /> 
+              <Battery size={16} className={telemetry.battery === "--" ? "text-gray-500" : parseInt(telemetry.battery) < 20 ? "text-rose-500" : "text-emerald-400"} />
               <span className="font-mono font-bold text-gray-100">{telemetry.battery}</span>
             </div>
             <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3 shadow-lg">
-              <span className="text-lg">🛰️</span>
               <Activity size={16} className={telemetry.altitude === "--" ? "text-gray-500" : "text-blue-400"} />
               <span className="font-mono font-bold text-gray-100">{telemetry.altitude}</span>
             </div>
             <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3 shadow-lg">
-              <span className="text-lg">📍</span>
               <MapPin size={16} className={telemetry.latitude === "--" ? "text-gray-500" : "text-indigo-400"} />
               <span className="font-mono text-gray-100 text-sm">{telemetry.latitude}, {telemetry.longitude}</span>
             </div>
@@ -473,12 +442,12 @@ export default function Dashboard() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 bg-gray-950">
-          
+
           {tab === "mission" && (
             <div className="grid grid-cols-12 gap-6 h-full">
               <div className="col-span-8 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl flex flex-col overflow-hidden">
                 <div className="bg-gray-800 px-4 py-2 border-b border-gray-700 flex justify-between items-center text-sm font-mono text-gray-400">
-                  <div className="flex items-center gap-2"><Target size={14}/> RGB OPTICAL ARRAY</div>
+                  <div className="flex items-center gap-2"><Target size={14} /> RGB OPTICAL ARRAY</div>
                   <span className="text-emerald-400 animate-pulse">● LIVE</span>
                 </div>
                 <div className="flex-1 bg-black relative flex items-center justify-center">
@@ -491,7 +460,7 @@ export default function Dashboard() {
                     />
                   ) : null}
                   <div className={`absolute inset-0 items-center justify-center flex-col text-gray-600 font-mono ${rosConnected ? 'hidden' : 'flex'}`}>
-                    <AlertTriangle size={48} className="mb-4 opacity-50"/>
+                    <AlertTriangle size={48} className="mb-4 opacity-50" />
                     OPTICAL ARRAY OFFLINE
                   </div>
                 </div>
@@ -518,13 +487,13 @@ export default function Dashboard() {
 
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-2xl flex-1 flex flex-col">
                   <h3 className="font-mono text-gray-400 text-sm mb-4 border-b border-gray-800 pb-2 flex items-center gap-2">
-                    <Settings size={14}/> IGNITION SEQUENCE
+                    <Settings size={14} /> IGNITION SEQUENCE
                   </h3>
                   <div className="space-y-3 font-mono flex-1">
                     {[
-                      { id: "sim",  label: "1. BOOT HYBRID SIMULATOR",   icon: "🚀", cmd: "ros2 launch vx01_bringup vx01_hybrid_sim.launch.py",                                                         color: "blue" },
-                      { id: "map",  label: "2. INITIALIZE VISUAL SLAM",   icon: "🗺️", cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py use_sim_time:=true",                                      color: "purple" },
-                      { id: "walk", label: "3. START HEXAPOD KINEMATICS", icon: "🕷️", cmd: "ros2 launch vx01_locomotion_control walk.launch.py use_sim_time:=true",                                      color: "teal" },
+                      { id: "sim", label: "1. BOOT HYBRID SIMULATOR", icon: "", cmd: "ros2 launch vx01_bringup vx01_hybrid_sim.launch.py", color: "blue" },
+                      { id: "map", label: "2. INITIALIZE VISUAL SLAM", icon: "", cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py use_sim_time:=true", color: "purple" },
+                      { id: "walk", label: "3. START HEXAPOD", icon: "", cmd: "ros2 launch vx01_locomotion_control walk.launch.py use_sim_time:=true", color: "teal" },
                     ].map(({ id, label, icon, cmd, color }) => {
                       const isRunning = runningProcesses.includes(id);
                       return (
@@ -532,8 +501,8 @@ export default function Dashboard() {
                           key={id}
                           onClick={() => backendLaunch(id, cmd)}
                           className={`w-full p-4 rounded border-l-4 transition-all flex items-center justify-between gap-3
-                            ${isRunning 
-                              ? `bg-${color}-600/20 text-${color}-400 border-${color}-500 ring-1 ring-${color}-500/30` 
+                            ${isRunning
+                              ? `bg-${color}-600/20 text-${color}-400 border-${color}-500 ring-1 ring-${color}-500/30`
                               : `bg-gray-800/40 text-gray-400 border-gray-700 hover:bg-gray-800 hover:text-gray-200`}`}
                         >
                           <div className="flex items-center gap-3">
@@ -549,8 +518,8 @@ export default function Dashboard() {
                       <button
                         onClick={() => backendLaunch("auto", "python3 /vx01_ws/src/vx01_bringup/scripts/mission_coordinator.py --ros-args -p use_sim_time:=true")}
                         className={`w-full font-black tracking-widest p-4 rounded transition-all shadow-lg flex items-center justify-center gap-3
-                          ${runningProcesses.includes("auto") 
-                            ? "bg-rose-600 text-white shadow-rose-900/50 ring-2 ring-rose-400 ring-offset-2 ring-offset-gray-900" 
+                          ${runningProcesses.includes("auto")
+                            ? "bg-rose-600 text-white shadow-rose-900/50 ring-2 ring-rose-400 ring-offset-2 ring-offset-gray-900"
                             : "bg-gray-800 text-gray-500 hover:bg-gray-700 border border-gray-700 font-bold"}`}
                       >
                         <span className="text-lg">🤖</span> {runningProcesses.includes("auto") ? "AUTONOMY ACTIVE" : "ENGAGE AUTONOMY"}
@@ -559,7 +528,7 @@ export default function Dashboard() {
                       <button
                         onClick={stopAll}
                         className={`w-full font-black tracking-widest p-4 rounded border-2 transition-all duration-300
-                          ${ stopConfirm
+                          ${stopConfirm
                             ? "bg-red-600 border-red-400 text-white shadow-lg shadow-red-900/80 scale-[1.02] animate-pulse"
                             : "bg-gray-900 border-gray-700 text-gray-500 hover:border-red-800 hover:text-red-500"
                           }`}
@@ -634,13 +603,13 @@ export default function Dashboard() {
 
           {tab === "teleop" && (
             <div className="flex flex-col gap-8 max-w-5xl mx-auto h-full">
-              
+
               <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6 mb-4">
                 <h3 className="font-bold text-gray-300 mb-3 font-mono">THROTTLE MULTIPLIER (SPEED OVERRIDE)</h3>
                 <div className="flex items-center gap-6">
-                  <input 
-                    type="range" min="0.1" max="3.0" step="0.1" 
-                    value={speedMultiplier} 
+                  <input
+                    type="range" min="0.1" max="3.0" step="0.1"
+                    value={speedMultiplier}
                     onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
                     className="flex-1 accent-blue-500 bg-gray-800 h-2 rounded-lg cursor-pointer"
                   />
@@ -649,19 +618,19 @@ export default function Dashboard() {
               </div>
 
               <div className="grid grid-cols-2 gap-8 items-start">
-                
+
                 {/* Hexapod Control */}
                 <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6">
                   <h3 className="font-black text-xl mb-2 text-blue-500 border-b border-gray-800 pb-4">GROUND MODE</h3>
                   <p className="text-gray-500 font-mono text-xs mb-8">Click Direction To Cruise, Click Stop To Halt</p>
-                  
+
                   <div className="grid grid-cols-3 gap-4 text-center max-w-xs mx-auto font-mono text-xl">
                     <button onClick={() => sendHexapodCmd(0, 0.5, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">↰</button>
                     <button onClick={() => sendHexapodCmd(0.5, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl border border-gray-700 hover:bg-white hover:text-black transition shadow-inner">↑</button>
                     <button onClick={() => sendHexapodCmd(0, -0.5, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">↱</button>
 
                     <button onClick={() => sendHexapodCmd(0, 0, 0.5)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">⟲</button>
-                    <button onClick={stopHexapod} className="bg-rose-900 text-white font-bold p-6 rounded-xl border border-rose-700 hover:bg-rose-600 transition flex items-center justify-center shadow-lg"><StopCircle size={28}/></button>
+                    <button onClick={stopHexapod} className="bg-rose-900 text-white font-bold p-6 rounded-xl border border-rose-700 hover:bg-rose-600 transition flex items-center justify-center shadow-lg"><StopCircle size={28} /></button>
                     <button onClick={() => sendHexapodCmd(0, 0, -0.5)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">⟳</button>
 
                     <div></div>
@@ -689,7 +658,7 @@ export default function Dashboard() {
                 <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6">
                   <h3 className="font-black text-xl mb-2 text-indigo-400 border-b border-gray-800 pb-4">AERIAL MODE</h3>
                   <p className="text-gray-500 font-mono text-xs mb-8">Click Direction To Cruise, Click Stop To Hover</p>
-                  
+
                   <div className="grid grid-cols-2 gap-8 font-mono text-sm max-w-sm mx-auto">
                     <div className="flex flex-col items-center">
                       <p className="text-gray-500 mb-4 whitespace-nowrap">THROTTLE/YAW</p>
@@ -698,7 +667,7 @@ export default function Dashboard() {
                         <button onClick={() => startDroneCmd(0, 0, 0.5, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">UP</button>
                         <div></div>
                         <button onClick={() => startDroneCmd(0, 0, 0, 0.5)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">⟲</button>
-                        <button onClick={stopDrone} className="bg-rose-900 text-white p-4 rounded hover:bg-rose-600 transition flex justify-center"><StopCircle size={20}/></button>
+                        <button onClick={stopDrone} className="bg-rose-900 text-white p-4 rounded hover:bg-rose-600 transition flex justify-center"><StopCircle size={20} /></button>
                         <button onClick={() => startDroneCmd(0, 0, 0, -0.5)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">⟳</button>
                         <div></div>
                         <button onClick={() => startDroneCmd(0, 0, -0.5, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">DN</button>
@@ -713,7 +682,7 @@ export default function Dashboard() {
                         <button onClick={() => startDroneCmd(1.0, 0, 0, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">FWD</button>
                         <div></div>
                         <button onClick={() => startDroneCmd(0, 0.5, 0, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">LF</button>
-                        <button onClick={stopDrone} className="bg-rose-900 text-white p-4 rounded hover:bg-rose-600 transition flex justify-center"><StopCircle size={20}/></button>
+                        <button onClick={stopDrone} className="bg-rose-900 text-white p-4 rounded hover:bg-rose-600 transition flex justify-center"><StopCircle size={20} /></button>
                         <button onClick={() => startDroneCmd(0, -0.5, 0, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">RT</button>
                         <div></div>
                         <button onClick={() => startDroneCmd(-1.0, 0, 0, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">BCK</button>
@@ -723,32 +692,30 @@ export default function Dashboard() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 font-mono text-sm max-w-sm mx-auto">
-                    {/* Force-arm does: ARMING_CHECK=0 → STABILIZE → ARM (retry) → GUIDED */}
-                    <button onClick={forceArm} className="bg-red-900/40 border border-red-800 text-red-500 p-3 rounded hover:bg-red-800 hover:text-white transition font-black tracking-widest">
-                      {droneArmed ? "ARMED — RE-FORCE" : "FORCE ARM / BYPASS"}
+                    <button onClick={armDrone} className="bg-red-900/40 border border-red-800 text-red-500 p-3 rounded hover:bg-red-800 hover:text-white transition font-black tracking-widest">
+                      {droneArmed ? "ARMED — RE-FORCE" : "ARM"}
                     </button>
-                    {/* Clean disarm — issues LAND first then disarms after 3s */}
                     <button onClick={disarmDrone} className="bg-orange-900/40 border border-orange-800 text-orange-400 p-3 rounded hover:bg-orange-800 hover:text-white transition font-black tracking-widest">
                       LAND + DISARM
                     </button>
                     {/* Takeoff via velocity setpoint to 5m: set GUIDED first, then climb */}
                     <button onClick={() => {
-                        if (!rosRef.current || !rosConnected) return;
-                        addLog("INFO", "Takeoff sequence initiated...");
-                        let t = 0;
-                        const climbInterval = setInterval(() => {
-                          const topic = new ROSLIB.Topic({ ros: rosRef.current, name: "/drone/cmd_vel", messageType: "geometry_msgs/msg/Twist" });
-                          topic.publish(new ROSLIB.Message({ linear: { x: 0, y: 0, z: 0.5 }, angular: { x: 0, y: 0, z: 0 } }));
-                          if (++t >= 10) { clearInterval(climbInterval); addLog("INFO", "Takeoff complete — altitude locked"); }
-                        }, 1000);
-                      }} className="bg-indigo-900/40 border border-indigo-800 text-indigo-400 p-3 rounded hover:bg-indigo-800 hover:text-white transition font-black tracking-widest">
+                      if (!rosRef.current || !rosConnected) return;
+                      addLog("INFO", "Takeoff sequence initiated...");
+                      let t = 0
+                      const climbInterval = setInterval(() => {
+                        const topic = new ROSLIB.Topic({ ros: rosRef.current, name: "/drone/cmd_vel", messageType: "geometry_msgs/msg/Twist" });
+                        topic.publish(new ROSLIB.Message({ linear: { x: 0, y: 0, z: 0.5 }, angular: { x: 0, y: 0, z: 0 } }));
+                        if (++t >= 10) { clearInterval(climbInterval); addLog("INFO", "Takeoff complete — altitude locked"); }
+                      }, 1000);
+                    }} className="bg-indigo-900/40 border border-indigo-800 text-indigo-400 p-3 rounded hover:bg-indigo-800 hover:text-white transition font-black tracking-widest">
                       CLIMB TO 5M
                     </button>
                     <button onClick={() => {
-                        stopDrone();
-                        const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode", serviceType: "mavros_msgs/srv/SetMode" });
-                        modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "LAND" }), () => addLog("INFO", "Executing LAND sequence"));
-                      }} className="bg-gray-800 border border-gray-700 text-gray-400 p-3 rounded hover:bg-gray-600 hover:text-white transition font-black tracking-widest">
+                      stopDrone();
+                      const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode", serviceType: "mavros_msgs/srv/SetMode" });
+                      modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "LAND" }), () => addLog("INFO", "Executing LAND sequence"));
+                    }} className="bg-gray-800 border border-gray-700 text-gray-400 p-3 rounded hover:bg-gray-600 hover:text-white transition font-black tracking-widest">
                       PERFORM LAND
                     </button>
                   </div>
