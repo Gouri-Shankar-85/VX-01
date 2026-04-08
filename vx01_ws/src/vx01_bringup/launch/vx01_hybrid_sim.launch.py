@@ -27,8 +27,8 @@ def generate_launch_description():
             '/ardupilot/Tools/autotest/default_params/copter.parm,'
             '/ardupilot/Tools/autotest/default_params/gazebo-iris.parm,'
             '/vx01_ws/src/vx01_bringup/config/ardupilot_sim_bypass.parm',
-            '--serial1', 'udp:127.0.0.1:14550',
-            '--serial2', 'udp:127.0.0.1:14555',
+            '--serial1', 'udp:0.0.0.0:14550',
+            '--serial2', 'udp:0.0.0.0:14555',
         ],
         cwd='/ardupilot/ArduCopter',
         output='screen'
@@ -40,7 +40,7 @@ def generate_launch_description():
         executable='mavros_node',
         output='screen',
         parameters=[
-            {'fcu_url': 'udp://127.0.0.1:14550@14555'},
+            {'fcu_url': 'udp://0.0.0.0:14550@14555'},
             {'use_sim_time': True},
             os.path.join(get_package_share_directory('vx01_bringup'), 'config', 'mavros_sim_config.yaml'),
             {'gcs_url': ''},
