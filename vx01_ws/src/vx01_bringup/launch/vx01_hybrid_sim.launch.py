@@ -40,7 +40,7 @@ def generate_launch_description():
         executable='mavros_node',
         output='screen',
         parameters=[
-            {'fcu_url': 'udp://127.0.0.1:14555@14550'},
+            {'fcu_url': 'udp://127.0.0.1:14550@14555'},
             {'use_sim_time': True},
             os.path.join(get_package_share_directory('vx01_bringup'), 'config', 'mavros_sim_config.yaml'),
             {'gcs_url': ''},
