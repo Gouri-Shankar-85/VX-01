@@ -81,7 +81,7 @@ def generate_launch_description():
             'ros2', 'service', 'call',
             '/mavros/param/set',
             'mavros_msgs/srv/ParamSet',
-            "{param_id: 'FRAME_TYPE', value: {integer: 1}}"
+            "{param_id: 'FRAME_TYPE', value: {integer: 0}}"
         ],
         output='screen'
     )
@@ -111,32 +111,32 @@ def generate_launch_description():
         sitl_layer,
 
         TimerAction(
-            period=5.0,
+            period=20.0,
             actions=[mavros_node]
         ),
 
         TimerAction(
-            period=6.0,
+            period=23.0,
             actions=[mode_manager, aerial_controller, web_video_server]
         ),
 
         TimerAction(
-            period=10.0,
+            period=25.0,
             actions=[set_frame_class]
         ),
 
         TimerAction(
-            period=11.0,
+            period=30.0,
             actions=[set_frame_type]
         ),
 
         TimerAction(
-            period=13.0,
+            period=35.0,
             actions=[set_guided_mode]
         ),
 
         TimerAction(
-            period=15.0,
+            period=40.0,
             actions=[arm_vehicle]
         )
     ])
