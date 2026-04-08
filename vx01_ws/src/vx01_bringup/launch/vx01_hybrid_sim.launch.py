@@ -19,7 +19,7 @@ def generate_launch_description():
     )
 
     # Launch ArduPilot SITL binary.
-    # SITL natively sends MAVLink to UDP 14550 by default.
+    # SITL natively sends MAVLink to UDP 14551 by default.
     sitl_layer = ExecuteProcess(
         cmd=[
             '/ardupilot/build/sitl/bin/arducopter',
@@ -28,7 +28,7 @@ def generate_launch_description():
             '/ardupilot/Tools/autotest/default_params/copter.parm,'
             '/ardupilot/Tools/autotest/default_params/gazebo-iris.parm,'
             '/vx01_ws/src/vx01_bringup/config/ardupilot_sim_bypass.parm',
-            '--serial1',  'out:udp:127.0.0.1:14551',
+            '--serial1',  'out:udp:127.0.0.1:14555',
         ],
         cwd='/ardupilot/ArduCopter',
         output='screen'
@@ -41,7 +41,7 @@ def generate_launch_description():
         output='screen',
         parameters=[
             # Bind to UDP 14550 and wait for incoming heartbeats from SITL.
-            {'fcu_url': 'udp://127.0.0.1:14551@'},
+            {'fcu_url': 'udp://:14555@127.0.0.1:14555'},
             {'use_sim_time': True},
             os.path.join(get_package_share_directory('vx01_bringup'), 'config', 'mavros_sim_config.yaml'),
             {'gcs_url': ''},

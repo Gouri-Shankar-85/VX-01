@@ -1,34 +1,21 @@
-# MAVROS parameters for VX-01 Hybrid Simulation
 /**:
   ros__parameters:
-    # ── Connection ────────────────────────────────────────────────────────────
-    # TCP to ArduPilot SITL on port 5760.
-    # Increase heartbeat timeout so a slow param sync doesn't kill the link.
+
     conn:
-      heartbeat_rate: 1.0       # Send heartbeat every 1 s
-      heartbeat_mav_type: 2     # MAV_TYPE_QUADROTOR
-      timeout: 60.0             # Wait 60 s before declaring link lost
+      heartbeat_rate: 1.0       
+      heartbeat_mav_type: 2    
+      timeout: 60.0            
       timesync_rate: 10.0
 
     sys:
-      conn_timeout: 120.0       # Give 2 min for initial param download
-      # Do NOT disable min_voltage — that causes FCU to reject commands
-      disable_diag: true        # Suppress ROS diagnostics (reduces noise)
+      conn_timeout: 120.0    
+      disable_diag: true      
 
-    # ── Stream rates ──────────────────────────────────────────────────────────
-    # These are sent via SET_MESSAGE_INTERVAL once params are downloaded.
-    # Rate 0 = 1 Hz,  Rate 4 = 5 Hz on ArduPilot's raw integer scale.
-    # We use the service call from the dashboard too, but defaults help.
-
-    # ── Distance sensor mapping ────────────────────────────────────────────────
-    # The TF-Mini sensor (type=4=LASER, orientation=25=PITCH_270=down-facing)
-    # must be mapped here or MAVROS logs an ERROR every 450ms and floods TCP.
     distance_sensor:
       rangefinder_pub:
         id: 0
         frame_id: "tf_mini_link"
-        field_of_view: 0.0523    # 3° half-angle for TF-Mini
-        send_tf: false
+        field_of_view: 0.0523    
         sensor_position:
           x: 0.0
           y: 0.0
