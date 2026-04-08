@@ -22,14 +22,9 @@ def generate_launch_description():
     sitl_layer = ExecuteProcess(
         cmd=[
             '/ardupilot/build/sitl/bin/arducopter',
-            '--model',    'JSON',
-            '--defaults',
-            '/ardupilot/Tools/autotest/default_params/copter.parm,'
-            '/ardupilot/Tools/autotest/default_params/gazebo-iris.parm,'
-            '/vx01_ws/src/vx01_bringup/config/ardupilot_sim_bypass.parm',
-            '--out=udp:0.0.0.0:14555',
+            '--model', 'quad',
+            '--serial0=tcp:0.0.0.0:5760',
         ],
-        cwd='/ardupilot/ArduCopter',
         output='screen'
     )
 
@@ -39,9 +34,13 @@ def generate_launch_description():
         executable='mavros_node',
         output='screen',
         parameters=[
-            {'fcu_url': 'udp://0.0.0.0:14550@14555'},
+            {'fcu_url': 'tcp://127.0.0.1:5760'},
             {'use_sim_time': True},
-            os.path.join(get_package_share_directory('vx01_bringup'), 'config', 'mavros_sim_config.yaml'),
+            os.path.join(
+                get_package_share_directory('vx01_bringup'),
+                'config',
+                'mavros_sim_config.yaml'
+            ),
             {'gcs_url': ''},
             {'target_system_id': 1},
             {'target_component_id': 1},
