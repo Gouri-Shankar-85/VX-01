@@ -19,7 +19,6 @@ def generate_launch_description():
     )
 
     # Launch ArduPilot SITL binary.
-    # SITL natively sends MAVLink to UDP 14551 by default.
     sitl_layer = ExecuteProcess(
         cmd=[
             '/ardupilot/build/sitl/bin/arducopter',
@@ -34,21 +33,19 @@ def generate_launch_description():
         output='screen'
     )
 
-    # Launch MAVROS — switch to UDP for reliable parameter sync.
+    # Launch MAVROS
     mavros_node = Node(
         package='mavros',
         executable='mavros_node',
         output='screen',
         parameters=[
-            # Bind to UDP 14550 and wait for incoming heartbeats from SITL.
-            {'fcu_url': 'udp://:14555@127.0.0.1:14555'},
+            {'fcu_url': 'udp://127.0.0.1:14555@14550'},
             {'use_sim_time': True},
             os.path.join(get_package_share_directory('vx01_bringup'), 'config', 'mavros_sim_config.yaml'),
             {'gcs_url': ''},
             {'target_system_id': 1},
             {'target_component_id': 1},
             {'fcu_protocol': 'v2.0'},
-            # 'param' plugin MUST be active for dashboard ARMING_CHECK bypass to work
             {'plugin_denylist': ['ftp']}
         ]
     )
