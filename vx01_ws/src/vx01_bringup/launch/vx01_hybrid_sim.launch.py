@@ -8,17 +8,16 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
 
+
 def generate_launch_description():
     vx01_sim_pkg = get_package_share_directory('vx01_simulation')
 
-    # Include core simulation
     sim_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(vx01_sim_pkg, 'launch', 'vx01_sim.launch.py')
         )
     )
 
-    # Launch ArduPilot SITL binary.
     sitl_layer = ExecuteProcess(
         cmd=[
             '/ardupilot/build/sitl/bin/arducopter',
@@ -28,7 +27,6 @@ def generate_launch_description():
         output='screen'
     )
 
-    # Launch MAVROS
     mavros_node = Node(
         package='mavros',
         executable='mavros_node',
@@ -49,8 +47,6 @@ def generate_launch_description():
         ]
     )
 
-
-    # Hybrid Mode Nodes
     mode_manager = Node(
         package='vx01_mode_manager',
         executable='mode_manager_node',
@@ -70,11 +66,77 @@ def generate_launch_description():
         parameters=[{'port': 8080}]
     )
 
+    set_frame_class = ExecuteProcess(
+        cmd=[
+            'ros2', 'service', 'call',
+            '/mavros/param/set',
+            'mavros_msgs/srv/ParamSet',
+            "{param_id: 'FRAME_CLASS', value: {integer: 1}}"
+        ],
+        output='screen'
+    )
+
+    set_frame_type = ExecuteProcess(
+        cmd=[
+            'ros2', 'service', 'call',
+            '/mavros/param/set',
+            'mavros_msgs/srv/ParamSet',
+            "{param_id: 'FRAME_TYPE', value: {integer: 1}}"
+        ],
+        output='screen'
+    )
+
+    set_guided_mode = ExecuteProcess(
+        cmd=[
+            'ros2', 'service', 'call',
+            '/mavros/set_mode',
+            'mavros_msgs/srv/SetMode',
+            "{custom_mode: 'GUIDED'}"
+        ],
+        output='screen'
+    )
+
+    arm_vehicle = ExecuteProcess(
+        cmd=[
+            'ros2', 'service', 'call',
+            '/mavros/cmd/arming',
+            'mavros_msgs/srv/CommandBool',
+            "{value: true}"
+        ],
+        output='screen'
+    )
+
     return LaunchDescription([
         sim_launch,
         sitl_layer,
+
         TimerAction(
-        period=18.0,
-            actions=[mavros_node, mode_manager, aerial_controller, web_video_server]
+            period=5.0,
+            actions=[mavros_node]
+        ),
+
+        TimerAction(
+            period=6.0,
+            actions=[mode_manager, aerial_controller, web_video_server]
+        ),
+
+        TimerAction(
+            period=10.0,
+            actions=[set_frame_class]
+        ),
+
+        TimerAction(
+            period=11.0,
+            actions=[set_frame_type]
+        ),
+
+        TimerAction(
+            period=13.0,
+            actions=[set_guided_mode]
+        ),
+
+        TimerAction(
+            period=15.0,
+            actions=[arm_vehicle]
         )
     ])
