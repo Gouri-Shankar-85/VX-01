@@ -77,9 +77,6 @@ def generate_launch_description():
         sim_launch,
         sitl_layer,
         TimerAction(
-            # Delay is critical: ArduPilot SITL needs ~12-15s to init JSON physics bridge.
-        # MAVROS connecting too early → 'Lost connection' loop.
-        # 18s gives headroom for slow machines and sim startup jitter.
         period=18.0,
             actions=[mavros_node, mode_manager, aerial_controller, web_video_server]
         )
