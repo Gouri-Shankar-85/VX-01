@@ -250,31 +250,19 @@ export default function Dashboard() {
   const armDrone = () => {
     if (!rosRef.current || !rosConnected) return;
 
-    startDroneCmd(0, 0, 0, 0);
+    const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode", serviceType: "mavros_msgs/srv/SetMode" });
+    const armSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
 
-    const modeSvc = new ROSLIB.Service({
-      ros: rosRef.current,
-      name: "/mavros/set_mode",
-      serviceType: "mavros_msgs/srv/SetMode"
+    modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "GUIDED" }), () => {
+      setTimeout(() => {
+        armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), (res) => {
+          if (res.success) {
+            addLog("INFO", "Armed — starting setpoint heartbeat");
+            startDroneCmd(0, 0, 0, 0);
+          }
+        });
+      }, 1000);
     });
-
-    const armSvc = new ROSLIB.Service({
-      ros: rosRef.current,
-      name: "/mavros/cmd/arming",
-      serviceType: "mavros_msgs/srv/CommandBool"
-    });
-
-    modeSvc.callService(
-      new ROSLIB.ServiceRequest({ custom_mode: "GUIDED" }),
-      () => {
-        setTimeout(() => {
-          armSvc.callService(
-            new ROSLIB.ServiceRequest({ value: true }),
-            () => { }
-          );
-        }, 1000);
-      }
-    );
   };
 
   const disarmDrone = () => {
