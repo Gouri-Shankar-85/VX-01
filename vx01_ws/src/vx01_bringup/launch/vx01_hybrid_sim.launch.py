@@ -110,30 +110,5 @@ def generate_launch_description():
         TimerAction(
             period=120.0,
             actions=[arm_vehicle]
-        ),
-
-        TimerAction(
-            period=130.0,
-            actions=[arm_vehicle]
-        ),
-
-        TimerAction(
-            period=150.0,
-            actions=[arm_vehicle]
-        ),
-
-        TimerAction(
-            period=170.0,
-            actions=[arm_vehicle]
-        ),
-
-        TimerAction(
-            period=200.0,
-            actions=[arm_vehicle]
-        ),
-
-        TimerAction(
-            period=220.0,
-            actions=[arm_vehicle]
         )
     ])
