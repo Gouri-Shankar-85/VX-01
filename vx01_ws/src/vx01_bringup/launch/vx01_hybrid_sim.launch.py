@@ -18,13 +18,19 @@ def generate_launch_description():
         )
     )
 
+    bypass_param = os.path.join(
+        get_package_share_directory('vx01_bringup'),
+        'config',
+        'ardupilot_sim_bypass.param'
+    )
+
     sitl_layer = ExecuteProcess(
         cmd=[
             '/ardupilot/build/sitl/bin/arducopter',
             '--model', 'quad',
             '--serial0=tcp:0.0.0.0:5760',
             '--defaults',
-            '/ardupilot/Tools/autotest/default_params/copter.parm'
+            '/ardupilot/Tools/autotest/default_params/copter.parm,' + bypass_param
         ],
         output='screen'
     )
