@@ -23,6 +23,8 @@ def generate_launch_description():
             '/ardupilot/build/sitl/bin/arducopter',
             '--model', 'quad',
             '--serial0=tcp:0.0.0.0:5760',
+            '--defaults',
+            '/ardupilot/Tools/autotest/default_params/copter.parm'
         ],
         output='screen'
     )
@@ -66,26 +68,6 @@ def generate_launch_description():
         parameters=[{'port': 8080}]
     )
 
-    set_frame_class = ExecuteProcess(
-        cmd=[
-            'ros2', 'service', 'call',
-            '/mavros/param/set',
-            'mavros_msgs/srv/ParamSet',
-            "{param_id: 'FRAME_CLASS', value: {integer: 1}}"
-        ],
-        output='screen'
-    )
-
-    set_frame_type = ExecuteProcess(
-        cmd=[
-            'ros2', 'service', 'call',
-            '/mavros/param/set',
-            'mavros_msgs/srv/ParamSet',
-            "{param_id: 'FRAME_TYPE', value: {integer: 0}}"
-        ],
-        output='screen'
-    )
-
     set_guided_mode = ExecuteProcess(
         cmd=[
             'ros2', 'service', 'call',
@@ -118,16 +100,6 @@ def generate_launch_description():
         TimerAction(
             period=23.0,
             actions=[mode_manager, aerial_controller, web_video_server]
-        ),
-
-        TimerAction(
-            period=25.0,
-            actions=[set_frame_class]
-        ),
-
-        TimerAction(
-            period=30.0,
-            actions=[set_frame_type]
         ),
 
         TimerAction(
