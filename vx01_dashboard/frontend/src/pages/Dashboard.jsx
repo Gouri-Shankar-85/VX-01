@@ -389,11 +389,14 @@ export default function Dashboard() {
           <div className="mb-8">
             <p className="text-gray-500 text-xs font-bold tracking-widest uppercase mb-3 text-center">Active Assets</p>
             {robots.map((robot, i) => (
-              <div key={i} className="flex justify-between items-center bg-gray-800 border border-gray-700 p-3 rounded-lg cursor-default">
+              <div key={i} className="flex justify-between items-center bg-gray-800/50 backdrop-blur-md border border-gray-700 p-3 rounded-lg cursor-default shadow-inner">
                 <div className="flex items-center gap-3">
-                  <span className={`h-2.5 w-2.5 rounded-full shadow-lg ${robot.status === "online" ? "bg-emerald-400 shadow-emerald-400/50" : "bg-rose-500 shadow-rose-500/50"}`} />
-                  <span className="font-bold tracking-wide">{robot.name}</span>
+                  <span className={`h-2.5 w-2.5 rounded-full shadow-lg ${robot.status === "online" ? "bg-emerald-400 shadow-emerald-400/50 animate-pulse" : "bg-rose-500 shadow-rose-500/50"}`} />
+                  <span className="font-bold tracking-wide uppercase text-sm">{robot.name}</span>
                 </div>
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded border ${robot.status === "online" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" : "text-rose-400 border-rose-500/30 bg-rose-500/10"}`}>
+                  {robot.status === "online" ? "LINKED" : "OFFLINE"}
+                </span>
               </div>
             ))}
           </div>
@@ -451,17 +454,20 @@ export default function Dashboard() {
           </div>
 
           <div className="flex gap-4">
-            <div className="bg-gray-800 border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3">
+            <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3 shadow-lg">
+              <span className="text-lg">🔋</span>
               <Battery size={16} className={telemetry.battery === "--" ? "text-gray-500" : parseInt(telemetry.battery) < 20 ? "text-rose-500" : "text-emerald-400"} /> 
-              <span className="font-mono font-bold">{telemetry.battery}</span>
+              <span className="font-mono font-bold text-gray-100">{telemetry.battery}</span>
             </div>
-            <div className="bg-gray-800 border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3">
+            <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3 shadow-lg">
+              <span className="text-lg">🛰️</span>
               <Activity size={16} className={telemetry.altitude === "--" ? "text-gray-500" : "text-blue-400"} />
-              <span className="font-mono font-bold">{telemetry.altitude}</span>
+              <span className="font-mono font-bold text-gray-100">{telemetry.altitude}</span>
             </div>
-            <div className="bg-gray-800 border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3">
+            <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3 shadow-lg">
+              <span className="text-lg">📍</span>
               <MapPin size={16} className={telemetry.latitude === "--" ? "text-gray-500" : "text-indigo-400"} />
-              <span className="font-mono">{telemetry.latitude}, {telemetry.longitude}</span>
+              <span className="font-mono text-gray-100 text-sm">{telemetry.latitude}, {telemetry.longitude}</span>
             </div>
           </div>
         </div>
@@ -511,25 +517,30 @@ export default function Dashboard() {
                 </div>
 
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-2xl flex-1 flex flex-col">
-                  <h3 className="font-mono text-gray-400 text-sm mb-4 border-b border-gray-800 pb-2">IGNITION SEQUENCE</h3>
+                  <h3 className="font-mono text-gray-400 text-sm mb-4 border-b border-gray-800 pb-2 flex items-center gap-2">
+                    <Settings size={14}/> IGNITION SEQUENCE
+                  </h3>
                   <div className="space-y-3 font-mono flex-1">
                     {[
-                      { id: "sim",  label: "1. BOOT HYBRID SIMULATOR",   cmd: "ros2 launch vx01_bringup vx01_hybrid_sim.launch.py",                                                         color: "blue" },
-                      { id: "map",  label: "2. INITIALIZE VISUAL SLAM",   cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py use_sim_time:=true",                                      color: "purple" },
-                      { id: "walk", label: "3. START HEXAPOD KINEMATICS", cmd: "ros2 launch vx01_locomotion_control walk.launch.py use_sim_time:=true",                                      color: "teal" },
-                    ].map(({ id, label, cmd, color }) => {
+                      { id: "sim",  label: "1. BOOT HYBRID SIMULATOR",   icon: "🚀", cmd: "ros2 launch vx01_bringup vx01_hybrid_sim.launch.py",                                                         color: "blue" },
+                      { id: "map",  label: "2. INITIALIZE VISUAL SLAM",   icon: "🗺️", cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py use_sim_time:=true",                                      color: "purple" },
+                      { id: "walk", label: "3. START HEXAPOD KINEMATICS", icon: "🕷️", cmd: "ros2 launch vx01_locomotion_control walk.launch.py use_sim_time:=true",                                      color: "teal" },
+                    ].map(({ id, label, icon, cmd, color }) => {
                       const isRunning = runningProcesses.includes(id);
                       return (
                         <button
                           key={id}
                           onClick={() => backendLaunch(id, cmd)}
-                          className={`w-full p-3 rounded border transition flex items-center justify-between gap-3
-                            bg-${color}-600/20 text-${color}-400 border-${color}-600/50
-                            hover:bg-${color}-600/40
-                            ${isRunning ? `ring-1 ring-${color}-400/60` : ""}`}
+                          className={`w-full p-4 rounded border-l-4 transition-all flex items-center justify-between gap-3
+                            ${isRunning 
+                              ? `bg-${color}-600/20 text-${color}-400 border-${color}-500 ring-1 ring-${color}-500/30` 
+                              : `bg-gray-800/40 text-gray-400 border-gray-700 hover:bg-gray-800 hover:text-gray-200`}`}
                         >
-                          <span>{label}</span>
-                          {isRunning && <span className="text-xs animate-pulse opacity-70">● RUNNING</span>}
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl opacity-80">{icon}</span>
+                            <span className="text-xs font-black tracking-tight">{label}</span>
+                          </div>
+                          {isRunning && <span className="text-[10px] animate-pulse font-black px-2 py-0.5 rounded bg-black/40">READY</span>}
                         </button>
                       );
                     })}
@@ -537,23 +548,26 @@ export default function Dashboard() {
                     <div className="pt-4 border-t border-gray-800 mt-4 space-y-3">
                       <button
                         onClick={() => backendLaunch("auto", "python3 /vx01_ws/src/vx01_bringup/scripts/mission_coordinator.py --ros-args -p use_sim_time:=true")}
-                        className="w-full bg-rose-600 text-white font-bold tracking-widest p-4 rounded hover:bg-rose-500 transition shadow-lg shadow-rose-900/50"
+                        className={`w-full font-black tracking-widest p-4 rounded transition-all shadow-lg flex items-center justify-center gap-3
+                          ${runningProcesses.includes("auto") 
+                            ? "bg-rose-600 text-white shadow-rose-900/50 ring-2 ring-rose-400 ring-offset-2 ring-offset-gray-900" 
+                            : "bg-gray-800 text-gray-500 hover:bg-gray-700 border border-gray-700 font-bold"}`}
                       >
-                        {runningProcesses.includes("auto") ? "● AUTONOMY ACTIVE" : "ENGAGE AUTONOMY"}
+                        <span className="text-lg">🤖</span> {runningProcesses.includes("auto") ? "AUTONOMY ACTIVE" : "ENGAGE AUTONOMY"}
                       </button>
 
-                      {/* EMERGENCY SHUTDOWN — 2-step confirm prevents accidental clicks */}
                       <button
                         onClick={stopAll}
-                        className={`w-full font-black tracking-widest p-4 rounded border-2 transition-all duration-200
+                        className={`w-full font-black tracking-widest p-4 rounded border-2 transition-all duration-300
                           ${ stopConfirm
                             ? "bg-red-600 border-red-400 text-white shadow-lg shadow-red-900/80 scale-[1.02] animate-pulse"
                             : "bg-gray-900 border-gray-700 text-gray-500 hover:border-red-800 hover:text-red-500"
                           }`}
                       >
-                        {stopConfirm
-                          ? "⚠ CONFIRM — KILL ALL PROCESSES"
-                          : "⏹ STOP SIMULATION"}
+                        <div className="flex items-center justify-center gap-3">
+                          <span className="text-lg">{stopConfirm ? "⚠" : "⏹"}</span>
+                          {stopConfirm ? "CONFIRM SHUTDOWN" : "KILL ALL PROCESSES"}
+                        </div>
                       </button>
                     </div>
                   </div>
@@ -710,33 +724,32 @@ export default function Dashboard() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 font-mono text-sm max-w-sm mx-auto">
                     {/* Force-arm does: ARMING_CHECK=0 → STABILIZE → ARM (retry) → GUIDED */}
-                    <button onClick={forceArm} className="bg-red-900/40 border border-red-800 text-red-400 p-3 rounded hover:bg-red-800 hover:text-white transition">
-                      {droneArmed ? "🔴 ARMED · FORCE ARM" : "⚡ FORCE ARM / BYPASS"}
+                    <button onClick={forceArm} className="bg-red-900/40 border border-red-800 text-red-500 p-3 rounded hover:bg-red-800 hover:text-white transition font-black tracking-widest">
+                      {droneArmed ? "ARMED — RE-FORCE" : "FORCE ARM / BYPASS"}
                     </button>
                     {/* Clean disarm — issues LAND first then disarms after 3s */}
-                    <button onClick={disarmDrone} className="bg-orange-900/40 border border-orange-800 text-orange-400 p-3 rounded hover:bg-orange-800 hover:text-white transition">
-                      🛬 LAND + DISARM
+                    <button onClick={disarmDrone} className="bg-orange-900/40 border border-orange-800 text-orange-400 p-3 rounded hover:bg-orange-800 hover:text-white transition font-black tracking-widest">
+                      LAND + DISARM
                     </button>
                     {/* Takeoff via velocity setpoint to 5m: set GUIDED first, then climb */}
                     <button onClick={() => {
                         if (!rosRef.current || !rosConnected) return;
-                        addLog("INFO", "Takeoff: climbing at 0.5m/s for 10s...");
-                        // Publish climb command via /drone/cmd_vel (aerial_controller streams to MAVROS)
+                        addLog("INFO", "Takeoff sequence initiated...");
                         let t = 0;
                         const climbInterval = setInterval(() => {
                           const topic = new ROSLIB.Topic({ ros: rosRef.current, name: "/drone/cmd_vel", messageType: "geometry_msgs/msg/Twist" });
                           topic.publish(new ROSLIB.Message({ linear: { x: 0, y: 0, z: 0.5 }, angular: { x: 0, y: 0, z: 0 } }));
-                          if (++t >= 10) { clearInterval(climbInterval); addLog("INFO", "Takeoff complete — hovering"); }
+                          if (++t >= 10) { clearInterval(climbInterval); addLog("INFO", "Takeoff complete — altitude locked"); }
                         }, 1000);
-                      }} className="bg-indigo-900/40 border border-indigo-800 text-indigo-400 p-3 rounded hover:bg-indigo-800 hover:text-white transition">
-                      ↑ TAKEOFF (~5m)
+                      }} className="bg-indigo-900/40 border border-indigo-800 text-indigo-400 p-3 rounded hover:bg-indigo-800 hover:text-white transition font-black tracking-widest">
+                      CLIMB TO 5M
                     </button>
                     <button onClick={() => {
                         stopDrone();
                         const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode", serviceType: "mavros_msgs/srv/SetMode" });
-                        modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "LAND" }), () => addLog("INFO", "LAND mode active"));
-                      }} className="bg-gray-800 border border-gray-700 text-gray-400 p-3 rounded hover:bg-gray-600 hover:text-white transition">
-                      ↓ LAND
+                        modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "LAND" }), () => addLog("INFO", "Executing LAND sequence"));
+                      }} className="bg-gray-800 border border-gray-700 text-gray-400 p-3 rounded hover:bg-gray-600 hover:text-white transition font-black tracking-widest">
+                      PERFORM LAND
                     </button>
                   </div>
                 </div>
