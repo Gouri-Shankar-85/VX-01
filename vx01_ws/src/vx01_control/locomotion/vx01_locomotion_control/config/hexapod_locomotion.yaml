@@ -12,9 +12,9 @@ hexapod_forward_walk_node:
     home_y: 0.0
     home_z: -61.379
 
-    step_length: 120.0
-    step_height:  40.0
-    step_period:   4.0
+    step_length: 60.0       # Reduced from 120mm to stay in workspace
+    step_height:  35.0      # Reduced from 40mm for safer operation
+    step_period:   3.0      # Increased for 6-block tripod gait
 
     standby_coxa:   0.0
     standby_femur: -0.7156
@@ -45,9 +45,9 @@ hexapod_turn_node:
     home_y: 0.0
     home_z: -61.379
 
-    step_length: 120.0
-    step_height:  40.0
-    step_period:   4.0
+    step_length: 60.0       # Reduced from 120mm to stay in workspace
+    step_height:  35.0      # Reduced from 40mm for safer operation
+    step_period:   3.0      # Increased for 6-block tripod gait
 
     standby_coxa:   0.0
     standby_femur: -0.7156

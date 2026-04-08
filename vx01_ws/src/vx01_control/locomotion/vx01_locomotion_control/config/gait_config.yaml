@@ -12,25 +12,22 @@ tripod_walk_node:
     beta_angle: 0.7854        
 
     # Robot geometry (all units: mm)
-    # home_x is the neutral foot position along the coxa axis (leg-local X).
-    # CRITICAL: home_x determines the workspace margin for walking.
-    #   At home_x=223mm → only 8.7mm margin → 45° legs fail at step_length>17mm.
-    #   At home_x=190mm → 32.3mm margin → all 6 legs handle step_length=30mm with
-    #   full IK success including swing apex and full stride arc.
-    home_x: 190.0
+    # home_x: neutral foot position along coxa axis (leg-local X)
+    # Tripod gait workspace check: all 6 legs must succeed IK at all swing points
+    home_x: 227.689
     home_y: 0.0
-    home_z: -72.82
+    home_z: -61.379
 
-    # Gait parameters
-    # step_length: total stride arc length (each half = 15mm).
-    # At home_x=190mm: 45° legs hit workspace boundary at step_length≥76mm.
-    # Swing apex uses Bézier control point P1z = home_z + 2*step_height.
-    # Quadratic Bézier reaches midpoint = (P0+2*P1+P2)/4, so actual apex at t=0.5
-    # is home_z + step_height (the 2× factor in P1z compensates the Bézier weighting).
-    step_length: 60.0          # mm — hardware-grade: gives 17.9° coxa sweep (max=76mm at home_x=190)
-    step_height: 35.0          # mm — clearly visible lift in sim and hardware
-    step_period: 1.5           # s  — full cycle (0.75s per half-cycle, natural tempo)
-    stand_duration: 2.0
+    # Gait parameters — CRITICAL: Tripod = 6 BLOCKS per cycle
+    # block_period = step_period / 6.0
+    # Each block = half-cycle: 3 legs swing, 3 legs drag
+    # step_length: verified safe stride (mm)
+    # step_height: lift above ground (mm)
+    # step_period: FULL cycle for 6 blocks (3.0s = 0.5s per block)
+    step_length: 60.0          # mm — workspace verified
+    step_height: 35.0          # mm — clearly visible in sim
+    step_period: 3.0           # s  — 6 blocks × 0.5s = 3.0s full cycle
+    stand_duration: 3.0
 
     # Velocity scaling
     max_linear_vel: 0.20      # m/s — consistent with stride math

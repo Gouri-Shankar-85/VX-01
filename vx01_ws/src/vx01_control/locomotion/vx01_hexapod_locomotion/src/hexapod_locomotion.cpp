@@ -183,19 +183,33 @@ namespace vx01_hexapod_locomotion {
     {
         global_t = std::max(0.0, std::min(1.0, global_t));
 
+        if (leg_index < 0 || leg_index >= 6) {
+            theta1 = theta2 = theta3 = 0.0;
+            return;
+        }
+
         const double half = step_length_ / 2.0;
         const double u    = 1.0 - global_t;
 
-        const double foot_y = u*u*(-half) + global_t*global_t*(half);
-        const double foot_z = home_z_ + 2.0 * u * global_t * step_height_;
+        // Swing trajectory in leg-local frame using Bézier curve
+        // P0 = back, P1 = peak (lifted), P2 = forward
+        const double foot_y_leg = u*u*(-half) + 2.0*u*global_t*0.0 + global_t*global_t*(half);
+        const double foot_z_leg = u*u*home_z_ + 2.0*u*global_t*(home_z_ + 2.0*step_height_) + global_t*global_t*home_z_;
+        const double foot_x_leg = home_x_;  // always at reach in leg-local X
+
+        // Transform from leg-local frame to body frame using leg controller
+        double foot_x_body, foot_y_body, foot_z_body;
+        leg_controllers_[leg_index]->legToBodyFrame(
+            foot_x_leg, foot_y_leg, foot_z_leg,
+            foot_x_body, foot_y_body, foot_z_body);
 
         kinematics::InverseKinematics ik(L1_, L2_, L3_);
         double th1 = 0.0, th2 = 0.0, th3 = 0.0;
-        bool ok = ik.compute(home_x_, foot_y, foot_z, th1, th2, th3);
+        bool ok = ik.compute(foot_x_body, foot_y_body, foot_z_body, th1, th2, th3);
         if (!ok) {
             std::cerr << "[sampleSwingAtGlobalT] IK failed leg=" << leg_index
                       << " t=" << global_t
-                      << " foot=(" << home_x_ << "," << foot_y << "," << foot_z << ")\n";
+                      << " foot_body=(" << foot_x_body << "," << foot_y_body << "," << foot_z_body << ")\n";
             th1 = current_joint_angles_[leg_index*3+0];
             th2 = current_joint_angles_[leg_index*3+1];
             th3 = current_joint_angles_[leg_index*3+2];
@@ -216,15 +230,31 @@ namespace vx01_hexapod_locomotion {
     {
         global_t = std::max(0.0, std::min(1.0, global_t));
 
+        if (leg_index < 0 || leg_index >= 6) {
+            theta1 = theta2 = theta3 = 0.0;
+            return;
+        }
+
         const double half = step_length_ / 2.0;
-        const double by   = half - 2.0 * half * global_t; 
+        // Drag (stance) phase: foot slides backward in leg-local frame
+        // from +half (forward) to -half (backward) over the duration
+        const double foot_y_leg = half - 2.0 * half * global_t;
+        const double foot_x_leg = home_x_;  // always at reach in leg-local X
+        const double foot_z_leg = home_z_;  // on ground
+
+        // Transform from leg-local frame to body frame using leg controller
+        double foot_x_body, foot_y_body, foot_z_body;
+        leg_controllers_[leg_index]->legToBodyFrame(
+            foot_x_leg, foot_y_leg, foot_z_leg,
+            foot_x_body, foot_y_body, foot_z_body);
         
         kinematics::InverseKinematics ik(L1_, L2_, L3_);
         double th1=0.0, th2=0.0, th3=0.0;
-        bool ok = ik.compute(home_x_, by, home_z_, th1, th2, th3);
+        bool ok = ik.compute(foot_x_body, foot_y_body, foot_z_body, th1, th2, th3);
         if (!ok) {
             std::cerr << "[sampleDragAtGlobalT] IK failed leg=" << leg_index
-                      << " y=" << by << "\n";
+                      << " t=" << global_t
+                      << " foot_body=(" << foot_x_body << "," << foot_y_body << "," << foot_z_body << ")\n";
             th1 = current_joint_angles_[leg_index*3+0];
             th2 = current_joint_angles_[leg_index*3+1];
             th3 = current_joint_angles_[leg_index*3+2];

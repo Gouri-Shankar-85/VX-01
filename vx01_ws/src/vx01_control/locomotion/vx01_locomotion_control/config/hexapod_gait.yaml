@@ -14,9 +14,10 @@ hexapod_gait_node:
     home_z:     -61.379
 
     # Gait parameters
+    # CRITICAL: Tripod gait = 6 blocks per cycle (3 swing + 3 drag per group)
     step_length:  60.0    # total stride length (mm)
     step_height:  30.0    # foot lift height above ground (mm)
-    step_period:   2.0    # full cycle period (s): one full cycle = 2 blocks
+    step_period:   3.0    # full cycle period (s): 6 blocks × 0.5s = 3.0s
 
     standby_duration: 3.0
     update_rate:     50.0
