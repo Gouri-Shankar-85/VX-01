@@ -108,7 +108,7 @@ def generate_launch_description():
         ),
 
         TimerAction(
-            period=40.0,
+            period=120.0,
             actions=[arm_vehicle]
         )
     ])
