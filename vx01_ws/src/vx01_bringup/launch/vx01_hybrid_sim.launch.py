@@ -64,7 +64,9 @@ def generate_launch_description():
     aerial_controller = Node(
         package='vx01_aerial_control',
         executable='aerial_controller_node',
-        output='screen'
+        output='screen',
+        parameters=[{'use_sim_time': True}]
+
     )
 
     web_video_server = Node(
