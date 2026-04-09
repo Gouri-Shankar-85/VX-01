@@ -30,7 +30,7 @@ def generate_launch_description():
             '--model', 'quad',
             '--serial0=tcp:0.0.0.0:5760',
             '--defaults',
-            '/ardupilot/Tools/autotest/default_params/copter.parm,' + bypass_param
+            bypass_param + ',' + '/ardupilot/Tools/autotest/default_params/copter.parm',
         ],
         output='screen'
     )
