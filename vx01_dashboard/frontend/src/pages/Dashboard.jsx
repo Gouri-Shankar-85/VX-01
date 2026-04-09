@@ -213,10 +213,7 @@ export default function Dashboard() {
 
       const msg = new ROSLIB.Message({
         header: {
-          stamp: {
-            sec: Math.floor(now / 1000),
-            nanosec: (now % 1000) * 1e6
-          },
+          stamp: { sec: 0, nanosec: 0 },
           frame_id: "base_link"
         },
         twist: {

@@ -54,20 +54,14 @@ private:
         if (!is_connected_) return;
 
         geometry_msgs::msg::TwistStamped cmd;
+        cmd.header.stamp    = now();
+        cmd.header.frame_id = "base_link";
 
         if (has_received_cmd_) {
             double age = (now() - last_cmd_time_).seconds();
-
             if (age < 0.5) {
-                cmd = latest_cmd_;
-            } else {
-                cmd.header.stamp = now();
-                cmd.header.frame_id = "base_link";
-                cmd.twist = geometry_msgs::msg::Twist();
+                cmd.twist = latest_cmd_.twist;
             }
-        } else {
-            cmd.header.stamp = now();
-            cmd.header.frame_id = "base_link";
         }
 
         pub_vel_->publish(cmd);
