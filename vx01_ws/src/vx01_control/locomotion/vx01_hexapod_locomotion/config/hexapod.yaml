@@ -1,0 +1,32 @@
+hexapod_node:
+  ros__parameters:
+    use_sim_time: true
+
+    L1: 60.55
+    L2: 73.84
+    L3: 112.16
+    body_radius: 105.66
+    home_reach: 227.689
+    home_z: -61.379
+
+    step_length: 60.0
+    step_height: 30.0
+    step_period: 2.0
+    stand_duration: 3.0
+    waypoints: 10
+
+    coxa_angles:
+      - -1.5708
+      - -0.7854
+      -  0.7854
+      -  1.5708
+      -  2.3920
+      - -2.3562
+
+    controller_names:
+      - leg_0_controller
+      - leg_1_controller
+      - leg_2_controller
+      - leg_3_controller
+      - leg_4_controller
+      - leg_5_controller

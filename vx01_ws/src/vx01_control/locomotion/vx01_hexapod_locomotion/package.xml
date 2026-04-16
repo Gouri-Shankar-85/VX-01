@@ -2,22 +2,22 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>vx01_hexapod_locomotion</name>
-  <version>0.0.0</version>
-  <description>Locomotion stack for VX-01 hexapod robot including gait generation, inverse kinematics, and leg trajectory control for stable walking.</description>
+  <version>1.0.0</version>
+  <description>VX-01 hexapod locomotion — Python tripod gait</description>
   <maintainer email="sskzm5585@gmail.com">Gouri Shankar</maintainer>
-  <license>BSD-3-Clause</license>
+  <license>MIT</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
-
-  <depend>rclcpp</depend>
+  <depend>rclpy</depend>
   <depend>geometry_msgs</depend>
-  <depend>tf2</depend>
-  <depend>tf2_ros</depend>
+  <depend>trajectory_msgs</depend>
+  <depend>builtin_interfaces</depend>
 
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
 
   <export>
-    <build_type>ament_cmake</build_type>
+    <build_type>ament_python</build_type>
   </export>
 </package>
