@@ -117,7 +117,7 @@ class HexapodNode(Node):
                 continue
             
             cmd1 = 0.0 - angles[0]
-            cmd2 = angles[1] - 0.1274
+            cmd2 = 0.1274 - angles[1]
             cmd3 = -0.6580 - angles[2]
 
             traj = JointTrajectory()
@@ -219,7 +219,7 @@ class HexapodNode(Node):
                 continue
 
             cmd1 = 0.0 - angles[0]
-            cmd2 = angles[1] - 0.1274
+            cmd2 = 0.1274 - angles[1]
             cmd3 = -0.6580 - angles[2]
 
             pt = JointTrajectoryPoint()
@@ -253,7 +253,7 @@ class HexapodNode(Node):
                 continue
 
             cmd1 = 0.0 - angles[0]
-            cmd2 = angles[1] - 0.1274
+            cmd2 = 0.1274 - angles[1]
             cmd3 = -0.6580 - angles[2]
 
             pt = JointTrajectoryPoint()
