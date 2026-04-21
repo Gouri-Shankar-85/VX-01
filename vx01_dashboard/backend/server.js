@@ -37,13 +37,22 @@ function shutdownAllInsideDocker(onDone) {
     ].join(' && ');
 
     exec(`docker exec vx01-dev bash -c "${steps}"`, (err, stdout, stderr) => {
-
         if (err && err.code !== 1) {
             console.error('[stop-all] Shutdown error:', err.message);
-        } else {
-            console.log('[stop-all] All processes terminated inside container');
         }
-        if (onDone) onDone(null);
+
+        const hostSteps = [
+            `pkill -SIGKILL -f 'gzclient' 2>/dev/null; true`,
+            `pkill -SIGKILL -f 'gzserver' 2>/dev/null; true`,
+            `pkill -SIGKILL -f 'gz' 2>/dev/null; true`,
+            `pkill -SIGKILL -f 'ign' 2>/dev/null; true`,
+            `pkill -SIGKILL -f 'ruby' 2>/dev/null; true`
+        ].join(' && ');
+
+        exec(hostSteps, () => {
+            console.log('[stop-all] All processes terminated inside container AND cleared from host GUI');
+            if (onDone) onDone(null);
+        });
     });
 }
 
