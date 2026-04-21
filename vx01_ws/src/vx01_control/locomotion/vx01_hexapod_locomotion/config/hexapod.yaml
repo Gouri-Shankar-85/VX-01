@@ -2,26 +2,34 @@ hexapod_node:
   ros__parameters:
     use_sim_time: true
 
-    L1: 60.55
-    L2: 73.84
-    L3: 112.16
-    body_radius: 105.66
-    home_reach: 120.0
-    home_z: -150.0
+    # Leg link lengths (mm) — measured from URDF/CAD
+    L1: 60.55       # coxa  length
+    L2: 73.84       # femur length
+    L3: 112.16      # tibia length
 
-    step_length: 60.0
-    step_height: 35.0
-    step_period: 2.0
-    stand_duration: 3.0
-    waypoints: 10
+    # Body geometry
+    body_radius: 105.66     # mm from body centre to coxa pivot
 
+    # Home foot position (in leg-local frame from coxa pivot)
+    home_reach: 120.0       # mm outward from coxa pivot along leg axis
+    home_z: -150.0          # mm downward from coxa pivot  (coxa is ~70 mm above base_link)
+                            # → ~80 mm body clearance, gives θ_femur ≈ -31° (proper M-shape)
+
+    # Gait parameters
+    step_length:   80.0     # mm  — max total foot sweep per half-cycle (cap = 40 mm each way)
+    step_height:   40.0     # mm  — peak Bézier lift height during swing
+    step_period:    1.2     # s   — full gait cycle (0.6 s per half-phase); gives ~67 mm/s at max speed
+    stand_duration: 2.0     # s   — time to reach stand pose on startup
+    waypoints:      15      # trajectory points per half-cycle (smooth Bézier)
+
+    # Leg coxa mount angles (rad, CCW from +X in body frame)
     coxa_angles:
-      - -1.5708
-      - -0.7854
-      -  0.7854
-      -  1.5708
-      -  2.3920
-      - -2.3562
+      - -1.5708   # leg 0 — right side
+      - -0.7854   # leg 1 — front-right
+      -  0.7854   # leg 2 — front-left
+      -  1.5708   # leg 3 — left side
+      -  2.3920   # leg 4 — rear-left
+      - -2.3562   # leg 5 — rear-right
 
     controller_names:
       - leg_0_controller

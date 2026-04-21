@@ -25,7 +25,7 @@ class InverseKinematics:
             return None
 
         phi1 = math.acos(cp1)
-        theta2 = -(phi2 + phi1)
+        theta2 = phi2 + phi1
 
         cp3 = (r1 ** 2 - self._L2 ** 2 - self._L3 ** 2) / (-2.0 * self._L2 * self._L3)
         cp3 = max(-1.0, min(1.0, cp3))
