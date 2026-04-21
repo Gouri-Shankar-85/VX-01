@@ -11,9 +11,9 @@ hexapod_node:
     body_radius: 105.66     # mm from body centre to coxa pivot
 
     # Home foot position (in leg-local frame from coxa pivot)
-    home_reach: 120.0       # mm outward from coxa pivot along leg axis
-    home_z: -150.0          # mm downward from coxa pivot  (coxa is ~70 mm above base_link)
-                            # → ~80 mm body clearance, gives θ_femur ≈ -31° (proper M-shape)
+    home_reach: 150.0       # mm outward from coxa pivot along leg axis
+    home_z: -130.0          # mm downward from coxa pivot  (coxa is ~70 mm above base_link)
+                            # → ~60 mm body clearance, gives θ_femur ≈ -15° (natural M-shape)
 
     # Gait parameters
     step_length:   80.0     # mm  — max total foot sweep per half-cycle (cap = 40 mm each way)
