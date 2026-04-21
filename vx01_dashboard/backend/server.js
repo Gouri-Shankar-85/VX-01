@@ -88,7 +88,7 @@ app.post('/api/stop', (req, res) => {
     const patternMap = {
         sim: 'vx01_hybrid_sim',
         map: 'vx01_mapping',
-        walk: 'walk.launch',
+        walk: 'hexapod.launch',
         auto: 'mission_coordinator',
     };
     const pattern = patternMap[command_id] || command_id;

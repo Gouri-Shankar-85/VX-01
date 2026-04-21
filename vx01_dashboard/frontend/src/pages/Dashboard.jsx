@@ -484,7 +484,7 @@ export default function Dashboard() {
                     {[
                       { id: "sim", label: "1. BOOT HYBRID SIMULATOR", icon: "", cmd: "ros2 launch vx01_bringup vx01_hybrid_sim.launch.py", color: "blue" },
                       { id: "map", label: "2. INITIALIZE VISUAL SLAM", icon: "", cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py use_sim_time:=true", color: "purple" },
-                      { id: "walk", label: "3. START HEXAPOD", icon: "", cmd: "ros2 launch vx01_locomotion_control walk.launch.py use_sim_time:=true", color: "teal" },
+                      { id: "walk", label: "3. START HEXAPOD", icon: "", cmd: "ros2 launch vx01_hexapod_locomotion hexapod.launch.py use_sim_time:=true", color: "teal" },
                     ].map(({ id, label, icon, cmd, color }) => {
                       const isRunning = runningProcesses.includes(id);
                       return (
