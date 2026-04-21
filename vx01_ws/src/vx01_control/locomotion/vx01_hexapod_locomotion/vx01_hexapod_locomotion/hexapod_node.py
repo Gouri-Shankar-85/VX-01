@@ -32,6 +32,8 @@ class HexapodNode(Node):
         self._vx = 0.0
         self._vy = 0.0
         self._omega = 0.0
+        
+        self._foot_offsets = [(0.0, 0.0) for _ in range(6)]
 
         self._cmd_vel_sub = self.create_subscription(
             Twist, '/cmd_vel', self._cmd_vel_cb, 10)
@@ -98,19 +100,31 @@ class HexapodNode(Node):
         ]
 
     def _initial_stand(self):
-        self._stand_timer.cancel()
-        self._send_stand()
+        ready = all(pub.get_subscription_count() > 0 for pub in self._pubs)
+        if ready:
+            self.get_logger().info('Controllers active. Sending stand pose...')
+            self._stand_timer.cancel()
+            self._foot_offsets = [(0.0, 0.0) for _ in range(6)]
+            self._send_stand()
 
     def _send_stand(self):
+
         for i in range(6):
             hx, hy, hz = self._legs[i].home
             angles = self._legs[i].solve_ik(hx, hy, hz)
+            
             if angles is None:
                 continue
+            
+            cmd1 = 0.0 - angles[0]
+            cmd2 = 0.1274 - angles[1]
+            cmd3 = -0.6580 - angles[2]
+
             traj = JointTrajectory()
             traj.joint_names = self._joint_names[i]
             pt = JointTrajectoryPoint()
-            pt.positions = list(angles)
+            pt.positions = [cmd1, cmd2, cmd3]
+
             pt.time_from_start = _ros_duration(self._stand_duration)
             traj.points = [pt]
             self._publish(i, traj)
@@ -135,6 +149,7 @@ class HexapodNode(Node):
         elif not moving and self._walking:
             self._walking = False
             self._gait_timer.cancel()
+            self._foot_offsets = [(0.0, 0.0) for _ in range(6)]
             self._send_stand()
 
     def _gait_tick(self):
@@ -144,6 +159,7 @@ class HexapodNode(Node):
         self._execute_phase()
 
     def _execute_phase(self):
+
         swing = self.GROUP_A if self._phase == 0 else self.GROUP_B
         stance = self.GROUP_B if self._phase == 0 else self.GROUP_A
         half_dur = self._step_period / 2.0
@@ -157,14 +173,15 @@ class HexapodNode(Node):
             self._publish(leg_id, self._build_stance(leg_id, dx, dy, half_dur))
 
     def _foot_stride(self, leg_id: int):
+    
         half_period = self._step_period / 2.0
         hx, hy, _ = self._legs[leg_id].home
 
-        lx = self._vx * half_period * 1000.0
-        ly = self._vy * half_period * 1000.0
+        lx = self._vx * half_period * 500.0
+        ly = self._vy * half_period * 500.0
 
-        rx = -hy * self._omega * half_period
-        ry = hx * self._omega * half_period
+        rx = -hy * self._omega * half_period * 0.5
+        ry = hx * self._omega * half_period * 0.5
 
         dx = lx + rx
         dy = ly + ry
@@ -172,10 +189,10 @@ class HexapodNode(Node):
         limit = self._step_length / 2.0
         mag = math.hypot(dx, dy)
         if mag > limit:
-            dx = dx / mag * limit
-            dy = dy / mag * limit
+            dx = dx * limit / mag
+            dy = dy * limit / mag
 
-        return (dx, dy)
+        return dx, dy
 
     def _build_swing(self, leg_id: int, dx: float, dy: float, duration: float):
         leg = self._legs[leg_id]
@@ -184,11 +201,15 @@ class HexapodNode(Node):
 
         traj = JointTrajectory()
         traj.joint_names = self._joint_names[leg_id]
+        
+        start_dx, start_dy = self._foot_offsets[leg_id]
+        end_dx, end_dy = dx, dy
 
-        for i in range(N + 1):
+        for i in range(1, N + 1):
             t = i / N
-            bx = hx + dx * (2.0 * t - 1.0)
-            by = hy + dy * (2.0 * t - 1.0)
+            # Interpolate from current offset to target offset
+            bx = hx + start_dx + (end_dx - start_dx) * t
+            by = hy + start_dy + (end_dy - start_dy) * t
             bz = hz + self._step_height * math.sin(math.pi * t)
 
             angles = leg.solve_ik(bx, by, bz)
@@ -197,11 +218,16 @@ class HexapodNode(Node):
             if angles is None:
                 continue
 
+            cmd1 = 0.0 - angles[0]
+            cmd2 = 0.1274 - angles[1]
+            cmd3 = -0.6580 - angles[2]
+
             pt = JointTrajectoryPoint()
-            pt.positions = list(angles)
+            pt.positions = [cmd1, cmd2, cmd3]
             pt.time_from_start = _ros_duration(t * duration)
             traj.points.append(pt)
 
+        self._foot_offsets[leg_id] = (end_dx, end_dy)
         return traj
 
     def _build_stance(self, leg_id: int, dx: float, dy: float, duration: float):
@@ -212,10 +238,13 @@ class HexapodNode(Node):
         traj = JointTrajectory()
         traj.joint_names = self._joint_names[leg_id]
 
-        for i in range(N + 1):
+        start_dx, start_dy = self._foot_offsets[leg_id]
+        end_dx, end_dy = -dx, -dy
+
+        for i in range(1, N + 1):
             t = i / N
-            bx = hx + dx * (1.0 - 2.0 * t)
-            by = hy + dy * (1.0 - 2.0 * t)
+            bx = hx + start_dx + (end_dx - start_dx) * t
+            by = hy + start_dy + (end_dy - start_dy) * t
 
             angles = leg.solve_ik(bx, by, hz)
             if angles is None:
@@ -223,11 +252,16 @@ class HexapodNode(Node):
             if angles is None:
                 continue
 
+            cmd1 = 0.0 - angles[0]
+            cmd2 = 0.1274 - angles[1]
+            cmd3 = -0.6580 - angles[2]
+
             pt = JointTrajectoryPoint()
-            pt.positions = list(angles)
+            pt.positions = [cmd1, cmd2, cmd3]
             pt.time_from_start = _ros_duration(t * duration)
             traj.points.append(pt)
 
+        self._foot_offsets[leg_id] = (end_dx, end_dy)
         return traj
 
     def _publish(self, leg_id: int, traj: JointTrajectory):

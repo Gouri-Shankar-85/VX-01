@@ -6,11 +6,11 @@ hexapod_node:
     L2: 73.84
     L3: 112.16
     body_radius: 105.66
-    home_reach: 227.689
-    home_z: -61.379
+    home_reach: 120.0
+    home_z: -150.0
 
     step_length: 60.0
-    step_height: 30.0
+    step_height: 35.0
     step_period: 2.0
     stand_duration: 3.0
     waypoints: 10
