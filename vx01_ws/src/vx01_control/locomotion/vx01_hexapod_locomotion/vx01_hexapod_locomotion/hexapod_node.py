@@ -72,6 +72,8 @@ class HexapodNode(Node):
         self.declare_parameter('waypoints', 15)
         self.declare_parameter('coxa_angles',
             [-1.5708, -0.7854, 0.7854, 1.5708, 2.3920, -2.3562])
+        self.declare_parameter('stand_femur_cmd', -0.9)
+        self.declare_parameter('stand_tibia_cmd', 0.7)
         self.declare_parameter('controller_names', [
             'leg_0_controller', 'leg_1_controller', 'leg_2_controller',
             'leg_3_controller', 'leg_4_controller', 'leg_5_controller'])
@@ -91,10 +93,20 @@ class HexapodNode(Node):
         self._coxa_angles    = self.get_parameter('coxa_angles').value
         self._controller_names = self.get_parameter('controller_names').value
 
+        self._stand_femur_cmd = self.get_parameter('stand_femur_cmd').value
+        self._stand_tibia_cmd = self.get_parameter('stand_tibia_cmd').value
+
         self._joint_names = [
             [f'coxa_leg{i}_joint', f'femur_leg{i}_joint', f'tibia_leg{i}_joint']
             for i in range(6)
         ]
+
+        # Calculate home_reach and home_z dynamically from the desired stand pose commands
+        angles = self._cmd_to_angles([0.0, self._stand_femur_cmd, self._stand_tibia_cmd])
+        hx, hy, hz = self._fk(angles)
+        self._home_reach = math.hypot(hx, hy)
+        self._home_z = hz
+        self.get_logger().info(f'FK from custom stand pose -> reach: {self._home_reach:.1f}, z: {hz:.1f}')
 
     # ------------------------------------------------------------------ init
 
@@ -126,13 +138,18 @@ class HexapodNode(Node):
             self._send_stand()
 
     def _send_stand(self):
+        cmd1 = 0.0
+        cmd2 = self._stand_femur_cmd
+        cmd3 = self._stand_tibia_cmd
+
         for i in range(6):
-            hx, hy, hz = self._legs[i].home
-            angles = self._legs[i].solve_ik(hx, hy, hz)
-            if angles is None:
-                self.get_logger().warn(f'IK failed for leg {i} at home pose!')
-                continue
-            traj = self._single_point_traj(i, angles, self._stand_duration)
+            pt = JointTrajectoryPoint()
+            pt.positions = [cmd1, cmd2, cmd3]
+            pt.time_from_start = _ros_duration(self._stand_duration)
+
+            traj = JointTrajectory()
+            traj.joint_names = self._joint_names[i]
+            traj.points = [pt]
             self._publish(i, traj)
 
     # ------------------------------------------------------------------ cmd_vel
@@ -304,6 +321,20 @@ class HexapodNode(Node):
         return traj
 
     # ------------------------------------------------------------------ helpers
+
+    def _cmd_to_angles(self, cmds):
+        theta1 = 0.0 - cmds[0]
+        theta2 = 0.1274 - cmds[1]
+        theta3 = -0.658 - cmds[2]
+        return [theta1, theta2, theta3]
+
+    def _fk(self, angles):
+        theta1, theta2, theta3 = angles
+        r_plane = self._L1 + self._L2 * math.cos(theta2) + self._L3 * math.cos(theta2 + theta3)
+        z = self._L2 * math.sin(theta2) + self._L3 * math.sin(theta2 + theta3)
+        x = r_plane * math.cos(theta1)
+        y = r_plane * math.sin(theta1)
+        return x, y, z
 
     def _angles_to_cmd(self, angles):
         """

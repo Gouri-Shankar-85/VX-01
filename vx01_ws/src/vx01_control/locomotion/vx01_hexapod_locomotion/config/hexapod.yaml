@@ -10,14 +10,17 @@ hexapod_node:
     # Body geometry
     body_radius: 105.66     # mm from body centre to coxa pivot
 
-    # Home foot position (in leg-local frame from coxa pivot)
-    home_reach: 150.0       # mm outward from coxa pivot along leg axis
-    home_z: -130.0          # mm downward from coxa pivot  (coxa is ~70 mm above base_link)
-                            # → ~60 mm body clearance, gives θ_femur ≈ -15° (natural M-shape)
+    # Stand-pose joint overrides (bypasses IK — set directly from Gazebo observation)
+    stand_femur_cmd:  -0.9  # rad — femur joint command for stand pose
+    stand_tibia_cmd:   0.7  # rad — tibia joint command for stand pose
+
+    # Home foot position for walking IK (set to match FK of the stand pose angles)
+    home_reach: 120.0
+    home_z: -150.0
 
     # Gait parameters
-    step_length:   80.0     # mm  — max total foot sweep per half-cycle (cap = 40 mm each way)
-    step_height:   40.0     # mm  — peak Bézier lift height during swing
+    step_length:   60.0     # mm  — half-stride cap = 30mm (safe for 120mm reach)
+    step_height:   35.0     # mm  — Bézier lift height
     step_period:    1.2     # s   — full gait cycle (0.6 s per half-phase); gives ~67 mm/s at max speed
     stand_duration: 2.0     # s   — time to reach stand pose on startup
     waypoints:      15      # trajectory points per half-cycle (smooth Bézier)
