@@ -74,7 +74,7 @@
                 <control channel="0">
                     <jointName>prop_0</jointName>
                     <multiplier>800</multiplier>
-                    <offset>-0.5</offset>
+                    <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
@@ -87,9 +87,9 @@
                     <cmd_min>-2.5</cmd_min>
                 </control>
                 <control channel="1">
-                    <jointName>prop_1</jointName>
-                    <multiplier>-800</multiplier>
-                    <offset>-0.5</offset>
+                    <jointName>prop_2</jointName>
+                    <multiplier>800</multiplier>
+                    <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
@@ -102,9 +102,9 @@
                     <cmd_min>-2.5</cmd_min>
                 </control>
                 <control channel="2">
-                    <jointName>prop_2</jointName>
+                    <jointName>prop_1</jointName>
                     <multiplier>800</multiplier>
-                    <offset>-0.5</offset>
+                    <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
@@ -118,8 +118,8 @@
                 </control>
                 <control channel="3">
                     <jointName>prop_3</jointName>
-                    <multiplier>-800</multiplier>
-                    <offset>-0.5</offset>
+                    <multiplier>800</multiplier>
+                    <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
@@ -142,8 +142,8 @@
                 <turningDirection>ccw</turningDirection>
                 <timeConstantUp>0.0125</timeConstantUp>
                 <timeConstantDown>0.025</timeConstantDown>
-                <maxRotVelocity>800.0</maxRotVelocity>
-                <motorConstant>8.54858e-06</motorConstant>
+                <maxRotVelocity>1500.0</maxRotVelocity>
+                <motorConstant>4.598e-05</motorConstant>
                 <momentConstant>0.016</momentConstant>
                 <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
                 <motorNumber>0</motorNumber>
@@ -161,8 +161,8 @@
                 <turningDirection>cw</turningDirection>
                 <timeConstantUp>0.0125</timeConstantUp>
                 <timeConstantDown>0.025</timeConstantDown>
-                <maxRotVelocity>800.0</maxRotVelocity>
-                <motorConstant>8.54858e-06</motorConstant>
+                <maxRotVelocity>1500.0</maxRotVelocity>
+                <motorConstant>4.598e-05</motorConstant>
                 <momentConstant>0.016</momentConstant>
                 <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
                 <motorNumber>1</motorNumber>
@@ -180,8 +180,8 @@
                 <turningDirection>ccw</turningDirection>
                 <timeConstantUp>0.0125</timeConstantUp>
                 <timeConstantDown>0.025</timeConstantDown>
-                <maxRotVelocity>800.0</maxRotVelocity>
-                <motorConstant>8.54858e-06</motorConstant>
+                <maxRotVelocity>1500.0</maxRotVelocity>
+                <motorConstant>4.598e-05</motorConstant>
                 <momentConstant>0.016</momentConstant>
                 <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
                 <motorNumber>2</motorNumber>
@@ -199,8 +199,8 @@
                 <turningDirection>cw</turningDirection>
                 <timeConstantUp>0.0125</timeConstantUp>
                 <timeConstantDown>0.025</timeConstantDown>
-                <maxRotVelocity>800.0</maxRotVelocity>
-                <motorConstant>8.54858e-06</motorConstant>
+                <maxRotVelocity>1500.0</maxRotVelocity>
+                <motorConstant>4.598e-05</motorConstant>
                 <momentConstant>0.016</momentConstant>
                 <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
                 <motorNumber>3</motorNumber>

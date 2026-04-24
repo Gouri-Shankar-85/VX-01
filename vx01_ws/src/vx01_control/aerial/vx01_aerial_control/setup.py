@@ -21,6 +21,7 @@ setup(
         'console_scripts': [
             'aerial_controller_node = vx01_aerial_control.aerial_controller_node:main',
             'drone_flight_manager  = vx01_aerial_control.drone_flight_manager:main',
+            'drone_teleop = vx01_aerial_control.drone_teleop:main',
         ],
     },
 )

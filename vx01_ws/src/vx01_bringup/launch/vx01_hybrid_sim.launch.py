@@ -75,7 +75,7 @@ def generate_launch_description():
         parameters=[{
             'use_sim_time': True,
             'takeoff_altitude': 2.0,
-            'auto_takeoff': True,
+            'auto_takeoff': False,
         }]
     )
 

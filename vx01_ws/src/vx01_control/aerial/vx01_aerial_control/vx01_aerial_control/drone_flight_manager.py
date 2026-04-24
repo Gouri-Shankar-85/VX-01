@@ -162,6 +162,10 @@ class DroneFlightManager(Node):
                 self.get_logger().info('GUIDED mode confirmed — arming')
                 self._phase = FlightPhase.ARMING
                 self._call_arm(True)
+            else:
+                if not hasattr(self, '_last_mode_req_time') or (self.get_clock().now() - self._last_mode_req_time).nanoseconds / 1e9 > 2.0:
+                    self._call_set_mode('GUIDED')
+                    self._last_mode_req_time = self.get_clock().now()
 
         elif self._phase == FlightPhase.ARMING:
             if self._armed:
@@ -169,6 +173,10 @@ class DroneFlightManager(Node):
                     f'Armed! Taking off to {self._takeoff_alt}m')
                 self._phase = FlightPhase.TAKING_OFF
                 self._call_takeoff(self._takeoff_alt)
+            else:
+                if not hasattr(self, '_last_arm_req_time') or (self.get_clock().now() - self._last_arm_req_time).nanoseconds / 1e9 > 2.0:
+                    self._call_arm(True)
+                    self._last_arm_req_time = self.get_clock().now()
 
         elif self._phase == FlightPhase.TAKING_OFF:
             if self._altitude >= self._takeoff_alt * 0.90:
