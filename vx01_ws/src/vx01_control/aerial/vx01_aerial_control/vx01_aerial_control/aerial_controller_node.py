@@ -27,7 +27,7 @@ class AerialControllerNode(Node):
     def __init__(self):
         super().__init__('aerial_controller_node')
 
-        # ── State ───────────────────────────────────────────────────────────
+        # ── State 
         self._connected = False
         self._armed = False
         self._mode = 'STABILIZE'
@@ -35,7 +35,7 @@ class AerialControllerNode(Node):
         self._last_cmd_time = self.get_clock().now()
         self._has_cmd = False
 
-        # ── Subscribers ─────────────────────────────────────────────────────
+        # ── Subscribers 
         self.create_subscription(
             TwistStamped, '/drone/cmd_vel', self._cmd_vel_cb, 10)
         self.create_subscription(
@@ -43,17 +43,17 @@ class AerialControllerNode(Node):
         self.create_subscription(
             Bool, '/drone/arm', self._arm_cb, 10)
 
-        # ── Publisher ───────────────────────────────────────────────────────
+        # ── Publisher 
         self._vel_pub = self.create_publisher(
             TwistStamped, '/mavros/setpoint_velocity/cmd_vel', 10)
 
-        # ── Service clients ─────────────────────────────────────────────────
+        # ── Service clients 
         self._arm_client = self.create_client(
             CommandBool, '/mavros/cmd/arming')
         self._mode_client = self.create_client(
             SetMode, '/mavros/set_mode')
 
-        # ── Heartbeat timer (10 Hz) ─────────────────────────────────────────
+        # ── Heartbeat timer (10 Hz) 
         self.create_timer(0.1, self._heartbeat)
 
         self.get_logger().info(
@@ -61,7 +61,7 @@ class AerialControllerNode(Node):
             'Publish TwistStamped → /drone/cmd_vel | '
             'Bool → /drone/arm')
 
-    # ── Callbacks ───────────────────────────────────────────────────────────
+    # ── Callbacks 
 
     def _cmd_vel_cb(self, msg: TwistStamped):
         self._latest_cmd = msg
@@ -76,7 +76,7 @@ class AerialControllerNode(Node):
     def _arm_cb(self, msg: Bool):
         self._send_arm(msg.data)
 
-    # ── Heartbeat — streams setpoints at 10 Hz ─────────────────────────────
+    # ── Heartbeat — streams setpoints at 10 Hz 
 
     def _heartbeat(self):
         if not self._connected:
@@ -93,7 +93,7 @@ class AerialControllerNode(Node):
 
         self._vel_pub.publish(cmd)
 
-    # ── Service calls ───────────────────────────────────────────────────────
+    # ── Service calls 
 
     def _send_arm(self, arm: bool):
         if not self._arm_client.wait_for_service(timeout_sec=2.0):

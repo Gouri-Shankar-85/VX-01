@@ -51,7 +51,7 @@ class DroneFlightManager(Node):
     def __init__(self):
         super().__init__('drone_flight_manager')
 
-        # ── Parameters ──────────────────────────────────────────────────────
+        # ── Parameters 
         self.declare_parameter('takeoff_altitude', 2.0)
         self.declare_parameter('auto_takeoff', True)
         self.declare_parameter('setpoint_stream_count', 100)
@@ -60,7 +60,7 @@ class DroneFlightManager(Node):
         self._auto_takeoff = self.get_parameter('auto_takeoff').value
         self._stream_target = self.get_parameter('setpoint_stream_count').value
 
-        # ── State ───────────────────────────────────────────────────────────
+        # ── State 
         self._phase = FlightPhase.WAITING_FOR_CONNECTION
         self._connected = False
         self._armed = False
@@ -71,7 +71,7 @@ class DroneFlightManager(Node):
         self._last_cmd_time = self.get_clock().now()
         self._has_external_cmd = False
 
-        # ── Subscribers ─────────────────────────────────────────────────────
+        # ── Subscribers 
         self.create_subscription(
             State, '/mavros/state', self._state_cb, 10)
         self.create_subscription(
@@ -81,11 +81,11 @@ class DroneFlightManager(Node):
         self.create_subscription(
             Bool, '/drone/land', self._land_cb, 10)
 
-        # ── Publisher ───────────────────────────────────────────────────────
+        # ── Publisher 
         self._vel_pub = self.create_publisher(
             TwistStamped, '/mavros/setpoint_velocity/cmd_vel', 10)
 
-        # ── Service clients ─────────────────────────────────────────────────
+        # ── Service clients 
         self._arm_client = self.create_client(
             CommandBool, '/mavros/cmd/arming')
         self._mode_client = self.create_client(
@@ -93,7 +93,7 @@ class DroneFlightManager(Node):
         self._takeoff_client = self.create_client(
             CommandTOL, '/mavros/cmd/takeoff')
 
-        # ── Main loop timer (20 Hz) ─────────────────────────────────────────
+        # ── Main loop timer (20 Hz) 
         self.create_timer(0.05, self._tick)
 
         self.get_logger().info(
@@ -101,7 +101,7 @@ class DroneFlightManager(Node):
             f'auto_takeoff={self._auto_takeoff}, '
             f'altitude={self._takeoff_alt}m')
 
-    # ── Subscriber callbacks ────────────────────────────────────────────────
+    # ── Subscriber callbacks 
 
     def _state_cb(self, msg: State):
         self._connected = msg.connected
@@ -122,10 +122,10 @@ class DroneFlightManager(Node):
             self._phase = FlightPhase.LANDING
             self._call_set_mode('LAND')
 
-    # ── Main state machine ──────────────────────────────────────────────────
+    # ── Main state machine 
 
     def _tick(self):
-        # Always stream a setpoint to keep MAVROS happy
+
         self._publish_setpoint()
 
         if self._phase == FlightPhase.WAITING_FOR_CONNECTION:
@@ -175,7 +175,7 @@ class DroneFlightManager(Node):
                 self.get_logger().info('Landed and disarmed.')
                 self._phase = FlightPhase.IDLE
 
-    # ── Setpoint publisher ──────────────────────────────────────────────────
+    # ── Setpoint publisher 
 
     def _publish_setpoint(self):
         cmd = TwistStamped()
@@ -189,7 +189,7 @@ class DroneFlightManager(Node):
 
         self._vel_pub.publish(cmd)
 
-    # ── Service helpers ─────────────────────────────────────────────────────
+    # ── Service helpers 
 
     def _call_set_mode(self, mode: str):
         if not self._mode_client.wait_for_service(timeout_sec=5.0):
