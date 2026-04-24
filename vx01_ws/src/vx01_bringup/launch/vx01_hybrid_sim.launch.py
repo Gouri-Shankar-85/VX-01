@@ -66,7 +66,17 @@ def generate_launch_description():
         executable='aerial_controller_node',
         output='screen',
         parameters=[{'use_sim_time': True}]
+    )
 
+    drone_flight_manager = Node(
+        package='vx01_aerial_control',
+        executable='drone_flight_manager',
+        output='screen',
+        parameters=[{
+            'use_sim_time': True,
+            'takeoff_altitude': 2.0,
+            'auto_takeoff': True,
+        }]
     )
 
     web_video_server = Node(
@@ -87,6 +97,7 @@ def generate_launch_description():
 
         TimerAction(
             period=23.0,
-            actions=[mode_manager, aerial_controller, web_video_server]
+            actions=[mode_manager, aerial_controller,
+                     drone_flight_manager, web_video_server]
         ),
     ])

@@ -2,18 +2,19 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>vx01_aerial_control</name>
-  <version>0.0.0</version>
-  <description>Control stack for VX-01 aerial robot including attitude control, trajectory planning, and flight dynamics simulation.</description>
+  <version>1.0.0</version>
+  <description>Python flight control for VX-01 drone: MAVROS-based aerial controller and autonomous flight manager.</description>
   <maintainer email="sskzm5585@gmail.com">Gouri Shankar</maintainer>
-  <license>BSD-3-Clause</license>
+  <license>MIT</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>rclcpp</depend>
-  <depend>geometry_msgs</depend>
-  <depend>vx01_msgs</depend>
-  <depend>mavros_msgs</depend>
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>mavros_msgs</exec_depend>
 
   <export>
-    <build_type>ament_cmake</build_type>
+    <build_type>ament_python</build_type>
   </export>
 </package>
