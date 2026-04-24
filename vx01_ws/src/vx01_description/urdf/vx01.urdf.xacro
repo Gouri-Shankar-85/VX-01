@@ -74,12 +74,12 @@
                 <imuName>imu_sensor</imuName>
                 <control channel="0">
                     <jointName>prop_0</jointName>
-                    <multiplier>2.0</multiplier>
+                    <multiplier>0.5</multiplier>
                     <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
-                    <p_gain>10.0</p_gain>
+                    <p_gain>100.0</p_gain>
                     <i_gain>0</i_gain>
                     <d_gain>0</d_gain>
                     <i_max>0</i_max>
@@ -89,12 +89,12 @@
                 </control>
                 <control channel="1">
                     <jointName>prop_2</jointName>
-                    <multiplier>2.0</multiplier>
+                    <multiplier>0.5</multiplier>
                     <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
-                    <p_gain>10.0</p_gain>
+                    <p_gain>100.0</p_gain>
                     <i_gain>0</i_gain>
                     <d_gain>0</d_gain>
                     <i_max>0</i_max>
@@ -104,12 +104,12 @@
                 </control>
                 <control channel="2">
                     <jointName>prop_1</jointName>
-                    <multiplier>2.0</multiplier>
+                    <multiplier>0.5</multiplier>
                     <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
-                    <p_gain>10.0</p_gain>
+                    <p_gain>100.0</p_gain>
                     <i_gain>0</i_gain>
                     <d_gain>0</d_gain>
                     <i_max>0</i_max>
@@ -119,12 +119,12 @@
                 </control>
                 <control channel="3">
                     <jointName>prop_3</jointName>
-                    <multiplier>2.0</multiplier>
+                    <multiplier>0.5</multiplier>
                     <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
-                    <p_gain>10.0</p_gain>
+                    <p_gain>100.0</p_gain>
                     <i_gain>0</i_gain>
                     <d_gain>0</d_gain>
                     <i_max>0</i_max>
