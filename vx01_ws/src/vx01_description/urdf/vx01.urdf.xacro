@@ -73,7 +73,7 @@
                 <imuName>imu_sensor</imuName>
                 <control channel="0">
                     <jointName>prop_0</jointName>
-                    <multiplier>1500</multiplier>
+                    <multiplier>1.5</multiplier>
                     <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
@@ -88,7 +88,7 @@
                 </control>
                 <control channel="1">
                     <jointName>prop_2</jointName>
-                    <multiplier>1500</multiplier>
+                    <multiplier>1.5</multiplier>
                     <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
@@ -103,7 +103,7 @@
                 </control>
                 <control channel="2">
                     <jointName>prop_1</jointName>
-                    <multiplier>1500</multiplier>
+                    <multiplier>1.5</multiplier>
                     <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
@@ -118,7 +118,7 @@
                 </control>
                 <control channel="3">
                     <jointName>prop_3</jointName>
-                    <multiplier>1500</multiplier>
+                    <multiplier>1.5</multiplier>
                     <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
@@ -143,14 +143,14 @@
                 <timeConstantUp>0.0125</timeConstantUp>
                 <timeConstantDown>0.025</timeConstantDown>
                 <maxRotVelocity>1500.0</maxRotVelocity>
-                <motorConstant>3.0e-05</motorConstant>
+                <motorConstant>4.0e-05</motorConstant>
                 <momentConstant>0.016</momentConstant>
                 <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
                 <motorNumber>0</motorNumber>
                 <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
                 <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
                 <motorSpeedPubTopic>motor_speed/0</motorSpeedPubTopic>
-                <rotorVelocitySlowdownSim>50</rotorVelocitySlowdownSim>
+                <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
             </plugin>
 
             <plugin filename="ignition-gazebo-multicopter-motor-model-system"
@@ -162,14 +162,14 @@
                 <timeConstantUp>0.0125</timeConstantUp>
                 <timeConstantDown>0.025</timeConstantDown>
                 <maxRotVelocity>1500.0</maxRotVelocity>
-                <motorConstant>3.0e-05</motorConstant>
+                <motorConstant>4.0e-05</motorConstant>
                 <momentConstant>0.016</momentConstant>
                 <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
                 <motorNumber>1</motorNumber>
                 <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
                 <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
                 <motorSpeedPubTopic>motor_speed/1</motorSpeedPubTopic>
-                <rotorVelocitySlowdownSim>50</rotorVelocitySlowdownSim>
+                <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
             </plugin>
 
             <plugin filename="ignition-gazebo-multicopter-motor-model-system"
@@ -181,14 +181,14 @@
                 <timeConstantUp>0.0125</timeConstantUp>
                 <timeConstantDown>0.025</timeConstantDown>
                 <maxRotVelocity>1500.0</maxRotVelocity>
-                <motorConstant>3.0e-05</motorConstant>
+                <motorConstant>4.0e-05</motorConstant>
                 <momentConstant>0.016</momentConstant>
                 <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
                 <motorNumber>2</motorNumber>
                 <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
                 <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
                 <motorSpeedPubTopic>motor_speed/2</motorSpeedPubTopic>
-                <rotorVelocitySlowdownSim>50</rotorVelocitySlowdownSim>
+                <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
             </plugin>
 
             <plugin filename="ignition-gazebo-multicopter-motor-model-system"
@@ -200,14 +200,14 @@
                 <timeConstantUp>0.0125</timeConstantUp>
                 <timeConstantDown>0.025</timeConstantDown>
                 <maxRotVelocity>1500.0</maxRotVelocity>
-                <motorConstant>3.0e-05</motorConstant>
+                <motorConstant>4.0e-05</motorConstant>
                 <momentConstant>0.016</momentConstant>
                 <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
                 <motorNumber>3</motorNumber>
                 <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
                 <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
                 <motorSpeedPubTopic>motor_speed/3</motorSpeedPubTopic>
-                <rotorVelocitySlowdownSim>50</rotorVelocitySlowdownSim>
+                <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
             </plugin>
         </gazebo>
 
