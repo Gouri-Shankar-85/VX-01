@@ -136,14 +136,13 @@
             <!-- Motor Models -->
             <plugin filename="ignition-gazebo-multicopter-motor-model-system"
                     name="ignition::gazebo::systems::MulticopterMotorModel">
-                <robotNamespace>vx01</robotNamespace>
                 <jointName>prop_0</jointName>
                 <linkName>prop_link_0</linkName>
-                <turningDirection>ccw</turningDirection>
+                <turningDirection>cw</turningDirection>
                 <timeConstantUp>0.0125</timeConstantUp>
                 <timeConstantDown>0.025</timeConstantDown>
                 <maxRotVelocity>1500.0</maxRotVelocity>
-                <motorConstant>2.0e-05</motorConstant>
+                <motorConstant>5.0e-04</motorConstant>
                 <momentConstant>0.016</momentConstant>
                 <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
                 <motorNumber>0</motorNumber>
@@ -155,14 +154,13 @@
 
             <plugin filename="ignition-gazebo-multicopter-motor-model-system"
                     name="ignition::gazebo::systems::MulticopterMotorModel">
-                <robotNamespace>vx01</robotNamespace>
                 <jointName>prop_1</jointName>
                 <linkName>prop_link_1</linkName>
-                <turningDirection>cw</turningDirection>
+                <turningDirection>ccw</turningDirection>
                 <timeConstantUp>0.0125</timeConstantUp>
                 <timeConstantDown>0.025</timeConstantDown>
                 <maxRotVelocity>1500.0</maxRotVelocity>
-                <motorConstant>2.0e-05</motorConstant>
+                <motorConstant>5.0e-04</motorConstant>
                 <momentConstant>0.016</momentConstant>
                 <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
                 <motorNumber>1</motorNumber>
@@ -174,14 +172,13 @@
 
             <plugin filename="ignition-gazebo-multicopter-motor-model-system"
                     name="ignition::gazebo::systems::MulticopterMotorModel">
-                <robotNamespace>vx01</robotNamespace>
                 <jointName>prop_2</jointName>
                 <linkName>prop_link_2</linkName>
-                <turningDirection>ccw</turningDirection>
+                <turningDirection>cw</turningDirection>
                 <timeConstantUp>0.0125</timeConstantUp>
                 <timeConstantDown>0.025</timeConstantDown>
                 <maxRotVelocity>1500.0</maxRotVelocity>
-                <motorConstant>2.0e-05</motorConstant>
+                <motorConstant>5.0e-04</motorConstant>
                 <momentConstant>0.016</momentConstant>
                 <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
                 <motorNumber>2</motorNumber>
@@ -193,14 +190,13 @@
 
             <plugin filename="ignition-gazebo-multicopter-motor-model-system"
                     name="ignition::gazebo::systems::MulticopterMotorModel">
-                <robotNamespace>vx01</robotNamespace>
                 <jointName>prop_3</jointName>
                 <linkName>prop_link_3</linkName>
-                <turningDirection>cw</turningDirection>
+                <turningDirection>ccw</turningDirection>
                 <timeConstantUp>0.0125</timeConstantUp>
                 <timeConstantDown>0.025</timeConstantDown>
                 <maxRotVelocity>1500.0</maxRotVelocity>
-                <motorConstant>2.0e-05</motorConstant>
+                <motorConstant>5.0e-04</motorConstant>
                 <momentConstant>0.016</momentConstant>
                 <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
                 <motorNumber>3</motorNumber>
