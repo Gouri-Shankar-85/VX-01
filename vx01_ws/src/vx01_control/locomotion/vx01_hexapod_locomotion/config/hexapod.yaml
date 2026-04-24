@@ -10,11 +10,11 @@ hexapod_node:
     # Body geometry
     body_radius: 105.66     # mm from body centre to coxa pivot
 
-    # Stand-pose joint overrides (bypasses IK — set directly from Gazebo observation)
+    # Stand-pose joint 
     stand_femur_cmd:  -0.9  # rad — femur joint command for stand pose
     stand_tibia_cmd:   0.7  # rad — tibia joint command for stand pose
 
-    # Home foot position for walking IK (set to match FK of the stand pose angles)
+    # Home foot position for walking IK
     home_reach: 120.0
     home_z: -150.0
 
