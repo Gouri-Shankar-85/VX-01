@@ -27,6 +27,7 @@ Services called:
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 from geometry_msgs.msg import TwistStamped, PoseStamped
 from std_msgs.msg import Bool
 from mavros_msgs.msg import State
@@ -71,11 +72,19 @@ class DroneFlightManager(Node):
         self._last_cmd_time = self.get_clock().now()
         self._has_external_cmd = False
 
-        # ── Subscribers 
+        # ── Subscribers ─────────────────────────────────────────────────────
         self.create_subscription(
             State, '/mavros/state', self._state_cb, 10)
+
+        # MAVROS publishes local_position with BEST_EFFORT — must match
+        sensor_qos = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE,
+            depth=10)
         self.create_subscription(
-            PoseStamped, '/mavros/local_position/pose', self._pose_cb, 10)
+            PoseStamped, '/mavros/local_position/pose',
+            self._pose_cb, sensor_qos)
+
         self.create_subscription(
             TwistStamped, '/drone/cmd_vel', self._cmd_vel_cb, 10)
         self.create_subscription(
@@ -97,6 +106,7 @@ class DroneFlightManager(Node):
         self.create_timer(0.05, self._tick)
 
         self.get_logger().info(
+            
             f'DroneFlightManager initialized. '
             f'auto_takeoff={self._auto_takeoff}, '
             f'altitude={self._takeoff_alt}m')

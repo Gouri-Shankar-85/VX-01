@@ -27,7 +27,7 @@ def generate_launch_description():
     sitl_layer = ExecuteProcess(
         cmd=[
             '/ardupilot/build/sitl/bin/arducopter',
-            '--model', 'quad',
+            '--model', 'JSON',
             '--serial0=tcp:0.0.0.0:5760',
             '--defaults',
             bypass_param + ',' + '/ardupilot/Tools/autotest/default_params/copter.parm',

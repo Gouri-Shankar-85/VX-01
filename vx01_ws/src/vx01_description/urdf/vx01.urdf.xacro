@@ -59,10 +59,10 @@
             </plugin>
         </gazebo>
 
-        <!-- ArduPilot SITL plugin — must be a model-level plugin -->
+        <!-- ArduPilot SITL plugin -->
         <gazebo>
             <plugin filename="libArduPilotPlugin.so"
-                    name="ArduPilotPlugin">
+                    name="ardupilot_gazebo::ArduPilotPlugin">
                 <fdm_addr>127.0.0.1</fdm_addr>
                 <fdm_port_in>9002</fdm_port_in>
                 <fdm_port_out>9003</fdm_port_out>
@@ -131,6 +131,83 @@
                     <cmd_max>2.5</cmd_max>
                     <cmd_min>-2.5</cmd_min>
                 </control>
+            </plugin>
+            
+            <!-- Motor Models -->
+            <plugin filename="ignition-gazebo-multicopter-motor-model-system"
+                    name="ignition::gazebo::systems::MulticopterMotorModel">
+                <robotNamespace>vx01</robotNamespace>
+                <jointName>prop_0</jointName>
+                <linkName>prop_link_0</linkName>
+                <turningDirection>ccw</turningDirection>
+                <timeConstantUp>0.0125</timeConstantUp>
+                <timeConstantDown>0.025</timeConstantDown>
+                <maxRotVelocity>800.0</maxRotVelocity>
+                <motorConstant>8.54858e-06</motorConstant>
+                <momentConstant>0.016</momentConstant>
+                <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
+                <motorNumber>0</motorNumber>
+                <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+                <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+                <motorSpeedPubTopic>motor_speed/0</motorSpeedPubTopic>
+                <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+            </plugin>
+
+            <plugin filename="ignition-gazebo-multicopter-motor-model-system"
+                    name="ignition::gazebo::systems::MulticopterMotorModel">
+                <robotNamespace>vx01</robotNamespace>
+                <jointName>prop_1</jointName>
+                <linkName>prop_link_1</linkName>
+                <turningDirection>cw</turningDirection>
+                <timeConstantUp>0.0125</timeConstantUp>
+                <timeConstantDown>0.025</timeConstantDown>
+                <maxRotVelocity>800.0</maxRotVelocity>
+                <motorConstant>8.54858e-06</motorConstant>
+                <momentConstant>0.016</momentConstant>
+                <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
+                <motorNumber>1</motorNumber>
+                <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+                <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+                <motorSpeedPubTopic>motor_speed/1</motorSpeedPubTopic>
+                <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+            </plugin>
+
+            <plugin filename="ignition-gazebo-multicopter-motor-model-system"
+                    name="ignition::gazebo::systems::MulticopterMotorModel">
+                <robotNamespace>vx01</robotNamespace>
+                <jointName>prop_2</jointName>
+                <linkName>prop_link_2</linkName>
+                <turningDirection>ccw</turningDirection>
+                <timeConstantUp>0.0125</timeConstantUp>
+                <timeConstantDown>0.025</timeConstantDown>
+                <maxRotVelocity>800.0</maxRotVelocity>
+                <motorConstant>8.54858e-06</motorConstant>
+                <momentConstant>0.016</momentConstant>
+                <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
+                <motorNumber>2</motorNumber>
+                <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+                <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+                <motorSpeedPubTopic>motor_speed/2</motorSpeedPubTopic>
+                <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+            </plugin>
+
+            <plugin filename="ignition-gazebo-multicopter-motor-model-system"
+                    name="ignition::gazebo::systems::MulticopterMotorModel">
+                <robotNamespace>vx01</robotNamespace>
+                <jointName>prop_3</jointName>
+                <linkName>prop_link_3</linkName>
+                <turningDirection>cw</turningDirection>
+                <timeConstantUp>0.0125</timeConstantUp>
+                <timeConstantDown>0.025</timeConstantDown>
+                <maxRotVelocity>800.0</maxRotVelocity>
+                <motorConstant>8.54858e-06</motorConstant>
+                <momentConstant>0.016</momentConstant>
+                <commandSubTopic>gazebo/command/motor_speed</commandSubTopic>
+                <motorNumber>3</motorNumber>
+                <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+                <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+                <motorSpeedPubTopic>motor_speed/3</motorSpeedPubTopic>
+                <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
             </plugin>
         </gazebo>
 
