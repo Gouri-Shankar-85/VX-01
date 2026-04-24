@@ -145,15 +145,7 @@
             </material>
         </visual>
 
-        <collision>
-            <origin
-                xyz="0 0 0"
-                rpy="0 0 0" />
-            <geometry>
-                <mesh
-                    filename="package://vx01_description/meshes/drone/prop_link_2.STL" />
-            </geometry>
-        </collision>
+        <!-- Removed collision mesh for propeller to prevent physics instability (ODE Error) -->
     </link>
 
     <joint name="prop_2" type="continuous">
