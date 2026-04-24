@@ -11,6 +11,11 @@
       conn_timeout: 120.0    
       disable_diag: true      
 
+    param:
+      startup_timeout: 60.0
+      pull_timeout: 30.0
+      retries: 5
+
     distance_sensor:
       rangefinder_pub:
         id: 0
