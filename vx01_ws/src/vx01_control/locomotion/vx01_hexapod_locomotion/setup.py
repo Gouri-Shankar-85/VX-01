@@ -23,7 +23,6 @@ setup(
     maintainer_email='sskzm5585@gmail.com',
     description='VX-01 hexapod locomotion — Python tripod gait',
     license='MIT',
-    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'hexapod_node = vx01_hexapod_locomotion.hexapod_node:main',

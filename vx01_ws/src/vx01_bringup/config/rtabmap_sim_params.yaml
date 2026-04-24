@@ -1,0 +1,47 @@
+# RTAB-Map 3D Mapping Parameters for VX-01
+# Configured for depth camera-based visual SLAM
+
+rtabmap:
+  ros__parameters:
+    # Core parameters
+    frame_id: "base_link"
+    odom_frame_id: "odom"
+    map_frame_id: "map"
+    
+    # Memory management
+    Db/DBPath: "/root/.ros/rtabmap.db"
+    Db/Sqlite3InMemory: "false"
+    Db/TargetVersion: "0.21.3"
+    
+    # Loop closure detection
+    RGBD/CreateOccupancyGrid: "true"
+    RGBD/OptimizeFromGraphEnd: "false"
+    RGBD/NeighborLinkRefining: "true"
+    RGBD/ProximityBySpace: "true"
+    
+    # Visual features
+    Vis/MinInliers: "8"
+    Vis/MaxFeatures: "400"
+    Vis/FeatureType: "6"    # GFTT
+    Vis/EstimationType: "1" # PnP homography
+    
+    # Update rates
+    RGBD/LinearUpdate: "0.01"    # 1cm linear movement before update
+    RGBD/AngularUpdate: "0.0174" # ~1 degree
+    
+    # ICP (for point cloud refinement)
+    Icp/MaxDistance: "0.1"
+    
+    # Occupancy grid
+    RGBD/CreateOccupancyGrid: "true"
+    OctoMap/PointSize: "0.01"
+    OctoMap/RayTracing: "true"
+    
+    # Time sync and topics
+    use_sim_time: true
+    subscribe_depth: true
+    subscribe_rgb: true
+    subscribe_rgbd: false
+    approx_sync: true
+    sync_queue_size: "50"
+    topic_queue_size: "50"

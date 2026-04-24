@@ -53,10 +53,9 @@ class HexapodNode(Node):
         self._gait_timer = self.create_timer(half, self._gait_tick)
         self._gait_timer.cancel()
 
-        # Poll until all joint controllers have subscribers
-        self._stand_timer = self.create_timer(0.5, self._initial_stand)
+        self.get_logger().info('Hexapod node initialized. Waiting for manual commands on /cmd_vel')
 
-    # ------------------------------------------------------------------ params
+    #  params
 
     def _declare_params(self):
         self.declare_parameter('L1', 60.55)
@@ -66,7 +65,7 @@ class HexapodNode(Node):
         self.declare_parameter('home_reach', 120.0)
         self.declare_parameter('home_z', -150.0)
         self.declare_parameter('step_length', 80.0)
-        self.declare_parameter('step_height', 40.0)
+        self.declare_parameter('step_height', 60.0)
         self.declare_parameter('step_period', 1.2)
         self.declare_parameter('stand_duration', 2.0)
         self.declare_parameter('waypoints', 15)
@@ -108,7 +107,7 @@ class HexapodNode(Node):
         self._home_z = hz
         self.get_logger().info(f'FK from custom stand pose -> reach: {self._home_reach:.1f}, z: {hz:.1f}')
 
-    # ------------------------------------------------------------------ init
+    #  init
 
     def _init_legs(self):
         self._legs = [
@@ -127,7 +126,7 @@ class HexapodNode(Node):
             for i in range(6)
         ]
 
-    # ------------------------------------------------------------------ stand
+    #  stand
 
     def _initial_stand(self):
         ready = all(pub.get_subscription_count() > 0 for pub in self._pubs)
@@ -152,7 +151,7 @@ class HexapodNode(Node):
             traj.points = [pt]
             self._publish(i, traj)
 
-    # ------------------------------------------------------------------ cmd_vel
+    #  cmd_vel
 
     def _cmd_vel_cb(self, msg: Twist):
         self._vx    = msg.linear.x
@@ -175,10 +174,9 @@ class HexapodNode(Node):
         elif not moving and self._walking:
             self._walking = False
             self._gait_timer.cancel()
-            self._foot_offsets = [(0.0, 0.0) for _ in range(6)]
-            self._send_stand()
+            # Do NOT call _send_stand() - just stop walking and hold current pose
 
-    # ------------------------------------------------------------------ gait
+    #  gait
 
     def _gait_tick(self):
         if not self._walking:
@@ -199,7 +197,7 @@ class HexapodNode(Node):
             dx, dy = self._foot_stride(leg_id)
             self._publish(leg_id, self._build_stance(leg_id, dx, dy, half_dur))
 
-    # ------------------------------------------------------------------ stride
+    #  stride
 
     def _foot_stride(self, leg_id: int):
         """
@@ -236,7 +234,7 @@ class HexapodNode(Node):
 
         return dx, dy
 
-    # ------------------------------------------------------------------ swing (Bézier)
+    #  swing (Bézier)
 
     def _build_swing(self, leg_id: int, dx: float, dy: float, duration: float):
         """
@@ -284,7 +282,7 @@ class HexapodNode(Node):
         self._foot_offsets[leg_id] = (end_dx, end_dy)
         return traj
 
-    # ------------------------------------------------------------------ stance (linear)
+    #  stance (linear)
 
     def _build_stance(self, leg_id: int, dx: float, dy: float, duration: float):
         """
@@ -320,7 +318,7 @@ class HexapodNode(Node):
         self._foot_offsets[leg_id] = (end_dx, end_dy)
         return traj
 
-    # ------------------------------------------------------------------ helpers
+    #  helpers
 
     def _cmd_to_angles(self, cmds):
         theta1 = 0.0 - cmds[0]

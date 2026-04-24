@@ -76,26 +76,6 @@ def generate_launch_description():
         parameters=[{'port': 8080}]
     )
 
-    set_guided_mode = ExecuteProcess(
-        cmd=[
-            'ros2', 'service', 'call',
-            '/mavros/set_mode',
-            'mavros_msgs/srv/SetMode',
-            "{custom_mode: 'GUIDED'}"
-        ],
-        output='screen'
-    )
-
-    arm_vehicle = ExecuteProcess(
-        cmd=[
-            'ros2', 'service', 'call',
-            '/mavros/cmd/arming',
-            'mavros_msgs/srv/CommandBool',
-            "{value: true}"
-        ],
-        output='screen'
-    )
-
     return LaunchDescription([
         sim_launch,
         sitl_layer,
@@ -109,14 +89,4 @@ def generate_launch_description():
             period=23.0,
             actions=[mode_manager, aerial_controller, web_video_server]
         ),
-
-        TimerAction(
-            period=35.0,
-            actions=[set_guided_mode]
-        ),
-
-        TimerAction(
-            period=120.0,
-            actions=[arm_vehicle]
-        )
     ])

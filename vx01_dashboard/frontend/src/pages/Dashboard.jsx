@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Battery, MapPin, Activity, Wifi, WifiOff, Map, Target, Settings, Terminal, Crosshair, AlertTriangle, StopCircle } from "lucide-react";
 import ROSLIB from "roslib";
 
@@ -30,9 +30,13 @@ export default function Dashboard() {
 
   const [victimData, setVictimData] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [mapImage, setMapImage] = useState(null);
+  const [mapMetadata, setMapMetadata] = useState(null);
 
   const rosRef = useRef(null);
   const droneIntervalRef = useRef(null);
+  const canvasRef = useRef(null);
+  const mapSubscriptionRef = useRef(null);
   const currentCmdRef = useRef({ lx: 0, ly: 0, lz: 0, az: 0 });
 
   const robots = [
@@ -167,6 +171,23 @@ export default function Dashboard() {
       setTelemetry((t) => ({ ...t, robot_mode: msg.mode }));
     });
 
+    // Subscribe to RTAB-Map occupancy grid
+    const mapTopic = new ROSLIB.Topic({
+      ros,
+      name: "/map",
+      messageType: "nav_msgs/OccupancyGrid",
+    });
+    mapTopic.subscribe((msg) => {
+      setMapMetadata({
+        width: msg.info.width,
+        height: msg.info.height,
+        resolution: msg.info.resolution,
+        origin: msg.info.origin,
+      });
+      setMapImage(msg.data);
+      mapSubscriptionRef.current = mapTopic;
+    });
+
     return () => {
       battery.unsubscribe();
       gps.unsubscribe();
@@ -177,6 +198,7 @@ export default function Dashboard() {
       terrainType.unsubscribe();
       walkScore.unsubscribe();
       robotModeTopic.unsubscribe();
+      mapTopic.unsubscribe();
       ros.close();
       if (droneIntervalRef.current) clearInterval(droneIntervalRef.current);
     };
@@ -192,7 +214,12 @@ export default function Dashboard() {
   };
 
   const stopHexapod = () => {
-    sendHexapodCmd(0, 0, 0);
+    if (!rosRef.current || !rosConnected) return;
+    const cmdVel = new ROSLIB.Topic({ ros: rosRef.current, name: "/cmd_vel", messageType: "geometry_msgs/msg/Twist" });
+    cmdVel.publish(new ROSLIB.Message({
+      linear: { x: 0, y: 0, z: 0 },
+      angular: { x: 0, y: 0, z: 0 },
+    }));
   };
 
   const startDroneCmd = (lx, ly, lz, az) => {
@@ -254,7 +281,7 @@ export default function Dashboard() {
       setTimeout(() => {
         armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), (res) => {
           if (res.success) {
-            addLog("INFO", "Armed — starting setpoint heartbeat");
+            addLog("INFO", "Armed — drone ready for manual control");
             startDroneCmd(0, 0, 0, 0);
           }
         });
@@ -374,6 +401,9 @@ export default function Dashboard() {
             </button>
             <button onClick={() => setTab("teleop")} className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all ${tab === "teleop" ? "bg-blue-600 text-white shadow-lg shadow-blue-900/50" : "hover:bg-gray-800"}`}>
               <Settings size={18} /> Manual Deck
+            </button>
+            <button onClick={() => setTab("mapping")} className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all ${tab === "mapping" ? "bg-blue-600 text-white shadow-lg shadow-blue-900/50" : "hover:bg-gray-800"}`}>
+              <Map size={18} /> Live Mapping
             </button>
             <button onClick={() => setTab("logs")} className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all ${tab === "logs" ? "bg-blue-600 text-white shadow-lg shadow-blue-900/50" : "hover:bg-gray-800"}`}>
               <Terminal size={18} /> System Logs
@@ -613,19 +643,34 @@ export default function Dashboard() {
                 {/* Hexapod Control */}
                 <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6">
                   <h3 className="font-black text-xl mb-2 text-blue-500 border-b border-gray-800 pb-4">GROUND MODE</h3>
+                  <p className="text-gray-500 font-mono text-xs mb-4">First launch hexapod, then enable manual control to move</p>
+
+                  <div className="mb-6">
+                    <button
+                      onClick={() => setHexapodManualEnabled(!hexapodManualEnabled)}
+                      className={`w-full font-black tracking-widest p-3 rounded transition-all ${
+                        hexapodManualEnabled
+                          ? "bg-emerald-600 text-white border border-emerald-500"
+                          : "bg-gray-700 text-gray-400 border border-gray-600 hover:bg-gray-600"
+                      }`}
+                    >
+                      {hexapodManualEnabled ? "✓ MANUAL CONTROL ENABLED" : "ENABLE MANUAL CONTROL"}
+                    </button>
+                  </div>
+
                   <p className="text-gray-500 font-mono text-xs mb-8">Click Direction To Cruise, Click Stop To Halt</p>
 
                   <div className="grid grid-cols-3 gap-4 text-center max-w-xs mx-auto font-mono text-xl">
-                    <button onClick={() => sendHexapodCmd(0, 0.5, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">↰</button>
-                    <button onClick={() => sendHexapodCmd(0.5, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl border border-gray-700 hover:bg-white hover:text-black transition shadow-inner">↑</button>
-                    <button onClick={() => sendHexapodCmd(0, -0.5, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">↱</button>
+                    <button onClick={() => sendHexapodCmd(0, 0.2, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">↰</button>
+                    <button onClick={() => sendHexapodCmd(0.2, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl border border-gray-700 hover:bg-white hover:text-black transition shadow-inner">↑</button>
+                    <button onClick={() => sendHexapodCmd(0, -0.2, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">↱</button>
 
-                    <button onClick={() => sendHexapodCmd(0, 0, 0.5)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">⟲</button>
+                    <button onClick={() => sendHexapodCmd(0, 0, 0.6)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">⟲</button>
                     <button onClick={stopHexapod} className="bg-rose-900 text-white font-bold p-6 rounded-xl border border-rose-700 hover:bg-rose-600 transition flex items-center justify-center shadow-lg"><StopCircle size={28} /></button>
-                    <button onClick={() => sendHexapodCmd(0, 0, -0.5)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">⟳</button>
+                    <button onClick={() => sendHexapodCmd(0, 0, -0.6)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">⟳</button>
 
                     <div></div>
-                    <button onClick={() => sendHexapodCmd(-0.5, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl border border-gray-700 hover:bg-white hover:text-black transition shadow-inner">↓</button>
+                    <button onClick={() => sendHexapodCmd(-0.2, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl border border-gray-700 hover:bg-white hover:text-black transition shadow-inner">↓</button>
                     <div></div>
                   </div>
 
@@ -740,6 +785,51 @@ export default function Dashboard() {
             </div>
           )}
 
+          {tab === "mapping" && (
+            <div className="flex flex-col gap-4 h-full">
+              <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6 flex-1 flex flex-col overflow-hidden">
+                <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-800">
+                  <h2 className="text-xl font-black text-teal-400">RTAB-MAP ENVIRONMENT MAPPING</h2>
+                  <div className="text-xs font-mono text-gray-500">
+                    {mapMetadata ? `${mapMetadata.width}×${mapMetadata.height} | ${(mapMetadata.resolution * 100).toFixed(1)}cm/px` : 'No map data'}
+                  </div>
+                </div>
+                
+                <div className="flex-1 bg-black rounded-lg overflow-hidden flex items-center justify-center relative border border-gray-700">
+                  {mapMetadata && mapImage ? (
+                    <div className="relative w-full h-full">
+                      <MapCanvas
+                        width={mapMetadata.width}
+                        height={mapMetadata.height}
+                        resolution={mapMetadata.resolution}
+                        data={mapImage}
+                        ref={canvasRef}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-gray-600 font-mono">
+                      <Map size={48} className="mb-4 opacity-30" />
+                      <p className="text-sm">Waiting for map data from RTAB-Map...</p>
+                      <p className="text-xs text-gray-700 mt-2">Launch mapping with "2. INITIALIZE VISUAL SLAM"</p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="mt-4 bg-gray-800/50 p-3 rounded text-xs text-gray-400 font-mono">
+                  <div className="flex justify-between mb-2">
+                    <span>Legend:</span>
+                    <span></span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-[10px]">
+                    <div><span className="inline-block w-3 h-3 bg-black border border-gray-600 mr-1"></span>Free Space</div>
+                    <div><span className="inline-block w-3 h-3 bg-gray-500 mr-1"></span>Unknown</div>
+                    <div><span className="inline-block w-3 h-3 bg-white mr-1"></span>Obstacle</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {tab === "logs" && (
             <div className="bg-black text-gray-300 p-6 rounded-xl shadow-lg font-mono text-xs h-full overflow-y-auto border border-gray-800">
               <div className="sticky top-0 bg-black/90 pb-2 mb-4 border-b border-gray-800 flex justify-between items-center backdrop-blur-sm">
@@ -762,3 +852,65 @@ export default function Dashboard() {
     </div>
   );
 }
+
+// MapCanvas component to render occupancy grid
+const MapCanvas = React.forwardRef(({ width, height, resolution, data }, ref) => {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    if (!canvasRef.current || !data) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    // Scale to fit container while maintaining aspect ratio
+    const maxWidth = 800;
+    const maxHeight = 600;
+    const scale = Math.min(maxWidth / width, maxHeight / height, 2);
+    
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+
+    // Render the occupancy grid
+    const imageData = ctx.createImageData(canvas.width, canvas.height);
+    const pixelData = imageData.data;
+
+    for (let i = 0; i < width * height; i++) {
+      const value = data[i];
+      const scaledIndex = i * Math.pow(scale, 2);
+      
+      // Map occupancy value to color
+      // -1 or 255 = unknown (gray), 0-50 = free (white), 51-100 = occupied (black)
+      let color;
+      if (value < 0 || value === 255) {
+        color = { r: 128, g: 128, b: 128 }; // Unknown - gray
+      } else if (value <= 50) {
+        color = { r: 255, g: 255, b: 255 }; // Free - white
+      } else {
+        color = { r: 0, g: 0, b: 0 }; // Occupied - black
+      }
+
+      // Fill the scaled pixels
+      for (let sy = 0; sy < scale; sy++) {
+        for (let sx = 0; sx < scale; sx++) {
+          const yi = Math.floor(i / width);
+          const xi = i % width;
+          const idx = ((yi * scale + sy) * canvas.width + (xi * scale + sx)) * 4;
+          
+          if (idx < pixelData.length) {
+            pixelData[idx] = color.r;
+            pixelData[idx + 1] = color.g;
+            pixelData[idx + 2] = color.b;
+            pixelData[idx + 3] = 255;
+          }
+        }
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  }, [data, width, height, resolution]);
+
+  return <canvas ref={canvasRef} className="max-w-full max-h-full" />;
+});
+
+MapCanvas.displayName = "MapCanvas";
