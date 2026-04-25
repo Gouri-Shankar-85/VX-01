@@ -74,8 +74,8 @@
                 <motorSpeedCommandPubTopic>/gazebo/command/motor_speed</motorSpeedCommandPubTopic>
                 <control channel="0">
                     <jointName>prop_0</jointName>
-                    <multiplier>1.0</multiplier>
-                    <offset>-1000</offset>
+                    <multiplier>800</multiplier>
+                    <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
@@ -84,13 +84,13 @@
                     <d_gain>0</d_gain>
                     <i_max>0</i_max>
                     <i_min>0</i_min>
-                    <cmd_max>2.5</cmd_max>
-                    <cmd_min>-2.5</cmd_min>
+                    <cmd_max>1500</cmd_max>
+                    <cmd_min>-1500</cmd_min>
                 </control>
                 <control channel="1">
                     <jointName>prop_2</jointName>
-                    <multiplier>1.0</multiplier>
-                    <offset>-1000</offset>
+                    <multiplier>800</multiplier>
+                    <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
@@ -99,13 +99,13 @@
                     <d_gain>0</d_gain>
                     <i_max>0</i_max>
                     <i_min>0</i_min>
-                    <cmd_max>2.5</cmd_max>
-                    <cmd_min>-2.5</cmd_min>
+                    <cmd_max>1500</cmd_max>
+                    <cmd_min>-1500</cmd_min>
                 </control>
                 <control channel="2">
                     <jointName>prop_1</jointName>
-                    <multiplier>1.0</multiplier>
-                    <offset>-1000</offset>
+                    <multiplier>800</multiplier>
+                    <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
@@ -114,13 +114,13 @@
                     <d_gain>0</d_gain>
                     <i_max>0</i_max>
                     <i_min>0</i_min>
-                    <cmd_max>2.5</cmd_max>
-                    <cmd_min>-2.5</cmd_min>
+                    <cmd_max>1500</cmd_max>
+                    <cmd_min>-1500</cmd_min>
                 </control>
                 <control channel="3">
                     <jointName>prop_3</jointName>
-                    <multiplier>1.0</multiplier>
-                    <offset>-1000</offset>
+                    <multiplier>800</multiplier>
+                    <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
@@ -129,8 +129,8 @@
                     <d_gain>0</d_gain>
                     <i_max>0</i_max>
                     <i_min>0</i_min>
-                    <cmd_max>2.5</cmd_max>
-                    <cmd_min>-2.5</cmd_min>
+                    <cmd_max>1500</cmd_max>
+                    <cmd_min>-1500</cmd_min>
                 </control>
             </plugin>
             
