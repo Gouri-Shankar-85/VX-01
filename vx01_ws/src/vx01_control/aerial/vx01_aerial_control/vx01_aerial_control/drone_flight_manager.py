@@ -55,10 +55,12 @@ class DroneFlightManager(Node):
         # ── Parameters 
         self.declare_parameter('takeoff_altitude', 2.0)
         self.declare_parameter('auto_takeoff', True)
+        self.declare_parameter('hover_duration', 10.0)
         self.declare_parameter('setpoint_stream_count', 100)
 
         self._takeoff_alt = self.get_parameter('takeoff_altitude').value
         self._auto_takeoff = self.get_parameter('auto_takeoff').value
+        self._hover_duration = self.get_parameter('hover_duration').value
         self._stream_target = self.get_parameter('setpoint_stream_count').value
 
         # ── State 
@@ -70,6 +72,7 @@ class DroneFlightManager(Node):
         self._stream_count = 0
         self._latest_cmd = TwistStamped()
         self._last_cmd_time = self.get_clock().now()
+        self._hover_start_time = None
         self._has_external_cmd = False
 
         # ── Subscribers ─────────────────────────────────────────────────────
@@ -181,12 +184,19 @@ class DroneFlightManager(Node):
         elif self._phase == FlightPhase.TAKING_OFF:
             if self._altitude >= self._takeoff_alt * 0.90:
                 self.get_logger().info(
-                    f'Reached {self._altitude:.1f}m — hovering. '
+                    f'Reached {self._altitude:.1f}m — hovering for {self._hover_duration}s. '
                     f'Use /drone/cmd_vel to fly, /drone/land to land.')
                 self._phase = FlightPhase.HOVERING
+                self._hover_start_time = self.get_clock().now()
 
         elif self._phase == FlightPhase.HOVERING:
-            pass  # setpoint streaming handles flight
+            # Check for timed exit
+            if self._hover_start_time is not None:
+                elapsed = (self.get_clock().now() - self._hover_start_time).nanoseconds / 1e9
+                if elapsed >= self._hover_duration:
+                    self.get_logger().info(f'Hover duration ({self._hover_duration}s) expired — landing.')
+                    self._phase = FlightPhase.LANDING
+                    self._call_set_mode('LAND')
 
         elif self._phase == FlightPhase.LANDING:
             if not self._armed:

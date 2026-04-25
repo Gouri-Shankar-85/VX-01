@@ -37,8 +37,12 @@ class DroneTeleop(Node):
         self._arm_client = self.create_client(CommandBool, '/mavros/cmd/arming')
         self._mode_client = self.create_client(SetMode, '/mavros/set_mode')
 
-        self._channels = [1500] * 18
+        self._channels = [0] * 18
+        # Mode 2 mapping
+        self._channels[0] = 1500 # Roll
+        self._channels[1] = 1500 # Pitch
         self._channels[2] = 1000 # Throttle default
+        self._channels[3] = 1500 # Yaw
         
         self._step = 25 # Increment step
         
