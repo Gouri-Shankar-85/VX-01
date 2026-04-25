@@ -156,44 +156,38 @@ class DroneFlightManager(Node):
         elif self._phase == FlightPhase.STREAMING_SETPOINTS:
             self._stream_count += 1
             if self._stream_count >= self._stream_target:
-                self.get_logger().info('Setpoint stream complete — setting STABILIZE mode for arming')
+                self.get_logger().info('Setpoint stream complete — setting GUIDED mode')
                 self._phase = FlightPhase.SETTING_GUIDED
-                self._call_set_mode('STABILIZE')
+                self._call_set_mode('GUIDED')
 
         elif self._phase == FlightPhase.SETTING_GUIDED:
-            if self._mode == 'STABILIZE':
-                self.get_logger().info('STABILIZE mode confirmed — arming')
+            if self._mode == 'GUIDED':
+                self.get_logger().info('GUIDED mode confirmed — arming')
                 self._phase = FlightPhase.ARMING
                 self._call_arm(True)
             else:
                 if not hasattr(self, '_last_mode_req_time') or (self.get_clock().now() - self._last_mode_req_time).nanoseconds / 1e9 > 2.0:
-                    self._call_set_mode('STABILIZE')
+                    self._call_set_mode('GUIDED')
                     self._last_mode_req_time = self.get_clock().now()
 
         elif self._phase == FlightPhase.ARMING:
             if self._armed:
-                self.get_logger().info('Armed in STABILIZE! Switching to GUIDED for takeoff.')
+                self.get_logger().info(f'Armed! Commanding takeoff to {self._takeoff_alt}m')
                 self._phase = FlightPhase.TAKING_OFF
-                self._call_set_mode('GUIDED')
+                self._call_takeoff(self._takeoff_alt)
             else:
                 if not hasattr(self, '_last_arm_req_time') or (self.get_clock().now() - self._last_arm_req_time).nanoseconds / 1e9 > 2.0:
                     self._call_arm(True)
                     self._last_arm_req_time = self.get_clock().now()
 
         elif self._phase == FlightPhase.TAKING_OFF:
-            if self._mode == 'GUIDED':
-                self.get_logger().info(f'In GUIDED — commanding takeoff to {self._takeoff_alt}m')
-                self._call_takeoff(self._takeoff_alt)
-                self._phase = FlightPhase.HOVERING # Simple transition, next check is altitude in tick
-            
-        elif self._phase == FlightPhase.HOVERING:
-            # Re-purposed to check for takeoff completion if we just transitioned
             if self._altitude >= self._takeoff_alt * 0.90:
-                if not hasattr(self, '_hover_start_time') or self._hover_start_time is None:
-                    self.get_logger().info(
-                        f'Reached {self._altitude:.1f}m — hovering for {self._hover_duration}s.')
-                    self._hover_start_time = self.get_clock().now()
-            
+                self.get_logger().info(
+                    f'Reached {self._altitude:.1f}m — hovering for {self._hover_duration}s.')
+                self._phase = FlightPhase.HOVERING
+                self._hover_start_time = self.get_clock().now()
+
+        elif self._phase == FlightPhase.HOVERING:
             # Check for timed exit
             if hasattr(self, '_hover_start_time') and self._hover_start_time is not None:
                 elapsed = (self.get_clock().now() - self._hover_start_time).nanoseconds / 1e9
