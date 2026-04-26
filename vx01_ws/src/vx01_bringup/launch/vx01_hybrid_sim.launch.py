@@ -10,7 +10,8 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    vx01_sim_pkg = get_package_share_directory('vx01_simulation')
+    vx01_sim_pkg    = get_package_share_directory('vx01_simulation')
+    vx01_bringup_pkg = get_package_share_directory('vx01_bringup')
 
     sim_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -19,11 +20,12 @@ def generate_launch_description():
     )
 
     bypass_param = os.path.join(
-        get_package_share_directory('vx01_bringup'),
+        vx01_bringup_pkg,
         'config',
         'ardupilot_sim_bypass.param'
     )
 
+    # ArduPilot SITL
     sitl_layer = ExecuteProcess(
         cmd=[
             '/ardupilot/build/sitl/bin/arducopter',
@@ -43,7 +45,7 @@ def generate_launch_description():
             {'fcu_url': 'tcp://127.0.0.1:5760'},
             {'use_sim_time': True},
             os.path.join(
-                get_package_share_directory('vx01_bringup'),
+                vx01_bringup_pkg,
                 'config',
                 'mavros_sim_config.yaml'
             ),
@@ -51,7 +53,7 @@ def generate_launch_description():
             {'target_system_id': 1},
             {'target_component_id': 1},
             {'fcu_protocol': 'v2.0'},
-            {'plugin_denylist': ['ftp']}
+            {'plugin_denylist': ['ftp']},
         ]
     )
 
@@ -68,16 +70,6 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}]
     )
 
-    drone_flight_manager = Node(
-        package='vx01_aerial_control',
-        executable='drone_flight_manager',
-        output='screen',
-        parameters=[{
-            'use_sim_time': True,
-            'takeoff_altitude': 2.0,
-            'auto_takeoff': False,
-        }]
-    )
 
     web_video_server = Node(
         package='web_video_server',
@@ -91,13 +83,16 @@ def generate_launch_description():
         sitl_layer,
 
         TimerAction(
-            period=20.0,
+            period=35.0,
             actions=[mavros_node]
         ),
 
         TimerAction(
-            period=23.0,
-            actions=[mode_manager, aerial_controller,
-                     drone_flight_manager, web_video_server]
+            period=42.0,
+            actions=[
+                mode_manager,
+                aerial_controller,
+                web_video_server,
+            ]
         ),
     ])
