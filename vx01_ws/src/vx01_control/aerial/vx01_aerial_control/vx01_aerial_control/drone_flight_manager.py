@@ -75,7 +75,7 @@ class DroneFlightManager(Node):
         self._hover_start_time = None
         self._has_external_cmd = False
 
-        # ── Subscribers ─────────────────────────────────────────────────────
+        # ── Subscribers 
         self.create_subscription(
             State, '/mavros/state', self._state_cb, 10)
 

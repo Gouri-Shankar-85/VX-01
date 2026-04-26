@@ -46,7 +46,7 @@
     <joint name="arm_joint2" type="revolute">
         <origin
             xyz="-0.0305865326107599 0.0270219698219533 0.115"
-            rpy="-1.5707963267949 0 0.824761604187581" />
+            rpy="-1.5707963267949 0 0.785398" />
         <parent
             link="base_link" />
         <child
