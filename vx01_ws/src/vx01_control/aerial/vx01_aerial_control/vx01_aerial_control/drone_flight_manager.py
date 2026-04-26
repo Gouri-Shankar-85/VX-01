@@ -13,7 +13,6 @@ class FlightPhase(Enum):
     IDLE                  = auto()
     WAITING_FOR_CONNECTION = auto()
     STREAMING_SETPOINTS   = auto()
-    WAITING_FOR_EKF       = auto()   
     SETTING_GUIDED        = auto()
     ARMING                = auto()
     TAKING_OFF            = auto()
@@ -31,13 +30,11 @@ class DroneFlightManager(Node):
         self.declare_parameter('auto_takeoff',          True)
         self.declare_parameter('hover_duration',        15.0)   
         self.declare_parameter('setpoint_stream_count', 200)    
-        self.declare_parameter('ekf_stable_seconds',    5.0)    
 
         self._takeoff_alt    = self.get_parameter('takeoff_altitude').value
         self._auto_takeoff   = self.get_parameter('auto_takeoff').value
         self._hover_duration = self.get_parameter('hover_duration').value
         self._stream_target  = self.get_parameter('setpoint_stream_count').value
-        self._ekf_stable_req = self.get_parameter('ekf_stable_seconds').value
 
         # ── State ────────────────────────────────────────────────────────────
         self._phase        = FlightPhase.WAITING_FOR_CONNECTION
@@ -46,10 +43,6 @@ class DroneFlightManager(Node):
         self._mode         = ''
         self._altitude     = 0.0
         self._stream_count = 0
-
-        # EKF health tracking 
-        self._ekf_ok          = False   # current tick health
-        self._ekf_stable_since = None   # timestamp when EKF first became healthy
 
         self._latest_cmd       = TwistStamped()
         self._last_cmd_time    = self.get_clock().now()
@@ -74,10 +67,6 @@ class DroneFlightManager(Node):
             self._pose_cb, sensor_qos)
 
         self.create_subscription(
-            EstimatorStatus, '/mavros/estimator_status',
-            self._ekf_cb, sensor_qos)
-
-        self.create_subscription(
             TwistStamped, '/drone/cmd_vel', self._cmd_vel_cb, 10)
         self.create_subscription(
             Bool, '/drone/land', self._land_cb, 10)
@@ -98,8 +87,7 @@ class DroneFlightManager(Node):
             f'DroneFlightManager initialized. '
             f'auto_takeoff={self._auto_takeoff}, '
             f'altitude={self._takeoff_alt}m, '
-            f'stream_count={self._stream_target}, '
-            f'ekf_stable_req={self._ekf_stable_req}s')
+            f'stream_count={self._stream_target}')
 
     # ── Subscriber callbacks ─────────────────────────────────────────────────
 
@@ -110,32 +98,6 @@ class DroneFlightManager(Node):
 
     def _pose_cb(self, msg: PoseStamped):
         self._altitude = msg.pose.position.z
-
-    def _ekf_cb(self, msg: EstimatorStatus):
-    
-        healthy = (
-            msg.pos_horiz_abs and
-            msg.vel_horiz and
-            msg.pred_pos_horiz_abs
-        )
-
-        now = self.get_clock().now()
-
-        if healthy and not self._ekf_ok:
-            # Just became healthy — start the stability timer
-            self._ekf_stable_since = now
-            self.get_logger().info('EKF health flags OK — starting stability timer...')
-
-        elif not healthy and self._ekf_ok:
-            # Just became unhealthy — reset the timer
-            self._ekf_stable_since = None
-            if self._phase in (FlightPhase.HOVERING, FlightPhase.TAKING_OFF):
-                self.get_logger().error(
-                    'EKF diverged mid-flight! Switching to LAND mode.')
-                self._phase = FlightPhase.LANDING
-                self._call_set_mode('LAND')
-
-        self._ekf_ok = healthy
 
     def _cmd_vel_cb(self, msg: TwistStamped):
         self._latest_cmd    = msg
@@ -171,27 +133,9 @@ class DroneFlightManager(Node):
         elif self._phase == FlightPhase.STREAMING_SETPOINTS:
             self._stream_count += 1
             if self._stream_count >= self._stream_target:
-                self._phase = FlightPhase.WAITING_FOR_EKF
-                self.get_logger().info(
-                    f'Setpoint stream complete — waiting for EKF to converge '
-                    f'(need {self._ekf_stable_req}s of healthy estimates)...')
-
-        elif self._phase == FlightPhase.WAITING_FOR_EKF:
-            if self._ekf_ok and self._ekf_stable_since is not None:
-                elapsed = (self.get_clock().now() - self._ekf_stable_since).nanoseconds / 1e9
-                if elapsed >= self._ekf_stable_req:
-                    self.get_logger().info(
-                        f'EKF stable for {elapsed:.1f}s — setting GUIDED mode')
-                    self._phase = FlightPhase.SETTING_GUIDED
-                    self._call_set_mode('GUIDED')
-                else:
-                    self.get_logger().info(
-                        f'EKF healthy for {elapsed:.1f}/{self._ekf_stable_req:.0f}s...',
-                        throttle_duration_sec=2.0)
-            else:
-                self.get_logger().info(
-                    'Waiting for EKF health flags (pos_horiz_abs + vel_horiz + pred_pos_horiz_abs)...',
-                    throttle_duration_sec=5.0)
+                self.get_logger().info('Setpoint stream complete — setting GUIDED mode')
+                self._phase = FlightPhase.SETTING_GUIDED
+                self._call_set_mode('GUIDED')
 
         elif self._phase == FlightPhase.SETTING_GUIDED:
             if self._mode == 'GUIDED':
