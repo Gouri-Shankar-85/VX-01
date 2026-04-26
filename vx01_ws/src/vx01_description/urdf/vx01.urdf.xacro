@@ -79,7 +79,7 @@
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
-                    <p_gain>0.5</p_gain>
+                    <p_gain>5.0</p_gain>
                     <i_gain>0</i_gain>
                     <d_gain>0</d_gain>
                     <i_max>0</i_max>
@@ -96,7 +96,7 @@
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
-                    <p_gain>0.5</p_gain>
+                    <p_gain>5.0</p_gain>
                     <i_gain>0</i_gain>
                     <d_gain>0</d_gain>
                     <i_max>0</i_max>
@@ -113,7 +113,7 @@
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
-                    <p_gain>0.5</p_gain>
+                    <p_gain>5.0</p_gain>
                     <i_gain>0</i_gain>
                     <d_gain>0</d_gain>
                     <i_max>0</i_max>
@@ -130,7 +130,7 @@
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
                     <type>VELOCITY</type>
-                    <p_gain>0.5</p_gain>
+                    <p_gain>5.0</p_gain>
                     <i_gain>0</i_gain>
                     <d_gain>0</d_gain>
                     <i_max>0</i_max>
