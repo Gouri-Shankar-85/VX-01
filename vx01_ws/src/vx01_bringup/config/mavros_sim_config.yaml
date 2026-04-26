@@ -12,9 +12,10 @@
       disable_diag: true      
 
     param:
-      startup_timeout: 120.0
-      pull_timeout: 120.0
-      retries: 20
+      startup_timeout: 60.0
+      pull_timeout: 30.0
+      retries: 10
+      force_pull: true
 
     distance_sensor:
       rangefinder_pub:
