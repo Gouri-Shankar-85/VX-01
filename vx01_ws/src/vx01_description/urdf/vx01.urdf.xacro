@@ -108,7 +108,7 @@
                 <!-- Channel 2 → Motor 3 → Front-Left → prop_1 (CW) -->
                 <control channel="2">
                     <jointName>prop_1</jointName>
-                    <multiplier>1500</multiplier>
+                    <multiplier>-1500</multiplier>
                     <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
@@ -125,7 +125,7 @@
                 <!-- Channel 3 → Motor 4 → Back-Right → prop_3 (CW) -->
                 <control channel="3">
                     <jointName>prop_3</jointName>
-                    <multiplier>1500</multiplier>
+                    <multiplier>-1500</multiplier>
                     <offset>0</offset>
                     <servo_min>1000</servo_min>
                     <servo_max>2000</servo_max>
