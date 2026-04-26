@@ -36,8 +36,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -54,8 +54,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -72,8 +72,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -91,8 +91,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -109,8 +109,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -127,8 +127,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -146,8 +146,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -164,8 +164,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -182,8 +182,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -201,8 +201,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -219,8 +219,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -237,8 +237,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -256,8 +256,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -274,8 +274,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -292,8 +292,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -311,8 +311,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -329,8 +329,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
@@ -347,8 +347,8 @@
                 <emissive>0.0 0.0 0.0 1.0</emissive>
             </material>
         </visual>
-        <mu1>2.0</mu1>
-        <mu2>2.0</mu2>
+        <mu1>0.8</mu1>
+        <mu2>0.8</mu2>
         <kp>1e6</kp>
         <kd>10.0</kd>
         <minDepth>0.001</minDepth>
