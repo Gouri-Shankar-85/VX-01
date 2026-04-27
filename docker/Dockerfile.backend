@@ -1,0 +1,15 @@
+FROM node:20-slim
+
+WORKDIR /app
+
+# Install docker-cli to allow the backend to call 'docker exec'
+RUN apt-get update && apt-get install -y docker.io && rm -rf /var/lib/apt/lists/*
+
+COPY vx01_dashboard/backend/package*.json ./
+RUN npm ci
+
+COPY vx01_dashboard/backend/server.js ./
+
+EXPOSE 3001
+
+CMD ["node", "server.js"]

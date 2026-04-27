@@ -11,7 +11,8 @@ export default function Dashboard() {
   const [robotActive, setRobotActive] = useState(false);
   const [speedMultiplier, setSpeedMultiplier] = useState(1.0);
   const [runningProcesses, setRunningProcesses] = useState([]);
-  const [stopConfirm, setStopConfirm] = useState(false);  // 2-step confirm for stop-all
+  const [stopConfirm, setStopConfirm] = useState(false);
+  const [isHardwareMode, setIsHardwareMode] = useState(false);
 
   const [telemetry, setTelemetry] = useState({
     battery: "--",
@@ -339,7 +340,7 @@ export default function Dashboard() {
     addLog("WARN", " EMERGENCY SHUTDOWN — terminating all simulation processes...");
     try {
       const res = await fetch(`http://${window.location.hostname}:3001/api/stop-all`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: "{}"
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ container_name: isHardwareMode ? 'vx01-robot' : 'vx01-dev' })
       });
       const data = await res.json();
       addLog("INFO", data.message || "Shutdown initiated");
@@ -355,7 +356,7 @@ export default function Dashboard() {
     try {
       const res = await fetch(`http://${window.location.hostname}:3001/api/launch`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ command_id, command_string })
+        body: JSON.stringify({ command_id, command_string, container_name: isHardwareMode ? 'vx01-robot' : 'vx01-dev' })
       });
       const data = await res.json();
       if (!res.ok) addLog("ERROR", data.error || "Failed to launch process");
@@ -389,6 +390,24 @@ export default function Dashboard() {
                 </span>
               </div>
             ))}
+          </div>
+
+          <div className="mb-8">
+            <p className="text-gray-500 text-xs font-bold tracking-widest uppercase mb-3 text-center">Operation Mode</p>
+            <div className="flex gap-1 bg-gray-950 p-1 rounded-xl border border-gray-800">
+              <button 
+                onClick={() => setIsHardwareMode(false)}
+                className={`flex-1 py-2 text-[10px] font-black rounded-lg transition-all ${!isHardwareMode ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                SIMULATION
+              </button>
+              <button 
+                onClick={() => setIsHardwareMode(true)}
+                className={`flex-1 py-2 text-[10px] font-black rounded-lg transition-all ${isHardwareMode ? 'bg-amber-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                HARDWARE
+              </button>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -474,7 +493,7 @@ export default function Dashboard() {
                 <div className="flex-1 bg-black relative flex items-center justify-center">
                   {rosConnected ? (
                     <img
-                      src={`http://${window.location.hostname}:8080/stream?topic=/depth_camera/color/image_raw&width=1280&height=720`}
+                      src={`http://${window.location.hostname}:8080/stream?topic=${isHardwareMode ? '/vx01_camera/depth_camera/color/image_raw' : '/depth_camera/color/image_raw'}&width=1280&height=720`}
                       className="w-full h-full object-cover"
                       alt="Primary Optical"
                       onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
@@ -511,26 +530,36 @@ export default function Dashboard() {
                     <Settings size={14} /> IGNITION SEQUENCE
                   </h3>
                   <div className="space-y-3 font-mono flex-1">
-                    {[
-                      { id: "sim", label: "1. BOOT HYBRID SIMULATOR", icon: "", cmd: "ros2 launch vx01_bringup vx01_hybrid_sim.launch.py", color: "blue" },
-                      { id: "map", label: "2. INITIALIZE VISUAL SLAM", icon: "", cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py use_sim_time:=true", color: "purple" },
-                      { id: "walk", label: "3. START HEXAPOD", icon: "", cmd: "ros2 launch vx01_hexapod_locomotion hexapod.launch.py use_sim_time:=true", color: "teal" },
-                    ].map(({ id, label, icon, cmd, color }) => {
+                    {(isHardwareMode ? [
+                      { id: "hw_base", label: "1. INITIALIZE HARDWARE", icon: "🔌", cmd: "ros2 launch vx01_bringup vx01.launch.py", color: "amber" },
+                      { id: "map", label: "2. INITIALIZE SLAM (RDK)", icon: "🗺", cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py", color: "indigo" },
+                      { id: "walk", label: "3. START HEXAPOD GAIT", icon: "🕷", cmd: "ros2 launch vx01_hexapod_locomotion hexapod.launch.py", color: "emerald" },
+                    ] : [
+                      { id: "sim", label: "1. BOOT HYBRID SIMULATOR", icon: "🎮", cmd: "ros2 launch vx01_bringup vx01_hybrid_sim.launch.py", color: "blue" },
+                      { id: "map", label: "2. INITIALIZE VISUAL SLAM", icon: "🗺", cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py use_sim_time:=true", color: "purple" },
+                      { id: "walk", label: "3. START HEXAPOD GAIT", icon: "🕷", cmd: "ros2 launch vx01_hexapod_locomotion hexapod.launch.py use_sim_time:=true", color: "teal" },
+                    ]).map(({ id, label, icon, cmd, color }) => {
                       const isRunning = runningProcesses.includes(id);
                       return (
                         <button
                           key={id}
                           onClick={() => backendLaunch(id, cmd)}
-                          className={`w-full p-4 rounded border-l-4 transition-all flex items-center justify-between gap-3
+                          className={`w-full p-4 rounded-xl border transition-all flex items-center justify-between group relative overflow-hidden
                             ${isRunning
-                              ? `bg-${color}-600/20 text-${color}-400 border-${color}-500 ring-1 ring-${color}-500/30`
-                              : `bg-gray-800/40 text-gray-400 border-gray-700 hover:bg-gray-800 hover:text-gray-200`}`}
+                              ? `bg-${color}-500/10 text-${color}-400 border-${color}-500/50 shadow-lg shadow-${color}-500/10`
+                              : `bg-gray-800/40 text-gray-400 border-gray-800 hover:border-gray-600 hover:bg-gray-800/60`}`}
                         >
-                          <div className="flex items-center gap-3">
-                            <span className="text-xl opacity-80">{icon}</span>
-                            <span className="text-xs font-black tracking-tight">{label}</span>
+                          <div className="flex items-center gap-3 relative z-10">
+                            <span className="text-xl group-hover:scale-110 transition-transform">{icon}</span>
+                            <span className="text-[10px] font-black tracking-widest">{label}</span>
                           </div>
-                          {isRunning && <span className="text-[10px] animate-pulse font-black px-2 py-0.5 rounded bg-black/40">READY</span>}
+                          {isRunning && (
+                            <div className="flex items-center gap-2 relative z-10">
+                              <span className="h-1.5 w-1.5 rounded-full bg-current animate-ping" />
+                              <span className="text-[9px] font-black tracking-tight">ACTIVE</span>
+                            </div>
+                          )}
+                          {!isRunning && <div className={`absolute inset-y-0 left-0 w-0 bg-${color}-500/10 group-hover:w-full transition-all duration-500`} />}
                         </button>
                       );
                     })}
@@ -641,9 +670,12 @@ export default function Dashboard() {
               <div className="grid grid-cols-2 gap-8 items-start">
 
                 {/* Hexapod Control */}
-                <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6">
-                  <h3 className="font-black text-xl mb-2 text-blue-500 border-b border-gray-800 pb-4">GROUND MODE</h3>
-                  <p className="text-gray-500 font-mono text-xs mb-4">First launch hexapod, then enable manual control to move</p>
+                <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl shadow-2xl p-8 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
+                    <Activity size={80} />
+                  </div>
+                  <h3 className="font-black text-2xl mb-2 text-blue-400 tracking-tighter uppercase italic">Ground Protocol</h3>
+                  <p className="text-gray-500 font-mono text-[10px] mb-6 tracking-widest uppercase">Manual Tripod Gait Override</p>
 
                   <div className="mb-6">
                     <button
@@ -691,9 +723,19 @@ export default function Dashboard() {
                 </div>
 
                 {/* Drone Control */}
-                <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6">
-                  <h3 className="font-black text-xl mb-2 text-indigo-400 border-b border-gray-800 pb-4">AERIAL MODE</h3>
-                  <p className="text-gray-500 font-mono text-xs mb-8">Click Direction To Cruise, Click Stop To Hover</p>
+                <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl shadow-2xl p-8 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
+                    <Target size={80} />
+                  </div>
+                  <h3 className="font-black text-2xl mb-2 text-indigo-400 tracking-tighter uppercase italic">Aerial Protocol</h3>
+                  <p className="text-gray-500 font-mono text-[10px] mb-6 tracking-widest uppercase text-center">Autonomous Guided Flight Interface</p>
+
+                  {isHardwareMode && (
+                    <div className="bg-rose-500/10 border border-rose-500/30 p-3 rounded-lg flex items-center gap-3 mb-6 animate-pulse">
+                      <AlertTriangle className="text-rose-500" size={18} />
+                      <span className="text-rose-500 text-[10px] font-black uppercase">Caution: High-RPM Propellers Active</span>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-8 font-mono text-sm max-w-sm mx-auto">
                     <div className="flex flex-col items-center">

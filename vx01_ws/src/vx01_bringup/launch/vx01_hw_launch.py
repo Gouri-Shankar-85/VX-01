@@ -132,6 +132,28 @@ def generate_launch_description():
         )
     )
 
+    mavros_config_file = os.path.join(vx01_bringup_pkg, 'config', 'mavros', 'mavros_params.yaml')
+
+    mavros_node = Node(
+        package='mavros',
+        executable='mavros_node',
+        name='mavros',
+        output='screen',
+        parameters=[mavros_config_file],
+    )
+
+    mavros_bridge_node = Node(
+        package='vx01_mavros_bridge',
+        executable='mavros_bridge_node',
+        name='vx01_mavros_bridge',
+        output='screen',
+        parameters=[{
+            'use_sim_time': False,
+            'base_frame': 'base_link',
+            'target_frame': 'map',
+        }]
+    )
+
     nodes = [
         control_node,
         robot_state_publisher_node,
@@ -141,7 +163,9 @@ def generate_launch_description():
         delay_leg2_controller_spawner_after_joint_state_broadcaster_spawner,
         delay_leg3_controller_spawner_after_joint_state_broadcaster_spawner,
         delay_leg4_controller_spawner_after_joint_state_broadcaster_spawner,
-        delay_leg5_controller_spawner_after_joint_state_broadcaster_spawner
+        delay_leg5_controller_spawner_after_joint_state_broadcaster_spawner,
+        mavros_node,
+        mavros_bridge_node
     ]
     
     return LaunchDescription([serial_port_arg] + nodes)

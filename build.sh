@@ -70,16 +70,23 @@ build_sim() {
 build_dashboard() {
     [ "${REGISTRY}" = "yourdockerhub" ] && \
         die "Set DOCKER_REGISTRY in .env to your Docker Hub username first"
-    info "Building dashboard image..."
+    info "Building dashboard images..."
     docker build \
         --platform linux/amd64 \
         -f docker/Dockerfile.dashboard \
         -t vx01-dashboard:latest \
         -t ${REGISTRY}/vx01-dashboard:latest \
         .
-    info "Pushing dashboard image..."
+    docker build \
+        --platform linux/amd64 \
+        -f docker/Dockerfile.backend \
+        -t vx01-dashboard-backend:latest \
+        -t ${REGISTRY}/vx01-dashboard-backend:latest \
+        .
+    info "Pushing dashboard images..."
     docker push ${REGISTRY}/vx01-dashboard:latest
-    ok "Dashboard image pushed: ${REGISTRY}/vx01-dashboard:latest"
+    docker push ${REGISTRY}/vx01-dashboard-backend:latest
+    ok "Dashboard images pushed: ${REGISTRY}/vx01-dashboard(-backend):latest"
 }
 
 build_arm() {
@@ -145,6 +152,7 @@ push_images() {
     docker push ${REGISTRY}/vx01-base:${TAG}-amd64
     docker push ${REGISTRY}/vx01-sim:${TAG}
     docker push ${REGISTRY}/vx01-dashboard:latest
+    docker push ${REGISTRY}/vx01-dashboard-backend:latest
     ok "All images pushed"
 }
 

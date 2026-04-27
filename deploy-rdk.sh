@@ -102,6 +102,16 @@ services:
     ports:
       - "5173:5173"
 
+  vx01-dashboard-backend:
+    image: ${REGISTRY}/vx01-dashboard-backend:latest
+    container_name: vx01-dashboard-backend
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "3001:3001"
+
 volumes:
   vx01_logs:
 EOF
@@ -109,6 +119,7 @@ EOF
 echo "Pulling images..."
 docker pull ${REGISTRY}/vx01-base:humble-arm64
 docker pull ${REGISTRY}/vx01-dashboard:latest
+docker pull ${REGISTRY}/vx01-dashboard-backend:latest
 
 echo "Starting containers..."
 cd "${HOME_DIR}/vx01"

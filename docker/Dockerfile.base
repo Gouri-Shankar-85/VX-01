@@ -51,6 +51,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-rosbridge-server \
     ros-humble-rosbridge-suite \
     ros-humble-tf2-web-republisher \
+    ros-humble-web-video-server \
+    ros-humble-foxglove-bridge \
     && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -81,7 +83,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xterm \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install --no-cache-dir pyserial hidapi
+RUN pip3 install --no-cache-dir pyserial hidapi gpiozero
 
 RUN rosdep init 2>/dev/null || true && \
     rosdep update --rosdistro humble
