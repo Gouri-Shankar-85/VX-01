@@ -33,8 +33,8 @@ export default function Dashboard() {
   const [logs, setLogs] = useState([]);
   const [mapImage, setMapImage] = useState(null);
   const [mapMetadata, setMapMetadata] = useState(null);
-  const [hexapodManualEnabled, setHexapodManualEnabled] = useState(false);
-  const [droneManualEnabled, setDroneManualEnabled] = useState(false);
+  const [droneRCState, setDroneRCState] = useState({ roll: 1500, pitch: 1500, throttle: 1000, yaw: 1500 });
+  const [hexapodState, setHexapodState] = useState({ vx: 0.0, vy: 0.0, omega: 0.0 });
 
   const rosRef = useRef(null);
   const droneIntervalRef = useRef(null);
@@ -111,6 +111,19 @@ export default function Dashboard() {
       setTelemetry((t) => ({ ...t, speed: `${Math.sqrt(vx * vx + vy * vy).toFixed(1)} m/s` }));
     });
 
+    const cmdVelSub = new ROSLIB.Topic({
+      ros,
+      name: "/cmd_vel",
+      messageType: "geometry_msgs/Twist",
+    });
+    cmdVelSub.subscribe((msg) => {
+      // Only update speed if velocity_local isn't providing data (simple heuristic)
+      const speed = Math.sqrt(msg.linear.x ** 2 + msg.linear.y ** 2);
+      if (speed > 0) {
+        setTelemetry((t) => ({ ...t, speed: `${speed.toFixed(1)} m/s` }));
+      }
+    });
+
     const state = new ROSLIB.Topic({
       ros,
       name: "/mavros/state",
@@ -127,10 +140,10 @@ export default function Dashboard() {
     const missionState = new ROSLIB.Topic({
       ros,
       name: "/mission_state",
-      messageType: "vx01_msgs/msg/MissionState",
+      messageType: "std_msgs/String",
     });
     missionState.subscribe((msg) => {
-      setTelemetry((t) => ({ ...t, mission_phase: msg.mission_phase }));
+      setTelemetry((t) => ({ ...t, mission_phase: msg.data }));
     });
 
     const victimDet = new ROSLIB.Topic({
@@ -168,10 +181,10 @@ export default function Dashboard() {
     const robotModeTopic = new ROSLIB.Topic({
       ros,
       name: "/robot_mode",
-      messageType: "vx01_msgs/msg/RobotMode",
+      messageType: "std_msgs/String",
     });
     robotModeTopic.subscribe((msg) => {
-      setTelemetry((t) => ({ ...t, robot_mode: msg.mode }));
+      setTelemetry((t) => ({ ...t, robot_mode: msg.data }));
     });
 
     // Subscribe to RTAB-Map occupancy grid
@@ -207,68 +220,62 @@ export default function Dashboard() {
     };
   }, []);
 
-  const sendHexapodCmd = (lx, ly, az) => {
+  const updateHexapod = (dx, dy, da, reset = false) => {
     if (!rosRef.current || !rosConnected) return;
+    const newState = reset ? { vx: 0, vy: 0, omega: 0 } : {
+      vx: Math.max(-0.2, Math.min(0.2, hexapodState.vx + dx)),
+      vy: Math.max(-0.2, Math.min(0.2, hexapodState.vy + dy)),
+      omega: Math.max(-0.6, Math.min(0.6, hexapodState.omega + da))
+    };
+    setHexapodState(newState);
     const cmdVel = new ROSLIB.Topic({ ros: rosRef.current, name: "/cmd_vel", messageType: "geometry_msgs/msg/Twist" });
     cmdVel.publish(new ROSLIB.Message({
-      linear: { x: lx * speedMultiplier, y: ly * speedMultiplier, z: 0 },
-      angular: { x: 0, y: 0, z: az * speedMultiplier },
+      linear: { x: newState.vx, y: newState.vy, z: 0 },
+      angular: { x: 0, y: 0, z: newState.omega },
     }));
   };
 
   const stopHexapod = () => {
-    if (!rosRef.current || !rosConnected) return;
-    const cmdVel = new ROSLIB.Topic({ ros: rosRef.current, name: "/cmd_vel", messageType: "geometry_msgs/msg/Twist" });
-    cmdVel.publish(new ROSLIB.Message({
-      linear: { x: 0, y: 0, z: 0 },
-      angular: { x: 0, y: 0, z: 0 },
-    }));
+    updateHexapod(0, 0, 0, true);
   };
 
-  const startDroneCmd = (lx, ly, lz, az) => {
+  const updateDroneRC = (dr, dp, dt, dy) => {
     if (!rosRef.current || !rosConnected) return;
+    const newState = {
+      roll: Math.max(1000, Math.min(2000, droneRCState.roll + dr)),
+      pitch: Math.max(1000, Math.min(2000, droneRCState.pitch + dp)),
+      throttle: Math.max(1000, Math.min(2000, droneRCState.throttle + dt)),
+      yaw: Math.max(1000, Math.min(2000, droneRCState.yaw + dy))
+    };
+    setDroneRCState(newState);
+    
+    if (droneIntervalRef.current) clearInterval(droneIntervalRef.current);
 
-    if (droneIntervalRef.current) {
-      clearInterval(droneIntervalRef.current);
-    }
-
-    const topic = new ROSLIB.Topic({
+    const rcTopic = new ROSLIB.Topic({
       ros: rosRef.current,
-      name: "/drone/cmd_vel",
-      messageType: "geometry_msgs/msg/TwistStamped"
+      name: "/mavros/rc/override",
+      messageType: "mavros_msgs/OverrideRCIn"
     });
 
-    const publishCmd = () => {
-      const now = Date.now();
-
-      const msg = new ROSLIB.Message({
-        header: {
-          stamp: { sec: 0, nanosec: 0 },
-          frame_id: "base_link"
-        },
-        twist: {
-          linear: {
-            x: lx * speedMultiplier,
-            y: ly * speedMultiplier,
-            z: lz * speedMultiplier
-          },
-          angular: {
-            x: 0,
-            y: 0,
-            z: az * speedMultiplier
-          }
-        }
-      });
-
-      topic.publish(msg);
+    const publishRC = () => {
+      const channels = Array(18).fill(0);
+      channels[0] = newState.roll;
+      channels[1] = newState.pitch;
+      channels[2] = newState.throttle;
+      channels[3] = newState.yaw;
+      rcTopic.publish(new ROSLIB.Message({ channels }));
     };
 
-    droneIntervalRef.current = setInterval(publishCmd, 50);
+    droneIntervalRef.current = setInterval(publishRC, 50);
   };
 
   const stopDrone = () => {
     if (droneIntervalRef.current) clearInterval(droneIntervalRef.current);
-    startDroneCmd(0, 0, 0, 0);
+    const rcTopic = new ROSLIB.Topic({ ros: rosRef.current, name: "/mavros/rc/override", messageType: "mavros_msgs/OverrideRCIn" });
+    const channels = Array(18).fill(0);
+    channels[0] = 1500; channels[1] = 1500; channels[2] = 1000; channels[3] = 1500;
+    rcTopic.publish(new ROSLIB.Message({ channels }));
+    setDroneRCState({ roll: 1500, pitch: 1500, throttle: 1000, yaw: 1500 });
   };
 
   const isArmedRef = useRef(false);
@@ -375,8 +382,8 @@ export default function Dashboard() {
       {/* Sidebar */}
       <div className="w-64 bg-gray-900 border-r border-gray-800 p-5 flex flex-col justify-between shadow-2xl z-10">
         <div>
-          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-600 mb-8 tracking-wider">
-            VELATRIX
+          <h1 className="text-2xl font-bold text-gray-100 mb-8 tracking-tight">
+            VX-01 MISSION CONTROL
           </h1>
 
           <div className="mb-8">
@@ -387,7 +394,7 @@ export default function Dashboard() {
                   <span className={`h-2.5 w-2.5 rounded-full shadow-lg ${robot.status === "online" ? "bg-emerald-400 shadow-emerald-400/50 animate-pulse" : "bg-rose-500 shadow-rose-500/50"}`} />
                   <span className="font-bold tracking-wide uppercase text-sm">{robot.name}</span>
                 </div>
-                <span className={`text-[10px] font-black px-2 py-0.5 rounded border ${robot.status === "online" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" : "text-rose-400 border-rose-500/30 bg-rose-500/10"}`}>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${robot.status === "online" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" : "text-rose-400 border-rose-500/30 bg-rose-500/10"}`}>
                   {robot.status === "online" ? "ONLINE" : "OFFLINE"}
                 </span>
               </div>
@@ -399,13 +406,13 @@ export default function Dashboard() {
             <div className="flex gap-1 bg-gray-950 p-1 rounded-xl border border-gray-800">
               <button 
                 onClick={() => setIsHardwareMode(false)}
-                className={`flex-1 py-2 text-[10px] font-black rounded-lg transition-all ${!isHardwareMode ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${!isHardwareMode ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
               >
                 SIMULATION
               </button>
               <button 
                 onClick={() => setIsHardwareMode(true)}
-                className={`flex-1 py-2 text-[10px] font-black rounded-lg transition-all ${isHardwareMode ? 'bg-amber-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${isHardwareMode ? 'bg-amber-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
               >
                 HARDWARE
               </button>
@@ -533,15 +540,15 @@ export default function Dashboard() {
                   </h3>
                   <div className="space-y-3 font-mono flex-1">
                     {(isHardwareMode ? [
-                      { id: "hw_base", label: "1. INITIALIZE HARDWARE", icon: "🔌", cmd: "ros2 launch vx01_bringup vx01.launch.py", color: "amber" },
-                      { id: "map", label: "2. INITIALIZE SLAM (RDK)", icon: "🗺", cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py", color: "indigo" },
-                      { id: "walk", label: "3. START HEXAPOD GAIT", icon: "🕷", cmd: "ros2 launch vx01_hexapod_locomotion hexapod.launch.py", color: "emerald" },
-                      { id: "teleop_hx", label: "4. LAUNCH HEXAPOD TELEOP", icon: "⌨️", cmd: "ros2 run vx01_hexapod_locomotion teleop_node", color: "blue" },
+                      { id: "hw_base", label: "1. INITIALIZE HARDWARE", icon: "", cmd: "ros2 launch vx01_bringup vx01.launch.py", color: "amber" },
+                      { id: "map", label: "2. INITIALIZE SLAM (RDK)", icon: "", cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py", color: "indigo" },
+                      { id: "walk", label: "3. START HEXAPOD GAIT", icon: "", cmd: "ros2 launch vx01_hexapod_locomotion hexapod.launch.py", color: "emerald" },
+                      { id: "teleop_hx", label: "4. LAUNCH HEXAPOD TELEOP", icon: "", cmd: "ros2 run vx01_hexapod_locomotion teleop_node", color: "blue" },
                     ] : [
-                      { id: "sim", label: "1. BOOT HYBRID SIMULATOR", icon: "🎮", cmd: "ros2 launch vx01_bringup vx01_hybrid_sim.launch.py", color: "blue" },
-                      { id: "map", label: "2. INITIALIZE VISUAL SLAM", icon: "🗺", cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py use_sim_time:=true", color: "purple" },
-                      { id: "walk", label: "3. START HEXAPOD GAIT", icon: "🕷", cmd: "ros2 launch vx01_hexapod_locomotion hexapod.launch.py use_sim_time:=true", color: "teal" },
-                      { id: "teleop_dr", label: "4. LAUNCH DRONE TELEOP", icon: "🚁", cmd: "ros2 run vx01_aerial_control drone_teleop", color: "orange" },
+                      { id: "sim", label: "1. BOOT HYBRID SIMULATOR", icon: "", cmd: "ros2 launch vx01_bringup vx01_hybrid_sim.launch.py", color: "blue" },
+                      { id: "map", label: "2. INITIALIZE VISUAL SLAM", icon: "", cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py use_sim_time:=true", color: "purple" },
+                      { id: "walk", label: "3. START HEXAPOD GAIT", icon: "", cmd: "ros2 launch vx01_hexapod_locomotion hexapod.launch.py use_sim_time:=true", color: "teal" },
+                      { id: "teleop_dr", label: "4. LAUNCH DRONE TELEOP", icon: "", cmd: "ros2 run vx01_aerial_control drone_teleop", color: "orange" },
                     ]).map(({ id, label, icon, cmd, color }) => {
                       const isRunning = runningProcesses.includes(id);
                       return (
@@ -555,12 +562,12 @@ export default function Dashboard() {
                         >
                           <div className="flex items-center gap-3 relative z-10">
                             <span className="text-xl group-hover:scale-110 transition-transform">{icon}</span>
-                            <span className="text-[10px] font-black tracking-widest">{label}</span>
+                            <span className="text-[10px] font-bold tracking-widest">{label}</span>
                           </div>
                           {isRunning && (
                             <div className="flex items-center gap-2 relative z-10">
                               <span className="h-1.5 w-1.5 rounded-full bg-current animate-ping" />
-                              <span className="text-[9px] font-black tracking-tight">ACTIVE</span>
+                              <span className="text-[9px] font-bold tracking-tight">ACTIVE</span>
                             </div>
                           )}
                           {!isRunning && <div className={`absolute inset-y-0 left-0 w-0 bg-${color}-500/10 group-hover:w-full transition-all duration-500`} />}
@@ -571,7 +578,7 @@ export default function Dashboard() {
                     <div className="pt-4 border-t border-gray-800 mt-4 space-y-3">
                       <button
                         onClick={() => backendLaunch("auto", "python3 /vx01_ws/src/vx01_bringup/scripts/mission_coordinator.py --ros-args -p use_sim_time:=true")}
-                        className={`w-full font-black tracking-widest p-4 rounded transition-all shadow-lg flex items-center justify-center gap-3
+                        className={`w-full font-bold tracking-widest p-4 rounded transition-all shadow-lg flex items-center justify-center gap-3
                           ${runningProcesses.includes("auto")
                             ? "bg-rose-600 text-white shadow-rose-900/50 ring-2 ring-rose-400 ring-offset-2 ring-offset-gray-900"
                             : "bg-gray-800 text-gray-500 hover:bg-gray-700 border border-gray-700 font-bold"}`}
@@ -581,7 +588,7 @@ export default function Dashboard() {
 
                       <button
                         onClick={stopAll}
-                        className={`w-full font-black tracking-widest p-4 rounded border-2 transition-all duration-300
+                        className={`w-full font-bold tracking-widest p-4 rounded border-2 transition-all duration-300
                           ${stopConfirm
                             ? "bg-red-600 border-red-400 text-white shadow-lg shadow-red-900/80 scale-[1.02] animate-pulse"
                             : "bg-gray-900 border-gray-700 text-gray-500 hover:border-red-800 hover:text-red-500"
@@ -603,10 +610,10 @@ export default function Dashboard() {
             <div className="h-full flex flex-col">
               <div className="flex justify-between items-end border-b border-gray-800 pb-4 mb-6">
                 <div>
-                  <h2 className="text-2xl font-black tracking-wide">VICTIM IDENTIFICATION REGISTRY</h2>
-                  <p className="text-gray-500 font-mono text-sm mt-1">Total Targets Detected: {victimData.length}</p>
+                  <h2 className="text-xl font-bold tracking-tight text-gray-200">VICTIM IDENTIFICATION REGISTRY</h2>
+                  <p className="text-gray-500 font-mono text-xs mt-1">Total Targets Detected: {victimData.length}</p>
                 </div>
-                {victimData.length > 0 && <div className="px-4 py-1 bg-rose-500 text-white font-mono text-xs font-bold rounded animate-pulse">ACTIVE DETECTIONS</div>}
+                {victimData.length > 0 && <div className="px-4 py-1 bg-red-600 text-white font-mono text-xs font-bold rounded">ACTIVE DETECTIONS</div>}
               </div>
 
               {victimData.length === 0 ? (
@@ -657,200 +664,109 @@ export default function Dashboard() {
 
           {tab === "teleop" && (
             <div className="flex flex-col gap-8 max-w-5xl mx-auto h-full">
+              
+              <div className="grid grid-cols-2 gap-8 items-stretch">
 
-              <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-2xl p-6 mb-4">
-                <h3 className="font-bold text-gray-300 mb-3 font-mono">THROTTLE MULTIPLIER (SPEED OVERRIDE)</h3>
-                <div className="flex items-center gap-6">
-                  <input
-                    type="range" min="0.1" max="3.0" step="0.1"
-                    value={speedMultiplier}
-                    onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
-                    className="flex-1 accent-blue-500 bg-gray-800 h-2 rounded-lg cursor-pointer"
-                  />
-                  <div className="text-2xl font-black text-white w-20 text-right">{speedMultiplier.toFixed(1)}x</div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-8 items-start">
-
-                {/* Hexapod Control */}
-                <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl shadow-2xl p-8 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
-                    <Activity size={80} />
-                  </div>
-                  <h3 className="font-black text-2xl mb-2 text-blue-400 tracking-tighter uppercase italic">Ground Protocol</h3>
-                  <p className="text-gray-500 font-mono text-[10px] mb-6 tracking-widest uppercase">Manual Tripod Gait Override</p>
-
-                  <div className="mb-6 flex gap-2">
-                    <button
-                      onClick={() => setHexapodManualEnabled(!hexapodManualEnabled)}
-                      className={`flex-1 font-black tracking-widest p-3 rounded transition-all ${
-                        hexapodManualEnabled
-                          ? "bg-emerald-600 text-white border border-emerald-500 shadow-lg shadow-emerald-900/40"
-                          : "bg-gray-700 text-gray-400 border border-gray-600 hover:bg-gray-600"
-                      }`}
-                    >
-                      {hexapodManualEnabled ? "✓ DASHBOARD ACTIVE" : "ENABLE DASHBOARD"}
-                    </button>
-                    <button
-                      onClick={() => backendLaunch("teleop_hx", "ros2 run vx01_hexapod_locomotion teleop_node")}
-                      className={`p-3 rounded border transition-all ${
-                        runningProcesses.includes("teleop_hx")
-                          ? "bg-blue-600 border-blue-400 text-white animate-pulse"
-                          : "bg-gray-800 border-gray-700 text-gray-500 hover:text-white"
-                      }`}
-                      title="Launch Terminal Teleop Node"
-                    >
-                      <Terminal size={18} />
-                    </button>
+                {/* Hexapod Control Card */}
+                <div className="bg-blue-900/10 border-2 border-blue-800/40 rounded-xl p-8 shadow-xl flex flex-col">
+                  <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-800">
+                    <div>
+                      <h3 className="font-bold text-xl text-blue-400 tracking-tight">GROUND PROTOCOL</h3>
+                      <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mt-1">Tripod Locomotion</p>
+                    </div>
+                    <div className="flex flex-col items-end font-mono text-[10px] text-gray-400 gap-1">
+                      <span className="bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">VX: {hexapodState.vx.toFixed(2)}</span>
+                      <span className="bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">VY: {hexapodState.vy.toFixed(2)}</span>
+                    </div>
                   </div>
 
-                  <p className="text-gray-500 font-mono text-xs mb-8">Click Direction To Cruise, Click Stop To Halt</p>
+                  <div className="flex-1 flex flex-col justify-center">
+                    <div className="grid grid-cols-3 gap-4 text-center max-w-[280px] mx-auto font-mono">
+                      <button onClick={() => updateHexapod(0, 0.05, 0)} className="bg-gray-800 text-gray-300 p-5 rounded-xl border border-gray-700 hover:border-blue-500 hover:text-white transition-all text-2xl shadow-inner">←</button>
+                      <button onClick={() => updateHexapod(0.05, 0, 0)} className="bg-gray-800 text-gray-300 p-5 rounded-xl border border-gray-700 hover:border-blue-500 hover:text-white transition-all text-2xl shadow-inner">↑</button>
+                      <button onClick={() => updateHexapod(0, -0.05, 0)} className="bg-gray-800 text-gray-300 p-5 rounded-xl border border-gray-700 hover:border-blue-500 hover:text-white transition-all text-2xl shadow-inner">→</button>
 
-                  <div className="grid grid-cols-3 gap-4 text-center max-w-xs mx-auto font-mono text-xl">
-                    <button onClick={() => sendHexapodCmd(0, 0.2, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">↰</button>
-                    <button onClick={() => sendHexapodCmd(0.2, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl border border-gray-700 hover:bg-white hover:text-black transition shadow-inner">↑</button>
-                    <button onClick={() => sendHexapodCmd(0, -0.2, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">↱</button>
+                      <button onClick={() => updateHexapod(0, 0, 0.3)} className="bg-gray-800 text-gray-300 p-5 rounded-xl border border-gray-700 hover:border-blue-500 hover:text-white transition-all text-2xl shadow-inner">⟲</button>
+                      <button onClick={stopHexapod} className="bg-red-950 text-white font-bold p-5 rounded-xl border border-red-800 hover:bg-red-800 transition-all flex items-center justify-center shadow-lg"><StopCircle size={24} /></button>
+                      <button onClick={() => updateHexapod(0, 0, -0.3)} className="bg-gray-800 text-gray-300 p-5 rounded-xl border border-gray-700 hover:border-blue-500 hover:text-white transition-all text-2xl shadow-inner">⟳</button>
 
-                    <button onClick={() => sendHexapodCmd(0, 0, 0.6)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">⟲</button>
-                    <button onClick={stopHexapod} className="bg-rose-900 text-white font-bold p-6 rounded-xl border border-rose-700 hover:bg-rose-600 transition flex items-center justify-center shadow-lg"><StopCircle size={28} /></button>
-                    <button onClick={() => sendHexapodCmd(0, 0, -0.6)} className="bg-gray-800 text-gray-400 p-6 rounded-xl hover:bg-white hover:text-black transition shadow-inner">⟳</button>
-
-                    <div></div>
-                    <button onClick={() => sendHexapodCmd(-0.2, 0, 0)} className="bg-gray-800 text-gray-400 p-6 rounded-xl border border-gray-700 hover:bg-white hover:text-black transition shadow-inner">↓</button>
-                    <div></div>
+                      <div></div>
+                      <button onClick={() => updateHexapod(-0.05, 0, 0)} className="bg-gray-800 text-gray-300 p-5 rounded-xl border border-gray-700 hover:border-blue-500 hover:text-white transition-all text-2xl shadow-inner">↓</button>
+                      <div></div>
+                    </div>
                   </div>
 
-                  <div className="mt-6 border-t border-gray-800 pt-4">
+                  <div className="mt-10 pt-6 border-t border-gray-800">
                     <button
                       onClick={() => {
                         if (!rosRef.current || !rosConnected) return;
                         stopHexapod();
                         const goHome = new ROSLIB.Topic({ ros: rosRef.current, name: "/hexapod/go_home", messageType: "std_msgs/msg/Empty" });
                         goHome.publish(new ROSLIB.Message({}));
-                        addLog("INFO", "Go-home command sent to hexapod.");
+                        addLog("INFO", "Executing stance normalization sequence.");
                       }}
-                      className="w-full bg-amber-900/40 border border-amber-700 text-amber-400 p-3 rounded-lg hover:bg-amber-700 hover:text-white transition font-mono text-sm font-bold tracking-widest"
+                      className="w-full bg-blue-900/20 border border-blue-800/50 text-blue-400 p-4 rounded-lg hover:bg-blue-800 hover:text-white transition-all text-xs font-bold uppercase tracking-widest"
                     >
-                      ⌂ SEND TO HOME POSITION
+                      HOME STANCE
                     </button>
                   </div>
                 </div>
 
-                {/* Drone Control */}
-                <div className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl shadow-2xl p-8 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
-                    <Target size={80} />
-                  </div>
-                  <h3 className="font-black text-2xl mb-2 text-indigo-400 tracking-tighter uppercase italic">Aerial Protocol</h3>
-                  <p className="text-gray-500 font-mono text-[10px] mb-6 tracking-widest uppercase text-center">Autonomous Guided Flight Interface</p>
-
-                  <div className="mb-8 flex gap-2">
-                    <button
-                      onClick={() => setDroneManualEnabled(!droneManualEnabled)}
-                      className={`flex-1 font-black tracking-widest p-3 rounded transition-all ${
-                        droneManualEnabled
-                          ? "bg-indigo-600 text-white border border-indigo-500 shadow-lg shadow-indigo-900/40"
-                          : "bg-gray-700 text-gray-400 border border-gray-600 hover:bg-gray-600"
-                      }`}
-                    >
-                      {droneManualEnabled ? "✓ DASHBOARD ACTIVE" : "ENABLE DASHBOARD"}
-                    </button>
-                    <button
-                      onClick={() => backendLaunch("teleop_dr", "ros2 run vx01_aerial_control drone_teleop")}
-                      className={`p-3 rounded border transition-all ${
-                        runningProcesses.includes("teleop_dr")
-                          ? "bg-orange-600 border-orange-400 text-white animate-pulse"
-                          : "bg-gray-800 border-gray-700 text-gray-500 hover:text-white"
-                      }`}
-                      title="Launch Terminal Teleop Node"
-                    >
-                      <Terminal size={18} />
-                    </button>
+                {/* Drone Control Card */}
+                <div className="bg-indigo-900/10 border-2 border-indigo-800/40 rounded-xl p-8 shadow-xl flex flex-col">
+                  <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-800">
+                    <div>
+                      <h3 className="font-bold text-xl text-indigo-400 tracking-tight">AERIAL PROTOCOL</h3>
+                      <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mt-1">Autonomous Guided Flight</p>
+                    </div>
+                    <div className="flex flex-col items-end font-mono text-[10px] text-gray-400 gap-1">
+                      <span className="bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">THROTTLE: {droneRCState.throttle}</span>
+                      <span className="bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">PITCH: {droneRCState.pitch}</span>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-8 font-mono text-sm max-w-sm mx-auto">
-                    <div className="flex flex-col items-center">
-                      <p className="text-gray-500 mb-4 whitespace-nowrap">THROTTLE/YAW</p>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div></div>
-                        <button onClick={() => startDroneCmd(0, 0, 0.5, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">UP</button>
-                        <div></div>
-                        <button onClick={() => startDroneCmd(0, 0, 0, 0.5)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">⟲</button>
-                        <button onClick={stopDrone} className="bg-rose-900 text-white p-4 rounded hover:bg-rose-600 transition flex justify-center"><StopCircle size={20} /></button>
-                        <button onClick={() => startDroneCmd(0, 0, 0, -0.5)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">⟳</button>
-                        <div></div>
-                        <button onClick={() => startDroneCmd(0, 0, -0.5, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">DN</button>
-                        <div></div>
+                  <div className="flex-1 grid grid-cols-2 gap-6 items-center">
+                    <div className="flex flex-col gap-3">
+                      <p className="text-[9px] text-center text-gray-600 font-bold uppercase tracking-[0.2em]">Elevation / Yaw</p>
+                      <div className="grid grid-cols-3 gap-2 font-mono text-[11px]">
+                        <div />
+                        <button onClick={() => updateDroneRC(0, 0, 25, 0)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">↑</button>
+                        <div />
+                        <button onClick={() => updateDroneRC(0, 0, 0, -25)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">⟲</button>
+                        <button onClick={stopDrone} className="bg-gray-700 text-red-500 p-3 rounded-lg border border-gray-600 hover:bg-gray-600 transition-all font-bold">✕</button>
+                        <button onClick={() => updateDroneRC(0, 0, 0, 25)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">⟳</button>
+                        <div />
+                        <button onClick={() => updateDroneRC(0, 0, -25, 0)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">↓</button>
+                        <div />
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-center">
-                      <p className="text-gray-500 mb-4 whitespace-nowrap">PITCH/ROLL</p>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div></div>
-                        <button onClick={() => startDroneCmd(1.0, 0, 0, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">FWD</button>
-                        <div></div>
-                        <button onClick={() => startDroneCmd(0, 0.5, 0, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">LF</button>
-                        <button onClick={stopDrone} className="bg-rose-900 text-white p-4 rounded hover:bg-rose-600 transition flex justify-center"><StopCircle size={20} /></button>
-                        <button onClick={() => startDroneCmd(0, -0.5, 0, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">RT</button>
-                        <div></div>
-                        <button onClick={() => startDroneCmd(-1.0, 0, 0, 0)} className="bg-gray-800 p-4 rounded hover:bg-white hover:text-black transition">BCK</button>
-                        <div></div>
+                    <div className="flex flex-col gap-3">
+                      <p className="text-[9px] text-center text-gray-600 font-bold uppercase tracking-[0.2em]">Position / Roll</p>
+                      <div className="grid grid-cols-3 gap-2 font-mono text-[11px]">
+                        <div />
+                        <button onClick={() => updateDroneRC(0, -25, 0, 0)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">↑</button>
+                        <div />
+                        <button onClick={() => updateDroneRC(-25, 0, 0, 0)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">←</button>
+                        <button onClick={stopDrone} className="bg-gray-700 text-red-500 p-3 rounded-lg border border-gray-600 hover:bg-gray-600 transition-all font-bold">✕</button>
+                        <button onClick={() => updateDroneRC(25, 0, 0, 0)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">→</button>
+                        <div />
+                        <button onClick={() => updateDroneRC(0, 25, 0, 0)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">↓</button>
+                        <div />
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 font-mono text-sm max-w-sm mx-auto">
-
+                  <div className="mt-10 grid grid-cols-2 gap-4">
                     <button
                       onClick={armDrone}
-                      className="bg-red-900/40 border border-red-800 text-red-500 p-3 rounded hover:bg-red-800 hover:text-white transition font-black tracking-widest">
-                      {droneArmed ? "ARMED" : "ARM"}
+                      className={`p-4 rounded-lg border-2 transition-all text-[10px] font-bold uppercase tracking-widest ${droneArmed ? 'bg-red-600 border-red-400 text-white shadow-lg' : 'bg-gray-800 border-gray-700 text-gray-500 hover:text-white'}`}>
+                      {droneArmed ? 'SYSTEM ARMED' : 'ARM / TAKEOFF'}
                     </button>
-
                     <button
                       onClick={disarmDrone}
-                      className="bg-orange-900/40 border border-orange-800 text-orange-400 p-3 rounded hover:bg-orange-800 hover:text-white transition font-black tracking-widest">
-                      LAND + DISARM
-                    </button>
-
-                    <button onClick={() => {
-                      if (!rosRef.current || !rosConnected) return;
-                      addLog("INFO", "Takeoff sequence initiated...");
-                      let t = 0;
-                      const topic = new ROSLIB.Topic({
-                        ros: rosRef.current,
-                        name: "/drone/cmd_vel",
-                        messageType: "geometry_msgs/msg/TwistStamped"
-                      });
-                      const climbInterval = setInterval(() => {
-                        const now = Date.now();
-                        topic.publish(new ROSLIB.Message({
-                          header: {
-                            stamp: { sec: Math.floor(now / 1000), nanosec: (now % 1000) * 1e6 },
-                            frame_id: "base_link"
-                          },
-                          twist: {
-                            linear: { x: 0, y: 0, z: 0.5 },
-                            angular: { x: 0, y: 0, z: 0 }
-                          }
-                        }));
-                        if (++t >= 10) {
-                          clearInterval(climbInterval);
-                          addLog("INFO", "Takeoff complete — altitude locked");
-                        }
-                      }, 1000);
-                    }} className="bg-indigo-900/40 border border-indigo-800 text-indigo-400 p-3 rounded hover:bg-indigo-800 hover:text-white transition font-black tracking-widest">
-                      CLIMB TO 5M
-                    </button>
-
-                    <button onClick={() => {
-                      stopDrone();
-                      const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode", serviceType: "mavros_msgs/srv/SetMode" });
-                      modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "LAND" }), () => addLog("INFO", "Executing LAND sequence"));
-                    }} className="bg-gray-800 border border-gray-700 text-gray-400 p-3 rounded hover:bg-gray-600 hover:text-white transition font-black tracking-widest">
-                      PERFORM LAND
+                      className="bg-gray-800 border-2 border-gray-700 text-gray-400 p-4 rounded-lg hover:bg-gray-700 hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest">
+                      Land / Disarm
                     </button>
                   </div>
                 </div>

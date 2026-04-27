@@ -42,6 +42,12 @@ class HexapodNode(Node):
         self._vx = 0.0
         self._vy = 0.0
         self._omega = 0.0
+        
+        self._mode_pub = self.create_publisher(JointTrajectory, '/robot_mode_data_dummy', 10) # Placeholder or use custom msg
+        # Instead of custom msg which might not be built, let's use a String for simplicity if available
+        from std_msgs.msg import String
+        self._mode_pub = self.create_publisher(String, '/robot_mode', 10)
+        self.create_timer(1.0, self._publish_mode)
 
         # Foot offset from home in world XY (mm), updated each half-cycle
         self._foot_offsets = [(0.0, 0.0) for _ in range(6)]
@@ -52,6 +58,12 @@ class HexapodNode(Node):
         half = self._step_period / 2.0
         self._gait_timer = self.create_timer(half, self._gait_tick)
         self._gait_timer.cancel()
+
+    def _publish_mode(self):
+        from std_msgs.msg import String
+        msg = String()
+        msg.data = "WALKING" if self._walking else "STANDING"
+        self._mode_pub.publish(msg)
 
         self.get_logger().info('Hexapod node initialized. Waiting for manual commands on /cmd_vel')
 
