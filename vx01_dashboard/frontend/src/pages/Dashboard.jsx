@@ -33,6 +33,8 @@ export default function Dashboard() {
   const [logs, setLogs] = useState([]);
   const [mapImage, setMapImage] = useState(null);
   const [mapMetadata, setMapMetadata] = useState(null);
+  const [hexapodManualEnabled, setHexapodManualEnabled] = useState(false);
+  const [droneManualEnabled, setDroneManualEnabled] = useState(false);
 
   const rosRef = useRef(null);
   const droneIntervalRef = useRef(null);
@@ -534,10 +536,12 @@ export default function Dashboard() {
                       { id: "hw_base", label: "1. INITIALIZE HARDWARE", icon: "🔌", cmd: "ros2 launch vx01_bringup vx01.launch.py", color: "amber" },
                       { id: "map", label: "2. INITIALIZE SLAM (RDK)", icon: "🗺", cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py", color: "indigo" },
                       { id: "walk", label: "3. START HEXAPOD GAIT", icon: "🕷", cmd: "ros2 launch vx01_hexapod_locomotion hexapod.launch.py", color: "emerald" },
+                      { id: "teleop_hx", label: "4. LAUNCH HEXAPOD TELEOP", icon: "⌨️", cmd: "ros2 run vx01_hexapod_locomotion teleop_node", color: "blue" },
                     ] : [
                       { id: "sim", label: "1. BOOT HYBRID SIMULATOR", icon: "🎮", cmd: "ros2 launch vx01_bringup vx01_hybrid_sim.launch.py", color: "blue" },
                       { id: "map", label: "2. INITIALIZE VISUAL SLAM", icon: "🗺", cmd: "ros2 launch vx01_simulation vx01_mapping.launch.py use_sim_time:=true", color: "purple" },
                       { id: "walk", label: "3. START HEXAPOD GAIT", icon: "🕷", cmd: "ros2 launch vx01_hexapod_locomotion hexapod.launch.py use_sim_time:=true", color: "teal" },
+                      { id: "teleop_dr", label: "4. LAUNCH DRONE TELEOP", icon: "🚁", cmd: "ros2 run vx01_aerial_control drone_teleop", color: "orange" },
                     ]).map(({ id, label, icon, cmd, color }) => {
                       const isRunning = runningProcesses.includes(id);
                       return (
@@ -677,16 +681,27 @@ export default function Dashboard() {
                   <h3 className="font-black text-2xl mb-2 text-blue-400 tracking-tighter uppercase italic">Ground Protocol</h3>
                   <p className="text-gray-500 font-mono text-[10px] mb-6 tracking-widest uppercase">Manual Tripod Gait Override</p>
 
-                  <div className="mb-6">
+                  <div className="mb-6 flex gap-2">
                     <button
                       onClick={() => setHexapodManualEnabled(!hexapodManualEnabled)}
-                      className={`w-full font-black tracking-widest p-3 rounded transition-all ${
+                      className={`flex-1 font-black tracking-widest p-3 rounded transition-all ${
                         hexapodManualEnabled
-                          ? "bg-emerald-600 text-white border border-emerald-500"
+                          ? "bg-emerald-600 text-white border border-emerald-500 shadow-lg shadow-emerald-900/40"
                           : "bg-gray-700 text-gray-400 border border-gray-600 hover:bg-gray-600"
                       }`}
                     >
-                      {hexapodManualEnabled ? "✓ MANUAL CONTROL ENABLED" : "ENABLE MANUAL CONTROL"}
+                      {hexapodManualEnabled ? "✓ DASHBOARD ACTIVE" : "ENABLE DASHBOARD"}
+                    </button>
+                    <button
+                      onClick={() => backendLaunch("teleop_hx", "ros2 run vx01_hexapod_locomotion teleop_node")}
+                      className={`p-3 rounded border transition-all ${
+                        runningProcesses.includes("teleop_hx")
+                          ? "bg-blue-600 border-blue-400 text-white animate-pulse"
+                          : "bg-gray-800 border-gray-700 text-gray-500 hover:text-white"
+                      }`}
+                      title="Launch Terminal Teleop Node"
+                    >
+                      <Terminal size={18} />
                     </button>
                   </div>
 
@@ -730,12 +745,29 @@ export default function Dashboard() {
                   <h3 className="font-black text-2xl mb-2 text-indigo-400 tracking-tighter uppercase italic">Aerial Protocol</h3>
                   <p className="text-gray-500 font-mono text-[10px] mb-6 tracking-widest uppercase text-center">Autonomous Guided Flight Interface</p>
 
-                  {isHardwareMode && (
-                    <div className="bg-rose-500/10 border border-rose-500/30 p-3 rounded-lg flex items-center gap-3 mb-6 animate-pulse">
-                      <AlertTriangle className="text-rose-500" size={18} />
-                      <span className="text-rose-500 text-[10px] font-black uppercase">Caution: High-RPM Propellers Active</span>
-                    </div>
-                  )}
+                  <div className="mb-8 flex gap-2">
+                    <button
+                      onClick={() => setDroneManualEnabled(!droneManualEnabled)}
+                      className={`flex-1 font-black tracking-widest p-3 rounded transition-all ${
+                        droneManualEnabled
+                          ? "bg-indigo-600 text-white border border-indigo-500 shadow-lg shadow-indigo-900/40"
+                          : "bg-gray-700 text-gray-400 border border-gray-600 hover:bg-gray-600"
+                      }`}
+                    >
+                      {droneManualEnabled ? "✓ DASHBOARD ACTIVE" : "ENABLE DASHBOARD"}
+                    </button>
+                    <button
+                      onClick={() => backendLaunch("teleop_dr", "ros2 run vx01_aerial_control drone_teleop")}
+                      className={`p-3 rounded border transition-all ${
+                        runningProcesses.includes("teleop_dr")
+                          ? "bg-orange-600 border-orange-400 text-white animate-pulse"
+                          : "bg-gray-800 border-gray-700 text-gray-500 hover:text-white"
+                      }`}
+                      title="Launch Terminal Teleop Node"
+                    >
+                      <Terminal size={18} />
+                    </button>
+                  </div>
 
                   <div className="grid grid-cols-2 gap-8 font-mono text-sm max-w-sm mx-auto">
                     <div className="flex flex-col items-center">
