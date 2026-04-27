@@ -53,6 +53,7 @@ services:
     environment:
       - ROS_DOMAIN_ID=0
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - LD_LIBRARY_PATH=/opt/ros/humble/lib:/vx01_ws/src/vx01_camera/libs/lib/aarch64-linux-gnu
     volumes:
       - /dev:/dev
       - ${HOME_DIR}/vx01/vx01_ws:/vx01_ws
