@@ -61,5 +61,15 @@ services:
     ports:
       - "5173:5173"
 
+  vx01-dashboard-backend:
+    image: ${DOCKER_REGISTRY}/vx01-dashboard-backend:latest
+    container_name: vx01-dashboard-backend
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "3001:3001"
+
 volumes:
   vx01_logs:
