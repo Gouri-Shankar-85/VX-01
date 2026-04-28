@@ -337,9 +337,9 @@ class HexapodNode(Node):
     #  helpers
 
     def _cmd_to_angles(self, cmds):
-        theta1 = 0.0 - cmds[0]
-        theta2 = 0.0 - cmds[1]
-        theta3 = -0.658 - cmds[2]
+        theta1 = cmds[0]
+        theta2 = cmds[1]
+        theta3 = cmds[2]
         return [theta1, theta2, theta3]
 
     def _fk(self, angles):
@@ -363,9 +363,9 @@ class HexapodNode(Node):
           femur (rpy "… 0.12741 0") → z-offset = 0.12741  (pitch in rolled frame)
           tibia (rpy "0 0 -0.65799") → z-offset = −0.65799
         """
-        cmd1 = 0.0 - angles[0]   # coxa
-        cmd2 = 0.0 - angles[1]   # femur
-        cmd3 = -0.658 - angles[2]   # tibia
+        cmd1 = angles[0]   # coxa
+        cmd2 = angles[1]   # femur
+        cmd3 = angles[2]   # tibia
         return [cmd1, cmd2, cmd3]
 
     def _single_point_traj(self, leg_id: int, angles, duration: float):

@@ -15,13 +15,13 @@ hexapod_node:
     stand_tibia_cmd:   0.7  # rad — tibia joint command for stand pose
 
     # Home foot position for walking IK
-    home_reach: 120.0
+    home_reach: 130.0
     home_z: -140.0
 
     # Gait parameters
     step_length:   60.0     # mm
-    step_height:   75.0     # mm  — Guaranteed reachable height
-    step_period:    4.0     # s   — Slow enough for safe torque
+    step_height:   80.0     # mm  — Balanced reachable height
+    step_period:    5.0     # s   — Very slow for direction testing
     duty_factor:    1.0     # seamless handoff
     stand_duration: 5.0     # s   — Extended for full stability
     waypoints:      30      # trajectory points (smoothed for torque)
