@@ -105,7 +105,7 @@
     <joint name="femur_leg0_joint" type="revolute">
         <origin
             xyz="0.060781 -0.0273 -0.0273"
-            rpy="1.5708 0.12741 0" />
+            rpy="1.5708 0 0" />
         <parent
             link="coxa_link_0" />
         <child
@@ -164,7 +164,7 @@
     <joint name="tibia_leg0_joint" type="revolute">
         <origin
             xyz="0.073712 -0.0041095 -0.0018"
-            rpy="0 0 -0.65799" />
+            rpy="0 0 -0.7854" />
         <parent
             link="femur_link_0" />
         <child

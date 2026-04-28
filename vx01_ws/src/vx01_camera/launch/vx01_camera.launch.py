@@ -17,11 +17,11 @@ def generate_launch_description():
             {"confiPath": "/vx01_ws/src/vx01_camera/configurationfiles"},
             {"color_pcl": False},
             {"pub_tfTree": False},
-            {"depth_width": 640},
-            {"depth_height": 480},
-            {"rgb_width": 640},
-            {"rgb_height": 480},
-            {"fps": 30},
+            {"depth_width": 320},
+            {"depth_height": 240},
+            {"rgb_width": 320},
+            {"rgb_height": 240},
+            {"fps": 15},
         ],
         remappings=[]
     )

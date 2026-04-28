@@ -2,7 +2,7 @@
 
 import os
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction, TimerAction
 from launch_ros.actions import Node, SetRemap
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -13,7 +13,7 @@ def generate_launch_description():
 
     vx01_bringup_pkg = get_package_share_directory('vx01_bringup')
     vx01_camera_pkg  = get_package_share_directory('vx01_camera')
-    vx01_imu_pkg     = get_package_share_directory('vx01_imu')
+    # vx01_imu_pkg     = get_package_share_directory('vx01_imu')
 
     serial_port_arg = DeclareLaunchArgument(
         'serial_port', default_value='/dev/ttyMAESTRO',
@@ -27,23 +27,28 @@ def generate_launch_description():
         launch_arguments={'serial_port': LaunchConfiguration('serial_port')}.items()
     )
 
-    camera_launch = GroupAction(
+    camera_launch = TimerAction(
+        period=5.0,
         actions=[
-            SetRemap(src='/vx01_camera/camera_publisher/rgb0/image', dst='/depth_camera/color/image_raw'),
-            SetRemap(src='/vx01_camera/camera_publisher/depth0/image_raw', dst='/depth_camera/depth/image_raw'),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(vx01_camera_pkg, 'launch', 'vx01_camera.launch.py')
-                )
+            GroupAction(
+                actions=[
+                    SetRemap(src='/vx01_camera/camera_publisher/rgb0/image', dst='/depth_camera/color/image_raw'),
+                    SetRemap(src='/vx01_camera/camera_publisher/depth0/image_raw', dst='/depth_camera/depth/image_raw'),
+                    IncludeLaunchDescription(
+                        PythonLaunchDescriptionSource(
+                            os.path.join(vx01_camera_pkg, 'launch', 'vx01_camera.launch.py')
+                        )
+                    )
+                ]
             )
         ]
     )
 
-    imu_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(vx01_imu_pkg, 'launch', 'vx01_imu.launch.py')
-        )
-    )
+    # imu_launch = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource(
+    #         os.path.join(vx01_imu_pkg, 'launch', 'vx01_imu.launch.py')
+    #     )
+    # )
 
     web_video_server = Node(
         package='web_video_server',
@@ -73,7 +78,7 @@ def generate_launch_description():
         serial_port_arg,
         hw_launch,
         camera_launch,
-        imu_launch,
+        # imu_launch,
         web_video_server,
         static_tf_odom,
         static_tf_camera_remap,
