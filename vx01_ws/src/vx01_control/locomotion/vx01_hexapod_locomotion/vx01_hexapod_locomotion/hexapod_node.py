@@ -78,7 +78,7 @@ class HexapodNode(Node):
         self.declare_parameter('home_z', -150.0)
         self.declare_parameter('step_length', 80.0)
         self.declare_parameter('step_height', 90.0)
-        self.declare_parameter('step_period', 1.5)
+        self.declare_parameter('step_period', 5.0)
         self.declare_parameter('duty_factor', 1.0)
         self.declare_parameter('stand_duration', 2.0)
         self.declare_parameter('waypoints', 15)
@@ -340,7 +340,7 @@ class HexapodNode(Node):
     def _cmd_to_angles(self, cmds):
         theta1 = 0.0 - cmds[0]
         theta2 = 0.0 - cmds[1]
-        theta3 = 0.0 - cmds[2]
+        theta3 = -0.7854 - cmds[2]
         return [theta1, theta2, theta3]
 
     def _fk(self, angles):
@@ -366,7 +366,7 @@ class HexapodNode(Node):
         """
         cmd1 = 0.0 - angles[0]   # coxa
         cmd2 = 0.0 - angles[1]   # femur
-        cmd3 = 0.0 - angles[2]   # tibia
+        cmd3 = -0.7854 - angles[2]   # tibia
         return [cmd1, cmd2, cmd3]
 
     def _single_point_traj(self, leg_id: int, angles, duration: float):
