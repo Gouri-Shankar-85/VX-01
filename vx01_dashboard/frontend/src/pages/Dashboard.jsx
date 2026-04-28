@@ -502,7 +502,7 @@ export default function Dashboard() {
                 <div className="flex-1 bg-black relative flex items-center justify-center">
                   {rosConnected ? (
                     <img
-                      src={`http://${window.location.hostname}:8080/stream?topic=${isHardwareMode ? '/vx01_camera/depth_camera/color/image_raw' : '/depth_camera/color/image_raw'}&width=1280&height=720`}
+                      src={`http://${window.location.hostname}:8080/stream?topic=/depth_camera/color/image_raw&width=1280&height=720`}
                       className="w-full h-full object-cover"
                       alt="Primary Optical"
                       onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}

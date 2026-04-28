@@ -2,11 +2,11 @@
 
 import os
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction
+from launch_ros.actions import Node, SetRemap
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
-from launch_ros.actions import Node
 
 
 def generate_launch_description():
@@ -27,10 +27,16 @@ def generate_launch_description():
         launch_arguments={'serial_port': LaunchConfiguration('serial_port')}.items()
     )
 
-    camera_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(vx01_camera_pkg, 'launch', 'vx01_camera.launch.py')
-        )
+    camera_launch = GroupAction(
+        actions=[
+            SetRemap(src='/vx01_camera/camera_publisher/rgb0/image', dst='/depth_camera/color/image_raw'),
+            SetRemap(src='/vx01_camera/camera_publisher/depth0/image_raw', dst='/depth_camera/depth/image_raw'),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(vx01_camera_pkg, 'launch', 'vx01_camera.launch.py')
+                )
+            )
+        ]
     )
 
     imu_launch = IncludeLaunchDescription(
@@ -39,10 +45,18 @@ def generate_launch_description():
         )
     )
 
+    web_video_server = Node(
+        package='web_video_server',
+        executable='web_video_server',
+        name='web_video_server',
+        parameters=[{'port': 8080}]
+    )
+
     static_tf_odom = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_tf_odom_to_base',
+        parameters=[{'use_sim_time': False}],
         arguments=['0', '0', '0', '0', '0', '0', 'odom', 'base_link'],
     )
 
@@ -50,6 +64,7 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_tf_camera_remap',
+        parameters=[{'use_sim_time': False}],
         arguments=['0', '0', '0', '0', '0', '0',
                    'depth_camera_optical_frame', 'vx01_camera_ascamera_0'],
     )
@@ -59,6 +74,7 @@ def generate_launch_description():
         hw_launch,
         camera_launch,
         imu_launch,
+        web_video_server,
         static_tf_odom,
         static_tf_camera_remap,
     ])
