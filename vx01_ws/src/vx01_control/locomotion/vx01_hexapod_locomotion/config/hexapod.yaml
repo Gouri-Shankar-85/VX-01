@@ -19,12 +19,12 @@ hexapod_node:
     home_z: -150.0
 
     # Gait parameters
-    step_length:   60.0     # mm  — Shortened for stability during high lift
-    step_height:   110.0    # mm  — Maximum lift (11cm) for absolute obstacle clearance
-    step_period:    5.0     # s   — Extreme precision gait for high-weight/high-lift testing
+    step_length:   60.0     # mm
+    step_height:   95.0     # mm  — Increased height
+    step_period:    4.0     # s   — Slow enough for safe torque
     duty_factor:    1.0     # seamless handoff
-    stand_duration: 3.0     # s   — time to reach stand pose on startup
-    waypoints:      15      # trajectory points per half-cycle (smooth Bézier)
+    stand_duration: 6.0     # s   — Extended for full stability
+    waypoints:      30      # trajectory points (smoothed for torque)
 
     # Leg coxa mount angles (rad, CCW from +X in body frame)
     coxa_angles:

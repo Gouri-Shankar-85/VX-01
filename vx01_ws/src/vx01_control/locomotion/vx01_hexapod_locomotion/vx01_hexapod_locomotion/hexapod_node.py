@@ -78,10 +78,10 @@ class HexapodNode(Node):
         self.declare_parameter('home_z', -150.0)
         self.declare_parameter('step_length', 80.0)
         self.declare_parameter('step_height', 90.0)
-        self.declare_parameter('step_period', 5.0)
+        self.declare_parameter('step_period', 4.0)
         self.declare_parameter('duty_factor', 1.0)
-        self.declare_parameter('stand_duration', 2.0)
-        self.declare_parameter('waypoints', 15)
+        self.declare_parameter('stand_duration', 5.0)
+        self.declare_parameter('waypoints', 30)
         self.declare_parameter('coxa_angles',
             [-1.5708, -0.7854, 0.7854, 1.5708, 2.3920, -2.3562])
         self.declare_parameter('stand_femur_cmd', -0.9)
@@ -205,9 +205,8 @@ class HexapodNode(Node):
 
         for leg_id in swing:
             dx, dy = self._foot_stride(leg_id)
-            # Finish swing slightly early (95%) to ensure contact before next liftoff
-            # without creating a full static pause.
-            swing_dur = half_dur * 0.95
+            # Removing early landing to give Group A full time to reach height
+            swing_dur = half_dur
             self._publish(leg_id, self._build_swing(leg_id, dx, dy, swing_dur))
 
         for leg_id in stance:
@@ -340,7 +339,7 @@ class HexapodNode(Node):
     def _cmd_to_angles(self, cmds):
         theta1 = 0.0 - cmds[0]
         theta2 = 0.0 - cmds[1]
-        theta3 = -0.7854 - cmds[2]
+        theta3 = -0.658 - cmds[2]
         return [theta1, theta2, theta3]
 
     def _fk(self, angles):
@@ -366,7 +365,7 @@ class HexapodNode(Node):
         """
         cmd1 = 0.0 - angles[0]   # coxa
         cmd2 = 0.0 - angles[1]   # femur
-        cmd3 = -0.7854 - angles[2]   # tibia
+        cmd3 = -0.658 - angles[2]   # tibia
         return [cmd1, cmd2, cmd3]
 
     def _single_point_traj(self, leg_id: int, angles, duration: float):
