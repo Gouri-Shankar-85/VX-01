@@ -21,7 +21,7 @@ hexapod_node:
     # Gait parameters
     step_length:   60.0     # mm  — half-stride cap = 30mm (safe for 120mm reach)
     step_height:   60.0     # mm  — Bézier lift height (increased for real hardware visibility)
-    step_period:    2.0     # s   — full gait cycle (0.75 s per half-phase); slowed for taller lift
+    step_period:    4.0     # s   — full gait cycle (0.75 s per half-phase); slowed for taller lift
     stand_duration: 3.0     # s   — time to reach stand pose on startup
     waypoints:      15      # trajectory points per half-cycle (smooth Bézier)
 
