@@ -52,7 +52,7 @@
         <child
             link="coxa_link_2" />
         <axis
-            xyz="0 0 1" />
+            xyz="0 0 -1" />
         <limit
             lower="-1.5708"
             upper="1.5708"
@@ -111,7 +111,7 @@
         <child
             link="femur_link_2" />
         <axis
-            xyz="0 0 1" />
+            xyz="0 0 -1" />
         <limit
             lower="-1.5708"
             upper="1.5708"
@@ -170,7 +170,7 @@
         <child
             link="tibia_link_2" />
         <axis
-            xyz="0 0 1" />
+            xyz="0 0 -1" />
         <limit
             lower="-1.5708"
             upper="1.5708"
