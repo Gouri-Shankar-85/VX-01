@@ -74,7 +74,7 @@ class HexapodNode(Node):
         self.declare_parameter('L2', 73.84)
         self.declare_parameter('L3', 112.16)
         self.declare_parameter('body_radius', 105.66)
-        self.declare_parameter('home_reach', 120.0)
+        self.declare_parameter('home_reach', 140.0)
         self.declare_parameter('home_z', -140.0)
         self.declare_parameter('step_length', 80.0)
         self.declare_parameter('step_height', 75.0)
@@ -114,12 +114,7 @@ class HexapodNode(Node):
             for i in range(6)
         ]
 
-        # Calculate home_reach and home_z dynamically from the desired stand pose commands
-        angles = self._cmd_to_angles([0.0, self._stand_femur_cmd, self._stand_tibia_cmd])
-        hx, hy, hz = self._fk(angles)
-        self._home_reach = math.hypot(hx, hy)
-        self._home_z = hz
-        self.get_logger().info(f'FK from custom stand pose -> reach: {self._home_reach:.1f}, z: {hz:.1f}')
+        self.get_logger().info(f'Walking initialized -> reach: {self._home_reach:.1f}, z: {self._home_z:.1f}')
 
     #  init
 

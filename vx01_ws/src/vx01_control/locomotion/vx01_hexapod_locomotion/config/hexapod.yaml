@@ -20,10 +20,10 @@ hexapod_node:
 
     # Gait parameters
     step_length:   60.0     # mm
-    step_height:   80.0     # mm  — Balanced reachable height
-    step_period:    5.0     # s   — Very slow for direction testing
+    step_height:   65.0     # mm  — Balanced reachable height
+    step_period:    4.0     # s
     duty_factor:    1.0     # seamless handoff
-    stand_duration: 5.0     # s   — Extended for full stability
+    stand_duration: 6.0     # s   — Extended for full stability
     waypoints:      30      # trajectory points (smoothed for torque)
 
     # Leg coxa mount angles (rad, CCW from +X in body frame)
@@ -32,7 +32,7 @@ hexapod_node:
       - -0.7854   # leg 1 — front-right
       -  0.7854   # leg 2 — front-left
       -  1.5708   # leg 3 — left side
-      -  2.3920   # leg 4 — rear-left
+      -  2.3562   # leg 4 — rear-left
       - -2.3562   # leg 5 — rear-right
 
     controller_names:
