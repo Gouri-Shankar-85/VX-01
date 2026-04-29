@@ -114,7 +114,12 @@ class HexapodNode(Node):
             for i in range(6)
         ]
 
-        self.get_logger().info(f'Walking initialized -> reach: {self._home_reach:.1f}, z: {self._home_z:.1f}')
+        # Calculate home_reach and home_z dynamically from your desired stand pose
+        angles = self._cmd_to_angles([0.0, self._stand_femur_cmd, self._stand_tibia_cmd])
+        hx, hy, hz = self._fk(angles)
+        self._home_reach = math.hypot(hx, hy)
+        self._home_z = hz
+        self.get_logger().info(f'Dynamic Home Synchronized -> Reach: {self._home_reach:.1f}, Z: {self._home_z:.1f}')
 
     #  init
 
