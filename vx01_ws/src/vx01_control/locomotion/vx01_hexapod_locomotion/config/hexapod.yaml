@@ -16,12 +16,12 @@ hexapod_node:
 
     # Home foot position for walking IK
     home_reach: 140.0
-    home_z: -120.0
+    home_z: -140.0
 
     # Gait parameters
     step_length:   60.0     # mm
-    step_height:   50.0     # mm  — Clear 5cm lift
-    step_period:    3.0     # s
+    step_height:   75.0     # mm  — Clear 5cm lift
+    step_period:    4.0     # s
     duty_factor:    1.0     # seamless handoff
     stand_duration: 6.0     # s   — Extended for full stability
     waypoints:      30      # trajectory points (smoothed for torque)
