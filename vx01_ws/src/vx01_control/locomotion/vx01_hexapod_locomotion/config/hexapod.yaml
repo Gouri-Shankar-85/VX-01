@@ -11,16 +11,16 @@ hexapod_node:
     body_radius: 105.66     # mm from body centre to coxa pivot
 
     # Stand-pose joint 
-    stand_femur_cmd:  -0.9  # rad — femur joint command for stand pose
-    stand_tibia_cmd:   0.7  # rad — tibia joint command for stand pose
+    stand_femur_cmd:   0.7  # rad — femur points UP (Spider Shape)
+    stand_tibia_cmd:  -1.1  # rad — tibia points DOWN
 
     # Home foot position for walking IK
-    home_reach: 130.0
-    home_z: -140.0
+    home_reach: 140.0
+    home_z: -120.0
 
     # Gait parameters
     step_length:   60.0     # mm
-    step_height:   65.0     # mm  — Balanced reachable height
+    step_height:   60.0     # mm  — High-clearance lift from M-shape
     step_period:    4.0     # s
     duty_factor:    1.0     # seamless handoff
     stand_duration: 6.0     # s   — Extended for full stability

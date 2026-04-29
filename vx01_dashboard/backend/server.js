@@ -144,10 +144,28 @@ app.get('/api/status', (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`VX-01 Launch Backend running on http://localhost:${PORT}`);
     console.log(`  POST /api/launch   { command_id, command_string }`);
     console.log(`  POST /api/stop     { command_id }`);
     console.log(`  POST /api/stop-all — kills everything in the container`);
     console.log(`  GET  /api/status   — list running processes`);
+}).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`[ERROR] Port ${PORT} is already in use! Please kill the process using it: 'fuser -k 3001/tcp'`);
+    } else {
+        console.error('[ERROR] Server failed to start:', err);
+    }
+    process.exit(1);
+});
+
+// Handle unexpected crashes
+process.on('uncaughtException', (err) => {
+    console.error('[CRITICAL] Uncaught Exception:', err);
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[CRITICAL] Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
 });
