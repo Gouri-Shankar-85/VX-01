@@ -10,21 +10,20 @@ hexapod_node:
     # Body geometry
     body_radius: 105.66     # mm from body centre to coxa pivot
 
-    # Stand-pose joint 
-    stand_femur_cmd:  -0.9  # rad — Your preferred femur posture
-    stand_tibia_cmd:   0.7  # rad — Your preferred tibia posture
+    # Stand-pose joint overrides (bypasses IK — set directly from Gazebo observation)
+    stand_femur_cmd:  -0.9  # rad — femur joint command for stand pose
+    stand_tibia_cmd:   0.7  # rad — tibia joint command for stand pose
 
-    # Home foot position for walking IK
-    home_reach: 140.0
-    home_z: -140.0
+    # Home foot position for walking IK (set to match FK of the stand pose angles)
+    home_reach: 120.0
+    home_z: -150.0
 
     # Gait parameters
-    step_length:   60.0     # mm
-    step_height:   75.0     # mm  — Clear 5cm lift
-    step_period:    4.0     # s
-    duty_factor:    1.0     # seamless handoff
-    stand_duration: 6.0     # s   — Extended for full stability
-    waypoints:      30      # trajectory points (smoothed for torque)
+    step_length:   60.0     # mm  — half-stride cap = 30mm (safe for 120mm reach)
+    step_height:   60.0     # mm  — Bézier lift height (increased for real hardware visibility)
+    step_period:    2.0     # s   — full gait cycle (0.75 s per half-phase); slowed for taller lift
+    stand_duration: 3.0     # s   — time to reach stand pose on startup
+    waypoints:      15      # trajectory points per half-cycle (smooth Bézier)
 
     # Leg coxa mount angles (rad, CCW from +X in body frame)
     coxa_angles:
@@ -32,7 +31,7 @@ hexapod_node:
       - -0.7854   # leg 1 — front-right
       -  0.7854   # leg 2 — front-left
       -  1.5708   # leg 3 — left side
-      -  2.3562   # leg 4 — rear-left
+      -  2.3920   # leg 4 — rear-left
       - -2.3562   # leg 5 — rear-right
 
     controller_names:

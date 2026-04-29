@@ -42,12 +42,6 @@ class HexapodNode(Node):
         self._vx = 0.0
         self._vy = 0.0
         self._omega = 0.0
-        
-        self._mode_pub = self.create_publisher(JointTrajectory, '/robot_mode_data_dummy', 10) # Placeholder or use custom msg
-        # Instead of custom msg which might not be built, let's use a String for simplicity if available
-        from std_msgs.msg import String
-        self._mode_pub = self.create_publisher(String, '/robot_mode', 10)
-        self.create_timer(1.0, self._publish_mode)
 
         # Foot offset from home in world XY (mm), updated each half-cycle
         self._foot_offsets = [(0.0, 0.0) for _ in range(6)]
@@ -59,12 +53,6 @@ class HexapodNode(Node):
         self._gait_timer = self.create_timer(half, self._gait_tick)
         self._gait_timer.cancel()
 
-    def _publish_mode(self):
-        from std_msgs.msg import String
-        msg = String()
-        msg.data = "WALKING" if self._walking else "STANDING"
-        self._mode_pub.publish(msg)
-
         self.get_logger().info('Hexapod node initialized. Waiting for manual commands on /cmd_vel')
 
     #  params
@@ -74,14 +62,13 @@ class HexapodNode(Node):
         self.declare_parameter('L2', 73.84)
         self.declare_parameter('L3', 112.16)
         self.declare_parameter('body_radius', 105.66)
-        self.declare_parameter('home_reach', 140.0)
-        self.declare_parameter('home_z', -140.0)
+        self.declare_parameter('home_reach', 120.0)
+        self.declare_parameter('home_z', -150.0)
         self.declare_parameter('step_length', 80.0)
-        self.declare_parameter('step_height', 75.0)
-        self.declare_parameter('step_period', 4.0)
-        self.declare_parameter('duty_factor', 1.0)
-        self.declare_parameter('stand_duration', 5.0)
-        self.declare_parameter('waypoints', 30)
+        self.declare_parameter('step_height', 60.0)
+        self.declare_parameter('step_period', 1.2)
+        self.declare_parameter('stand_duration', 2.0)
+        self.declare_parameter('waypoints', 15)
         self.declare_parameter('coxa_angles',
             [-1.5708, -0.7854, 0.7854, 1.5708, 2.3920, -2.3562])
         self.declare_parameter('stand_femur_cmd', -0.9)
@@ -100,7 +87,6 @@ class HexapodNode(Node):
         self._step_length    = self.get_parameter('step_length').value
         self._step_height    = self.get_parameter('step_height').value
         self._step_period    = self.get_parameter('step_period').value
-        self._duty_factor    = self.get_parameter('duty_factor').value
         self._stand_duration = self.get_parameter('stand_duration').value
         self._waypoints      = self.get_parameter('waypoints').value
         self._coxa_angles    = self.get_parameter('coxa_angles').value
@@ -114,12 +100,12 @@ class HexapodNode(Node):
             for i in range(6)
         ]
 
-        # Calculate home_reach and home_z dynamically from your desired stand pose
+        # Calculate home_reach and home_z dynamically from the desired stand pose commands
         angles = self._cmd_to_angles([0.0, self._stand_femur_cmd, self._stand_tibia_cmd])
         hx, hy, hz = self._fk(angles)
         self._home_reach = math.hypot(hx, hy)
         self._home_z = hz
-        self.get_logger().info(f'Dynamic Home Synchronized -> Reach: {self._home_reach:.1f}, Z: {self._home_z:.1f}')
+        self.get_logger().info(f'FK from custom stand pose -> reach: {self._home_reach:.1f}, z: {hz:.1f}')
 
     #  init
 
@@ -205,9 +191,7 @@ class HexapodNode(Node):
 
         for leg_id in swing:
             dx, dy = self._foot_stride(leg_id)
-            # Removing early landing to give Group A full time to reach height
-            swing_dur = half_dur
-            self._publish(leg_id, self._build_swing(leg_id, dx, dy, swing_dur))
+            self._publish(leg_id, self._build_swing(leg_id, dx, dy, half_dur))
 
         for leg_id in stance:
             dx, dy = self._foot_stride(leg_id)
@@ -254,51 +238,39 @@ class HexapodNode(Node):
 
     def _build_swing(self, leg_id: int, dx: float, dy: float, duration: float):
         """
-        Decoupled 'Pop-and-Stride' Trajectory:
-          0% - 15%: Pure Vertical Lift (Breaks ground friction)
-         15% - 85%: Arc Stride (Bézier swing in the air)
-         85% - 100%: Pure Vertical Landing (Firm plant)
+        Cubic Bézier swing trajectory:
+          P0 → start foot on ground
+          P1 → P0 lifted straight up by step_height  (fast liftoff)
+          P2 → P3 lifted straight up by step_height  (controlled landing)
+          P3 → end foot on ground
         """
         leg = self._legs[leg_id]
         hx, hy, hz = leg.home
         N  = self._waypoints
-        h  = self._step_height
 
         start_dx, start_dy = self._foot_offsets[leg_id]
         end_dx,   end_dy   = dx, dy
+
+        sx, sy = hx + start_dx, hy + start_dy
+        ex, ey = hx + end_dx,   hy + end_dy
+        h      = self._step_height
+
+        # Cubic Bézier control points
+        P0 = (sx, sy, hz)
+        P1 = (sx, sy, hz + h)           # lift straight from start
+        P2 = (ex, ey, hz + h)           # hover over end
+        P3 = (ex, ey, hz)               # touch down at end
 
         traj = JointTrajectory()
         traj.joint_names = self._joint_names[leg_id]
 
         for i in range(1, N + 1):
-            t = i / N
-            
-            # --- Decoupled Math ---
-            if t < 0.15:
-                # Phase 1: Pure Lift
-                t_p1 = t / 0.15
-                bz = hz + h * t_p1
-                bx = hx + start_dx
-                by = hy + start_dy
-            elif t > 0.85:
-                # Phase 3: Pure Land
-                t_p3 = (t - 0.85) / 0.15
-                bz = (hz + h) - (h * t_p3)
-                bx = hx + end_dx
-                by = hy + end_dy
-            else:
-                # Phase 2: Arc Stride
-                t_p2 = (t - 0.15) / 0.70
-                # Use Bézier for a smooth arc in the air
-                P0 = (hx + start_dx, hy + start_dy, hz + h)
-                P1 = (hx + start_dx, hy + start_dy, hz + h + 10) # slight peak
-                P2 = (hx + end_dx,   hy + end_dy,   hz + h + 10)
-                P3 = (hx + end_dx,   hy + end_dy,   hz + h)
-                bx, by, bz = _bezier3(P0, P1, P2, P3, t_p2)
+            t  = i / N
+            bx, by, bz = _bezier3(P0, P1, P2, P3, t)
 
             angles = leg.solve_ik(bx, by, bz)
             if angles is None:
-                angles = leg.solve_ik(hx, hy, hz)
+                angles = leg.solve_ik(hx, hy, hz)   # fall back to home
             if angles is None:
                 continue
 
@@ -375,7 +347,7 @@ class HexapodNode(Node):
           femur (rpy "… 0.12741 0") → z-offset = 0.12741  (pitch in rolled frame)
           tibia (rpy "0 0 -0.65799") → z-offset = −0.65799
         """
-        cmd1 = 0.0 - angles[0]   # coxa
+        cmd1 = 0.0    - angles[0]   # coxa
         cmd2 = 0.1274 - angles[1]   # femur
         cmd3 = -0.658 - angles[2]   # tibia
         return [cmd1, cmd2, cmd3]
