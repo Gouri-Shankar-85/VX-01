@@ -11,12 +11,12 @@ hexapod_node:
     body_radius: 105.66     # mm from body centre to coxa pivot
 
     # Stand-pose joint overrides (bypasses IK — set directly from Gazebo observation)
-    stand_femur_cmd:  -1.2  # rad — femur joint command for stand pose (more extended)
-    stand_tibia_cmd:   1.0  # rad — tibia joint command for stand pose (more extended)
+    stand_femur_cmd:  -0.95  # rad — femur joint command for stand pose
+    stand_tibia_cmd:   0.85  # rad — tibia joint command for stand pose
 
-    # Home foot position for walking IK (set to match FK of the stand pose angles)
-    home_reach: 140.0
-    home_z: -120.0
+    # Home foot position for walking IK 
+    home_reach: 120.0
+    home_z: -150.0
 
     # Gait parameters
     step_length:   60.0     # mm  — half-stride cap = 30mm (safe for 120mm reach)
