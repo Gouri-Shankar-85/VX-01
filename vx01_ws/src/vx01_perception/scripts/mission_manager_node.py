@@ -8,6 +8,7 @@ import yaml
 import os
 
 from vx01_msgs.msg import VictimArray, MissionState
+from ament_index_python.packages import get_package_share_directory
 
 
 class MissionManagerNode(Node):
@@ -79,7 +80,8 @@ class MissionManagerNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    config = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'topics.yaml')
+    share_dir = get_package_share_directory('vx01_perception')
+    config = os.path.join(share_dir, 'config', 'topics.yaml')
     node   = MissionManagerNode(config)
     rclpy.spin(node)
     node.destroy_node()

@@ -11,6 +11,7 @@ import os
 import base64
 
 from vx01_msgs.msg import Victim, VictimArray, MissionState
+from ament_index_python.packages import get_package_share_directory
 
 
 class VictimDetectorNode(Node):
@@ -171,7 +172,8 @@ class VictimDetectorNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    config = os.path.expanduser('~/vx-01/vx01_ws/src/vx01_perception/config/topics.yaml')
+    share_dir = get_package_share_directory('vx01_perception')
+    config = os.path.join(share_dir, 'config', 'topics.yaml')
     node   = VictimDetectorNode(config)
     rclpy.spin(node)
     node.destroy_node()

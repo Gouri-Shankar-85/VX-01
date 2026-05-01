@@ -17,11 +17,36 @@ ament_python_install_package(${PROJECT_NAME})
 install(
   PROGRAMS
     scripts/victim_detector_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME victim_detector_node
+)
+
+install(
+  PROGRAMS
     scripts/terrain_classifier_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME terrain_classifier_node
+)
+
+install(
+  PROGRAMS
     scripts/mapping_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME mapping_node
+)
+
+install(
+  PROGRAMS
     scripts/mission_manager_node.py
+  DESTINATION lib/${PROJECT_NAME}
+  RENAME mission_manager_node
+)
+
+install(
+  PROGRAMS
     scripts/mode_manager_node.py
   DESTINATION lib/${PROJECT_NAME}
+  RENAME mode_manager_node
 )
 
 # Install config
