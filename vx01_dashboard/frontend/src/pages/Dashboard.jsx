@@ -27,6 +27,11 @@ export default function Dashboard() {
     terrain: "UNKNOWN",
     walkability: "--",
     robot_mode: "UNKNOWN",
+    rel_alt: "--",
+    heading: "--",
+    satellites: "--",
+    roll: 0,
+    pitch: 0,
   });
 
   const [victimData, setVictimData] = useState([]);
@@ -98,6 +103,55 @@ export default function Dashboard() {
         longitude: msg.longitude.toFixed(5),
         altitude: `${msg.altitude.toFixed(1)}m`,
       }));
+    });
+
+    const relAlt = new ROSLIB.Topic({
+      ros,
+      name: "/mavros/global_position/rel_alt",
+      messageType: "std_msgs/Float64",
+    });
+    relAlt.subscribe((msg) => {
+      setTelemetry((t) => ({ ...t, rel_alt: `${msg.data.toFixed(1)}m` }));
+    });
+
+    const compass = new ROSLIB.Topic({
+      ros,
+      name: "/mavros/global_position/compass_hdg",
+      messageType: "std_msgs/Float64",
+    });
+    compass.subscribe((msg) => {
+      setTelemetry((t) => ({ ...t, heading: `${msg.data.toFixed(0)}°` }));
+    });
+
+    const sats = new ROSLIB.Topic({
+      ros,
+      name: "/mavros/global_position/raw/satellites",
+      messageType: "std_msgs/UInt32",
+    });
+    sats.subscribe((msg) => {
+      setTelemetry((t) => ({ ...t, satellites: msg.data }));
+    });
+
+    const imu = new ROSLIB.Topic({
+      ros,
+      name: "/mavros/imu/data",
+      messageType: "sensor_msgs/Imu",
+    });
+    imu.subscribe((msg) => {
+      const q = msg.orientation;
+      const sinr_cosp = 2 * (q.w * q.x + q.y * q.z);
+      const cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y);
+      let roll = Math.atan2(sinr_cosp, cosr_cosp);
+
+      const sinp = 2 * (q.w * q.y - q.z * q.x);
+      let pitch;
+      if (Math.abs(sinp) >= 1) pitch = Math.sign(sinp) * Math.PI / 2;
+      else pitch = Math.asin(sinp);
+
+      roll = (roll * 180) / Math.PI;
+      pitch = (pitch * 180) / Math.PI;
+
+      setTelemetry((t) => ({ ...t, roll, pitch }));
     });
 
     const velocity = new ROSLIB.Topic({
@@ -215,6 +269,10 @@ export default function Dashboard() {
       walkScore.unsubscribe();
       robotModeTopic.unsubscribe();
       mapTopic.unsubscribe();
+      relAlt.unsubscribe();
+      compass.unsubscribe();
+      sats.unsubscribe();
+      imu.unsubscribe();
       ros.close();
       if (droneIntervalRef.current) clearInterval(droneIntervalRef.current);
     };
@@ -474,18 +532,26 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="flex gap-4">
-            <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3 shadow-lg">
-              <Battery size={16} className={telemetry.battery === "--" ? "text-gray-500" : parseInt(telemetry.battery) < 20 ? "text-rose-500" : "text-emerald-400"} />
-              <span className="font-mono font-bold text-gray-100">{telemetry.battery}</span>
+          <div className="flex gap-3">
+            <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-lg">
+              <Battery size={14} className={telemetry.battery === "--" ? "text-gray-500" : parseInt(telemetry.battery) < 20 ? "text-rose-500" : "text-emerald-400"} />
+              <span className="font-mono text-sm font-bold text-gray-100">{telemetry.battery}</span>
             </div>
-            <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3 shadow-lg">
-              <Activity size={16} className={telemetry.altitude === "--" ? "text-gray-500" : "text-blue-400"} />
-              <span className="font-mono font-bold text-gray-100">{telemetry.altitude}</span>
+            <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-lg">
+              <Activity size={14} className={telemetry.rel_alt === "--" ? "text-gray-500" : "text-blue-400"} />
+              <span className="font-mono text-sm font-bold text-gray-100" title="Relative Altitude">Alt: {telemetry.rel_alt}</span>
             </div>
-            <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 px-4 py-2 rounded-lg flex items-center gap-3 shadow-lg">
-              <MapPin size={16} className={telemetry.latitude === "--" ? "text-gray-500" : "text-indigo-400"} />
-              <span className="font-mono text-gray-100 text-sm">{telemetry.latitude}, {telemetry.longitude}</span>
+            <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-lg">
+              <Target size={14} className={telemetry.heading === "--" ? "text-gray-500" : "text-amber-400"} />
+              <span className="font-mono text-sm font-bold text-gray-100" title="Compass Heading">Hdg: {telemetry.heading}</span>
+            </div>
+            <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-lg">
+              <Wifi size={14} className={telemetry.satellites === "--" ? "text-gray-500" : telemetry.satellites < 6 ? "text-rose-500" : "text-emerald-400"} />
+              <span className="font-mono text-sm font-bold text-gray-100" title="GPS Satellites">Sats: {telemetry.satellites}</span>
+            </div>
+            <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-lg">
+              <MapPin size={14} className={telemetry.latitude === "--" ? "text-gray-500" : "text-indigo-400"} />
+              <span className="font-mono text-xs text-gray-100">{telemetry.latitude}, {telemetry.longitude}</span>
             </div>
           </div>
         </div>
@@ -725,33 +791,58 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <div className="flex-1 grid grid-cols-2 gap-6 items-center">
+                  <div className="flex-1 grid grid-cols-3 gap-4 items-center">
                     <div className="flex flex-col gap-3">
                       <p className="text-[9px] text-center text-gray-600 font-bold uppercase tracking-[0.2em]">Elevation / Yaw</p>
-                      <div className="grid grid-cols-3 gap-2 font-mono text-[11px]">
+                      <div className="grid grid-cols-3 gap-3 font-mono text-xl">
                         <div />
-                        <button onClick={() => updateDroneRC(0, 0, 25, 0)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">↑</button>
+                        <button onClick={() => updateDroneRC(0, 0, 25, 0)} className="bg-gray-800 text-gray-300 p-4 rounded-xl border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold shadow-inner flex items-center justify-center">↑</button>
                         <div />
-                        <button onClick={() => updateDroneRC(0, 0, 0, -25)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">⟲</button>
-                        <button onClick={stopDrone} className="bg-gray-700 text-red-500 p-3 rounded-lg border border-gray-600 hover:bg-gray-600 transition-all font-bold">✕</button>
-                        <button onClick={() => updateDroneRC(0, 0, 0, 25)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">⟳</button>
+                        <button onClick={() => updateDroneRC(0, 0, 0, -25)} className="bg-gray-800 text-gray-300 p-4 rounded-xl border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold shadow-inner flex items-center justify-center">⟲</button>
+                        <button onClick={stopDrone} className="bg-red-950 text-white font-bold p-4 rounded-xl border border-red-800 hover:bg-red-800 transition-all flex items-center justify-center shadow-lg"><StopCircle size={20} /></button>
+                        <button onClick={() => updateDroneRC(0, 0, 0, 25)} className="bg-gray-800 text-gray-300 p-4 rounded-xl border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold shadow-inner flex items-center justify-center">⟳</button>
                         <div />
-                        <button onClick={() => updateDroneRC(0, 0, -25, 0)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">↓</button>
+                        <button onClick={() => updateDroneRC(0, 0, -25, 0)} className="bg-gray-800 text-gray-300 p-4 rounded-xl border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold shadow-inner flex items-center justify-center">↓</button>
                         <div />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <p className="text-[9px] text-center text-gray-600 font-bold uppercase tracking-[0.2em]">Attitude</p>
+                      <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-gray-800 bg-sky-400 shadow-inner">
+                        <div 
+                          className="absolute w-[300%] h-[300%] -left-full -top-full flex flex-col transition-transform duration-75"
+                          style={{
+                            transform: `rotate(${-telemetry.roll}deg) translateY(${telemetry.pitch * 1.5}px)`,
+                            transformOrigin: 'center center'
+                          }}
+                        >
+                          <div className="flex-1 bg-sky-500"></div>
+                          <div className="h-0.5 bg-white w-full shadow-lg"></div>
+                          <div className="flex-1 bg-amber-700"></div>
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none drop-shadow-md">
+                          <div className="w-12 h-0.5 bg-yellow-400"></div>
+                          <div className="absolute w-0.5 h-3 bg-yellow-400 -mt-2"></div>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 text-[10px] font-mono text-gray-400 font-bold tracking-widest">
+                        <span>P: {telemetry.pitch.toFixed(1)}°</span>
+                        <span>R: {telemetry.roll.toFixed(1)}°</span>
                       </div>
                     </div>
 
                     <div className="flex flex-col gap-3">
                       <p className="text-[9px] text-center text-gray-600 font-bold uppercase tracking-[0.2em]">Position / Roll</p>
-                      <div className="grid grid-cols-3 gap-2 font-mono text-[11px]">
+                      <div className="grid grid-cols-3 gap-3 font-mono text-xl">
                         <div />
-                        <button onClick={() => updateDroneRC(0, -25, 0, 0)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">↑</button>
+                        <button onClick={() => updateDroneRC(0, -25, 0, 0)} className="bg-gray-800 text-gray-300 p-4 rounded-xl border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold shadow-inner flex items-center justify-center">↑</button>
                         <div />
-                        <button onClick={() => updateDroneRC(-25, 0, 0, 0)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">←</button>
-                        <button onClick={stopDrone} className="bg-gray-700 text-red-500 p-3 rounded-lg border border-gray-600 hover:bg-gray-600 transition-all font-bold">✕</button>
-                        <button onClick={() => updateDroneRC(25, 0, 0, 0)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">→</button>
+                        <button onClick={() => updateDroneRC(-25, 0, 0, 0)} className="bg-gray-800 text-gray-300 p-4 rounded-xl border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold shadow-inner flex items-center justify-center">←</button>
+                        <button onClick={stopDrone} className="bg-red-950 text-white font-bold p-4 rounded-xl border border-red-800 hover:bg-red-800 transition-all flex items-center justify-center shadow-lg"><StopCircle size={20} /></button>
+                        <button onClick={() => updateDroneRC(25, 0, 0, 0)} className="bg-gray-800 text-gray-300 p-4 rounded-xl border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold shadow-inner flex items-center justify-center">→</button>
                         <div />
-                        <button onClick={() => updateDroneRC(0, 25, 0, 0)} className="bg-gray-800 text-gray-400 p-3 rounded-lg border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold">↓</button>
+                        <button onClick={() => updateDroneRC(0, 25, 0, 0)} className="bg-gray-800 text-gray-300 p-4 rounded-xl border border-gray-700 hover:border-indigo-500 hover:text-white transition-all font-bold shadow-inner flex items-center justify-center">↓</button>
                         <div />
                       </div>
                     </div>

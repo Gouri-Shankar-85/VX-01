@@ -1,11 +1,8 @@
 mavros:
   ros__parameters:
-
-    # ========================
-    # CONNECTION
-    # RDK X5 → Pix6 via USB
-    # ========================
-    fcu_url: "serial:///dev/ttyACM1:57600"
+    # Hardware Connection (RDK X5 to PIX6 via USB)
+    fcu_url: "serial:///dev/ttyPIXHAWK:115200"
+    # No GCS Bridge needed since the Dashboard uses ROS Topics (rosbridge)
     gcs_url: ""
 
     # MAVLink system IDs
@@ -13,53 +10,18 @@ mavros:
     target_component_id: 1
     system_id: 255
     component_id: 240
-
-    # Protocol
     fcu_protocol: "v2.0"
 
-    # ========================
-    # FRAME
-    # ========================
+    # Frame
     frame_id: "map"
     local_position_frame_id: "base_link"
     
-    # ========================
-    # HEARTBEAT
-    # ========================
-    heartbeat_rate: 1.0       # Hz
-    heartbeat_mav_type: 2     # MAV_TYPE_QUADROTOR
+    # Heartbeat
+    heartbeat_rate: 1.0
+    heartbeat_mav_type: 2
 
-    # ========================
-    # TIMEOUTS
-    # ========================
+    # Timeouts
     conn_timeout: 30.0
-    
-    # ========================
-    # MOTOR MAPPING
-    # ArduPilot X-Frame:
-    # Motor 1: Front-Right (CW)
-    # Motor 2: Back-Left   (CW)
-    # Motor 3: Front-Left  (CCW)
-    # Motor 4: Back-Right  (CCW)
-    # ========================
 
-    # ========================
-    # FLIGHT MODES
-    # All modes enabled
-    # ========================
-    # STABILIZE : Manual stabilized flight
-    # GUIDED    : Full ROS2 autonomous control
-    # LOITER    : GPS hold position
-    # ALT_HOLD  : Altitude hold
-    # LAND      : Auto landing
-    # RTL       : Return to launch
-
-    # ========================
-    # ARDUPILOT PARAMETERS
-    # Set these in Mission Planner:
-    # FRAME_CLASS  = 1  (Quadcopter)
-    # FRAME_TYPE   = 1  (X frame)
-    # SYSID_MYGCS  = 255
-    # SERIAL0_BAUD = 57  (57600)
-    # SERIAL0_PROTOCOL = 2 (MAVLink2)
-    # ========================
+    # Note: ArduPilot parameters should be set in Mission Planner
+    # FRAME_CLASS = 1, FRAME_TYPE = 1, SYSID_MYGCS = 255, SERIAL0_BAUD = 115, SERIAL0_PROTOCOL = 2

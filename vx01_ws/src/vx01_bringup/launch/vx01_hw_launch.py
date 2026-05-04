@@ -164,8 +164,8 @@ def generate_launch_description():
         delay_leg3_controller_spawner_after_joint_state_broadcaster_spawner,
         delay_leg4_controller_spawner_after_joint_state_broadcaster_spawner,
         delay_leg5_controller_spawner_after_joint_state_broadcaster_spawner,
-        # mavros_node,
-        # mavros_bridge_node
+        mavros_node,
+        mavros_bridge_node
     ]
     
     return LaunchDescription([serial_port_arg] + nodes)

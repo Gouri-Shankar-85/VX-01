@@ -1,22 +1,25 @@
 /**:
   ros__parameters:
-
+    # Simulation Connection Config
     conn:
       heartbeat_rate: 1.0       
       heartbeat_mav_type: 2    
       timeout: 60.0            
       timesync_rate: 10.0
 
+    # System configuration
     sys:
       conn_timeout: 120.0    
       disable_diag: true      
 
+    # Parameter sync settings
     param:
       startup_timeout: 60.0
       pull_timeout: 30.0
       retries: 10
       force_pull: true
 
+    # Gazebo Distance Sensor Simulation
     distance_sensor:
       rangefinder_pub:
         id: 0
