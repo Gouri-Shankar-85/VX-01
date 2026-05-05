@@ -70,23 +70,26 @@ build_sim() {
 build_dashboard() {
     [ "${REGISTRY}" = "yourdockerhub" ] && \
         die "Set DOCKER_REGISTRY in .env to your Docker Hub username first"
-    info "Building dashboard images..."
-    docker build \
-        --platform linux/amd64 \
+    info "Building and pushing multi-arch dashboard images..."
+
+    docker buildx use vx01-builder 2>/dev/null || \
+        docker buildx create --name vx01-builder \
+            --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=50000000 \
+            --use
+
+    docker buildx build \
+        --platform linux/amd64,linux/arm64 \
         -f docker/Dockerfile.dashboard \
-        -t vx01-dashboard:latest \
         -t ${REGISTRY}/vx01-dashboard:latest \
+        --push \
         .
-    docker build \
-        --platform linux/amd64 \
+    docker buildx build \
+        --platform linux/amd64,linux/arm64 \
         -f docker/Dockerfile.backend \
-        -t vx01-dashboard-backend:latest \
         -t ${REGISTRY}/vx01-dashboard-backend:latest \
+        --push \
         .
-    info "Pushing dashboard images..."
-    docker push ${REGISTRY}/vx01-dashboard:latest
-    docker push ${REGISTRY}/vx01-dashboard-backend:latest
-    ok "Dashboard images pushed: ${REGISTRY}/vx01-dashboard(-backend):latest"
+    ok "Dashboard images built and pushed for AMD64 and ARM64: ${REGISTRY}/vx01-dashboard(-backend):latest"
 }
 
 build_arm() {
