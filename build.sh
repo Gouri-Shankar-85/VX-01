@@ -149,6 +149,22 @@ build_arm_ci() {
     info "  docker pull ${REGISTRY}/vx01-base:${TAG}-arm64"
 }
 
+build_dashboard_ci() {
+    [ "${REGISTRY}" = "yourdockerhub" ] && \
+        die "Set DOCKER_REGISTRY in .env to your Docker Hub username first"
+
+    if ! command -v gh &>/dev/null; then
+        die "GitHub CLI (gh) not installed. Install: https://cli.github.com\n   Then run: gh auth login"
+    fi
+
+    info "Triggering Dashboard build on GitHub Actions..."
+    gh workflow run build-dashboard.yml
+
+    ok "Build triggered. Monitor at: https://github.com/Gouri-Shankar-85/VX-01/actions"
+    info "Once complete, pull the image on your Pi 5:"
+    info "  docker pull ${REGISTRY}/vx01-dashboard:latest"
+}
+
 push_images() {
     [ "${REGISTRY}" = "yourdockerhub" ] && \
         die "Set DOCKER_REGISTRY in .env to your Docker Hub username first"
@@ -166,6 +182,7 @@ case "${1}" in
     build-base)       build_base ;;
     build-sim)        build_sim ;;
     build-dashboard)  build_dashboard ;;
+    build-dashboard-ci) build_dashboard_ci ;;
     build-arm)        build_arm ;;
     build-arm-ci)     build_arm_ci ;;
     push)             push_images ;;
