@@ -75,6 +75,7 @@ build_dashboard() {
     docker buildx use vx01-builder 2>/dev/null || \
         docker buildx create --name vx01-builder \
             --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=50000000 \
+            --driver-opt network=host \
             --use
 
     docker buildx build \
