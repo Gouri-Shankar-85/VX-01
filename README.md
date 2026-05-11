@@ -4,6 +4,10 @@
 ![ROS 2](https://img.shields.io/badge/ROS%202-Humble-22314E.svg?logo=ros)
 ![Status](https://img.shields.io/badge/Status-Active_Development-brightgreen.svg)
 
+<p align="center">
+  <img src="vx01_robot.jpg" alt="VX-01 Multi-Terrain Robot" width="600"/>
+</p>
+
 The **VX-01** is a highly advanced, modular, multi-terrain robotic platform designed for autonomous and manual navigation across land, air, and water. By combining the agility of a hexapod with the flight capabilities of a drone, the VX-01 adapts to virtually any environment.
 
 ## 🌟 System Architecture
