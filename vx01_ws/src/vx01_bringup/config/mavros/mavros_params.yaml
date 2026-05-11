@@ -23,14 +23,10 @@ mavros:
     # Timeouts
     conn_timeout: 30.0
 
-    # Distance Sensor Mapping (TF-Mini downwards)
-    distance_sensor:
-      config:
-        tfmini:
-          subscriber: false
-          id: 0
-          orientation: 25
-          frame_id: "tf_mini_link"
+    # Blacklist the distance_sensor plugin since ArduPilot handles the TF-Mini natively
+    # and we don't need MAVROS to bridge it to ROS. This silences the mapping warning.
+    plugin_blacklist:
+      - "distance_sensor"
 
     # Note: ArduPilot parameters should be set in Mission Planner
     # FRAME_CLASS = 1, FRAME_TYPE = 1, SYSID_MYGCS = 255, SERIAL0_BAUD = 115, SERIAL0_PROTOCOL = 2
