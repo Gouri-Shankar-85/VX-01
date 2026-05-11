@@ -342,6 +342,9 @@ export default function Dashboard() {
   const armDrone = () => {
     if (!rosRef.current || !rosConnected) return;
 
+    // Start publishing RC overrides so Pixhawk sees valid RC signals before arming!
+    updateDroneRC(0, 0, 0, 0);
+
     const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode", serviceType: "mavros_msgs/srv/SetMode" });
     const armSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
 
@@ -350,7 +353,8 @@ export default function Dashboard() {
         armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), (res) => {
           if (res.success) {
             addLog("INFO", "Armed — drone ready for manual control");
-            startDroneCmd(0, 0, 0, 0);
+          } else {
+            addLog("ERROR", "Arming rejected by Pixhawk (Check RC or pre-arm checks)");
           }
         });
       }, 1000);
