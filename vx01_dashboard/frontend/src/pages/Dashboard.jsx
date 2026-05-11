@@ -345,7 +345,7 @@ export default function Dashboard() {
     const modeSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/set_mode", serviceType: "mavros_msgs/srv/SetMode" });
     const armSvc = new ROSLIB.Service({ ros: rosRef.current, name: "/mavros/cmd/arming", serviceType: "mavros_msgs/srv/CommandBool" });
 
-    modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "GUIDED" }), () => {
+    modeSvc.callService(new ROSLIB.ServiceRequest({ custom_mode: "STABILIZE" }), () => {
       setTimeout(() => {
         armSvc.callService(new ROSLIB.ServiceRequest({ value: true }), (res) => {
           if (res.success) {
