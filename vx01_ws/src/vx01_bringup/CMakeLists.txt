@@ -14,9 +14,10 @@ find_package(trajectory_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(vx01_hexapod_locomotion REQUIRED)   # your locomotion library
 
-# ── Teleop script ─────────────────────────────────────────────────
+# ── Scripts ─────────────────────────────────────────────────
 install(PROGRAMS
     scripts/hexapod_teleop_key.py
+    scripts/qos_relay.py
     DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -140,6 +140,22 @@ def generate_launch_description():
         name='mavros',
         output='screen',
         parameters=[mavros_config_file],
+        remappings=[
+            ('/mavros/battery', '/mavros_internal/battery'),
+            ('/mavros/global_position/global', '/mavros_internal/global_position/global'),
+            ('/mavros/global_position/rel_alt', '/mavros_internal/global_position/rel_alt'),
+            ('/mavros/global_position/compass_hdg', '/mavros_internal/global_position/compass_hdg'),
+            ('/mavros/global_position/raw/satellites', '/mavros_internal/global_position/raw/satellites'),
+            ('/mavros/imu/data', '/mavros_internal/imu/data'),
+            ('/mavros/local_position/velocity_local', '/mavros_internal/local_position/velocity_local'),
+        ]
+    )
+
+    qos_relay_node = Node(
+        package='vx01_bringup',
+        executable='qos_relay.py',
+        name='telemetry_qos_relay',
+        output='screen'
     )
 
     mavros_bridge_node = Node(
@@ -165,7 +181,8 @@ def generate_launch_description():
         delay_leg4_controller_spawner_after_joint_state_broadcaster_spawner,
         delay_leg5_controller_spawner_after_joint_state_broadcaster_spawner,
         mavros_node,
-        mavros_bridge_node
+        mavros_bridge_node,
+        qos_relay_node
     ]
     
     return LaunchDescription([serial_port_arg] + nodes)
