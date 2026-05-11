@@ -19,8 +19,8 @@ def generate_launch_description():
             {"pub_tfTree": False},
             {"depth_width": 640},
             {"depth_height": 480},
-            {"rgb_width": 640},
-            {"rgb_height": 480},
+            {"rgb_width": -1},
+            {"rgb_height": -1},
             {"fps": 15},
         ],
         remappings=[]
