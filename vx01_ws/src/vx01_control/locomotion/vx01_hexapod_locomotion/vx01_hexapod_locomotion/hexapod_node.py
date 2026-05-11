@@ -321,7 +321,7 @@ class HexapodNode(Node):
     #  helpers
 
     def _cmd_to_angles(self, cmds):
-        theta1 = 0.0 - cmds[0]9
+        theta1 = 0.0 - cmds[0]
         theta2 = 0.1274 - cmds[1]
         theta3 = -0.658 - cmds[2]
         return [theta1, theta2, theta3]
