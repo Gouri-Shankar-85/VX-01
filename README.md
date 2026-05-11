@@ -1,84 +1,61 @@
-**Multi-Terrain Robot**
+# VX-01 Multi-Terrain Robot
 
-A modular multi-terrain robotic platform designed for autonomous and manual navigation across different environments. The system integrates embedded control, sensor fusion, and optional computer vision support.
+![VX-01 Architecture](https://img.shields.io/badge/Platform-Multi--Terrain-blue.svg)
+![ROS 2](https://img.shields.io/badge/ROS%202-Humble-22314E.svg?logo=ros)
+![Status](https://img.shields.io/badge/Status-Active_Development-brightgreen.svg)
 
-**Overview**
+The **VX-01** is a highly advanced, modular, multi-terrain robotic platform designed for autonomous and manual navigation across land, air, and water. By combining the agility of a hexapod with the flight capabilities of a drone, the VX-01 adapts to virtually any environment.
 
-This project focuses on designing and developing a scalable robotic system capable of:
-1) Hexapod Gait Locomotion
-2) Real-time sensor data processing
-3) Manual and autonomous operation
-4) Obstacle detection
-5) Modular hardware expansion
-6) Land, air and underwater navigation 
+## 🌟 System Architecture
 
-**Hardware**
+The core architecture operates on a distributed compute model:
+- **High-Level Compute:** **RDK X5** (ARM64) running Ubuntu 22.04 + ROS 2 Humble inside Docker containers. Handles SLAM, inverse kinematics, vision, web dashboard, and high-level mission planning.
+- **Flight Controller:** **Pixhawk (ArduPilot)** connected via USB (MAVLink/MAVROS). Manages aerial stabilization, GPS, IMU, and autonomous flight modes.
+- **Servo Controller:** **Pololu Maestro Mini**. Receives commands from the RDK X5 via `ros2_control` to actuate the 18 hexapod leg servos.
+- **Perception:** **Orbbec Astra** Depth Camera for 3D mapping and obstacle avoidance (RTAB-Map).
 
-1) RDK X5 8GB Development Board (Microprocessor)
-2) PIX6 Flight Controller
-3) Polulu Maestro Mini Servo Controller
-4) BLDC Motors
-5) ESC
-6) IMU
-7) Ultrasonic Sensors
-8) Depth Sensing Camera
-9) LiPo Battery
+## 🚀 Key Features
 
-**Software Stack**
+* **Terrestrial Locomotion:** Hexapod gait generation (Tripod/Wave) with real-time inverse kinematics.
+* **Aerial Flight:** Full MAVROS integration for STABILIZE and GUIDED autonomous flight.
+* **Web Dashboard:** A sleek, React-based UI communicating via `rosbridge_server` for manual teleop, mapping visualization, and telemetry monitoring.
+* **Containerized Deployment:** Entire software stack is split into robust Docker containers (Base, ROS Bridge, MAVROS, Dashboard) managed by `docker-compose`.
 
-1) Python
-2) C/C++
-3) OpenCV
-4) ROS 2
+## 📦 Workspace Structure
 
-**Repository Structure**
+The ROS 2 workspace (`vx01_ws/src`) is heavily modularized:
+* `vx01_bringup`: Core launch files and system initialization.
+* `vx01_control`: Gait generation, mode management, and locomotion scripts.
+* `vx01_description`: URDF, Xacro, and 3D meshes.
+* `vx01_hardware`: `ros2_control` hardware interfaces for the Maestro controller.
+* `vx01_mapping`: RTAB-Map SLAM integration for the depth camera.
+* `vx01_mavros_bridge`: Custom C++ bridging for Pixhawk telemetry and command handling.
 
-multi-terrain-robot
+## 🛠️ Quick Start
 
-│
-        
-├── hardware..............# Schematics and mechanical design
+### 1. Build the Docker Images
+Use the included cross-compilation and build scripts:
+```bash
+# Build the base and ROS bridge images
+./build.sh build-base
 
-├── software...............# Source code
+# Build the Web Dashboard
+./build.sh build-dashboard
+```
 
-│   ├── rdk...............# ROS 2 code
+### 2. Launch the Hardware Stack
+```bash
+# Start all background containers (ROS, MAVROS, Dashboard)
+docker compose -f docker-compose.rdk.yml up -d
 
-│   ├── controller...............# Microcontroller code
+# Drop into the ROS container to launch the hardware
+docker exec -it vx01-robot bash
+colcon build --symlink-install
+ros2 launch vx01_bringup vx01_hw_launch.py
+```
 
-│   └── vision...............# Vision modules
+### 3. Access the Dashboard
+Open a browser and navigate to `http://<robot-ip>:5173` to access the Mission Control Dashboard.
 
-├── docs...............# Documentation and diagrams
-
-├── tests...............# Testing scripts
-
-└── README.md
-
-**Installation**
-
-1) Clone Repository
-2) git clone https://github.com/your-username/multi-terrain-robot.git
-3) cd multi-terrain-robot
-4) Install Dependencies
-5) sudo apt update
-6) pip3 install -r requirements.txt
-
-Usage
-
-**Features**
-
-1) PWM motor control
-2) Sensor-based obstacle detection
-3) Modular software architecture
-4) Expandable for autonomous navigation
-
-**Future Work**
-
-1) SLAM integration
-2) LIDAR support
-3) Terrain classification
-4) Waypoint-based navigation
-5) Cloud telemetry
-
-**Contributing**
-
-Pull requests are welcome. For major changes, open an issue first to discuss what you would like to change.
+## 🤝 Contributing
+Contributions are welcome. Please ensure that all new ROS 2 nodes include proper launch file integration and parameter definitions.
