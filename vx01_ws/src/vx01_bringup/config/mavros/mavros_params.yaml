@@ -25,10 +25,12 @@ mavros:
 
     # Distance Sensor Mapping (TF-Mini downwards)
     distance_sensor:
-      tfmini:
-        id: 0
-        orientation: 25
-        frame_id: "tf_mini_link"
+      config:
+        tfmini:
+          subscriber: false
+          id: 0
+          orientation: 25
+          frame_id: "tf_mini_link"
 
     # Note: ArduPilot parameters should be set in Mission Planner
     # FRAME_CLASS = 1, FRAME_TYPE = 1, SYSID_MYGCS = 255, SERIAL0_BAUD = 115, SERIAL0_PROTOCOL = 2
