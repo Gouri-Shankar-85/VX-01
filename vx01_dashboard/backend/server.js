@@ -144,8 +144,8 @@ app.get('/api/status', (req, res) => {
     });
 });
 
-const server = app.listen(PORT, () => {
-    console.log(`VX-01 Launch Backend running on http://localhost:${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`VX-01 Launch Backend running on http://0.0.0.0:${PORT}`);
     console.log(`  POST /api/launch   { command_id, command_string }`);
     console.log(`  POST /api/stop     { command_id }`);
     console.log(`  POST /api/stop-all — kills everything in the container`);
