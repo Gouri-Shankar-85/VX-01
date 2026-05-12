@@ -56,7 +56,7 @@ vx01_ws/src
 
 ## 🚀 Quick Start Guide
 
-This project is fully containerized. Please refer to the `VX01_Docker_Manual.pdf` inside the `docker/` folder for complete, in-depth documentation.
+This project is fully containerized. Please refer to the [VX01 Docker & Deployment Manual](VX01_Docker_Manual.md) in the root directory for complete, in-depth documentation.
 
 ### 1. Simulation on Laptop
 Run the simulation stack (Gazebo + ROS 2 Bridge + Dashboard) on your computer without needing the physical hardware:
